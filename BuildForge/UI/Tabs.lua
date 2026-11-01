@@ -4,8 +4,7 @@ local BF = NS.BF
 local Tabs = { render = {}, actions = {} }
 BF.Tabs = Tabs
 
--- Dark enough to read on the Quest Log's parchment.
-local GREEN, YELLOW, RED, GREY = "|cff106b10", "|cff7a4a00", "|cff9a0c0c", "|cff5e4b33"
+local GREEN, YELLOW, RED, GREY = "|cff60ff60", "|cffffd040", "|cffff6060", "|cffaaaaaa"
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local function color(c, text) return c .. text .. "|r" end

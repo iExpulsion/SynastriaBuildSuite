@@ -2,17 +2,18 @@ local _, NS = ...
 local BF = NS.BF
 
 -- Scrolling list of pooled rows: icon, text, right-aligned status, optional tooltip, click and item drop.
--- The "parchment" style uses the dark quest fonts for the Quest Log's detail pane.
+-- "category" rows copy the Achievement window's category buttons (AchievementCategoryTemplate and
+-- AchievementFrameCategories_DisplayButton): headers full width, children narrower, dimmed and right-aligned.
 local List = {}
 BF.List = List
-List.ROW_H = 20
 
--- The parchment's right edge is shaded, so its rows keep their status text further in.
 local STYLES = {
-	dark = { header = "GameFontNormal", row = "GameFontHighlightSmall", rightPad = 4 },
-	parchment = { header = "QuestFont", row = "QuestFontNormalSmall", rightPad = 16 },
+	dark = { rowH = 20, header = "GameFontNormal", row = "GameFontHighlightSmall", rightPad = 6 },
+	category = { rowH = 24, header = "GameFontNormal", row = "GameFontHighlight", rightPad = 10, category = true },
 }
-local MINUS, PLUS = "Interface\\Buttons\\UI-MinusButton-UP", "Interface\\Buttons\\UI-PlusButton-UP"
+local CATEGORY_BG = "Interface\\AchievementFrame\\UI-Achievement-Category-Background"
+local CATEGORY_HIGHLIGHT = "Interface\\AchievementFrame\\UI-Achievement-Category-Highlight"
+local HEADER_INSET, CHILD_INSET = 10, 25
 
 local function runTooltip(row)
 	if row.tooltip then
@@ -34,30 +35,41 @@ local function dropOrClick(row, button)
 end
 
 local function newRow(self)
+	local style = self.style
 	local row = CreateFrame("Button", nil, self.content)
-	row:SetHeight(List.ROW_H)
-	row:SetPoint("LEFT", self.content, "LEFT")
-	row:SetPoint("RIGHT", self.content, "RIGHT")
+	row:SetHeight(style.rowH)
 	row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-	row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
 
-	row.selectedTex = row:CreateTexture(nil, "BACKGROUND")
-	row.selectedTex:SetAllPoints()
-	row.selectedTex:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-	row.selectedTex:SetBlendMode("ADD")
-
-	row.toggle = row:CreateTexture(nil, "ARTWORK")
-	row.toggle:SetSize(16, 16)
-	row.toggle:SetPoint("LEFT", 3, 0)
+	if style.category then
+		row.background = row:CreateTexture(nil, "BACKGROUND")
+		row.background:SetTexture(CATEGORY_BG)
+		row.background:SetTexCoord(0, 0.6640625, 0, 1)
+		row.background:SetPoint("TOPLEFT")
+		row.background:SetPoint("TOPRIGHT")
+		row.background:SetHeight(32)
+		local highlight = row:CreateTexture(nil, "HIGHLIGHT")
+		highlight:SetTexture(CATEGORY_HIGHLIGHT)
+		highlight:SetTexCoord(0, 0.6640625, 0, 1)
+		highlight:SetBlendMode("ADD")
+		highlight:SetPoint("TOPLEFT")
+		highlight:SetPoint("BOTTOMRIGHT", -1, -7)
+		row:SetHighlightTexture(highlight)
+	else
+		row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+		row.selectedTex = row:CreateTexture(nil, "BACKGROUND")
+		row.selectedTex:SetAllPoints()
+		row.selectedTex:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+		row.selectedTex:SetBlendMode("ADD")
+	end
 
 	row.icon = row:CreateTexture(nil, "ARTWORK")
 	row.icon:SetSize(16, 16)
 
-	row.status = row:CreateFontString(nil, "ARTWORK", self.fonts.row)
-	row.status:SetPoint("RIGHT", -self.fonts.rightPad, 0)
+	row.status = row:CreateFontString(nil, "ARTWORK", style.row)
+	row.status:SetPoint("RIGHT", -style.rightPad, style.category and 2 or 0)
 	row.status:SetJustifyH("RIGHT")
 
-	row.text = row:CreateFontString(nil, "ARTWORK", self.fonts.row)
+	row.text = row:CreateFontString(nil, "ARTWORK", style.row)
 	row.text:SetPoint("RIGHT", row.status, "LEFT", -6, 0)
 	row.text:SetJustifyH("LEFT")
 
@@ -69,7 +81,7 @@ local function newRow(self)
 end
 
 function List.New(parent, name, width, height, style)
-	local self = setmetatable({ rows = {}, count = 0, fonts = STYLES[style or "dark"] }, { __index = List })
+	local self = setmetatable({ rows = {}, count = 0, style = STYLES[style or "dark"], width = width, name = name }, { __index = List })
 	self.scroll = CreateFrame("ScrollFrame", name, parent, "UIPanelScrollFrameTemplate")
 	self.scroll:SetSize(width, height)
 	self.content = CreateFrame("Frame", nil, self.scroll)
@@ -78,42 +90,56 @@ function List.New(parent, name, width, height, style)
 	return self
 end
 
+-- Moves the scroll bar, e.g. to span a taller pane than the list itself.
+function List:DockScrollBar(relativeTo, top, bottom)
+	local bar = _G[self.name .. "ScrollBar"]
+	bar:ClearAllPoints()
+	bar:SetPoint("TOPLEFT", relativeTo, "TOPRIGHT", top[1], top[2])
+	bar:SetPoint("BOTTOMLEFT", relativeTo, "BOTTOMRIGHT", bottom[1], bottom[2])
+end
+
 function List:Begin()
 	self.count = 0
 end
 
--- entry: text, status, icon, header, collapsed (true/false shows a +/- toggle), indent, selected,
--- tooltip(tt), onClick(row, button), onDrop(itemId)
+-- entry: text, status, icon, header, indent, selected, tooltip(tt), onClick(row, button), onDrop(itemId)
 function List:Add(entry)
+	local style = self.style
 	self.count = self.count + 1
 	local row = self.rows[self.count]
 	if not row then
 		row = newRow(self)
 		self.rows[self.count] = row
 	end
-	row:SetPoint("TOP", self.content, "TOP", 0, -(self.count - 1) * List.ROW_H)
-
+	row:ClearAllPoints()
+	local top = -(self.count - 1) * style.rowH
 	local indent = entry.indent or 0
-	if entry.collapsed ~= nil then
-		row.toggle:SetTexture(entry.collapsed and PLUS or MINUS)
-		row.toggle:Show()
-		indent = indent + 18
+
+	if style.category then
+		row:SetPoint("TOPRIGHT", self.content, "TOPRIGHT", 0, top)
+		row:SetWidth(self.width - (entry.header and HEADER_INSET or CHILD_INSET))
+		local shade = entry.header and 1 or 0.6
+		row.background:SetVertexColor(shade, shade, shade)
+		if entry.selected then row:LockHighlight() else row:UnlockHighlight() end
 	else
-		row.toggle:Hide()
+		row:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, top)
+		row:SetPoint("TOPRIGHT", self.content, "TOPRIGHT", 0, top)
+		if entry.selected then row.selectedTex:Show() else row.selectedTex:Hide() end
 	end
-	row.icon:SetPoint("LEFT", 4 + indent, 0)
+
+	local textX = style.category and 16 or 4
+	row.icon:SetPoint("LEFT", textX + indent, 0)
 	if entry.icon then
 		row.icon:SetTexture(entry.icon)
 		row.icon:Show()
 		row.text:SetPoint("LEFT", row.icon, "RIGHT", 4, 0)
 	else
 		row.icon:Hide()
-		row.text:SetPoint("LEFT", 4 + indent, 0)
+		row.text:SetPoint("LEFT", textX + indent, style.category and 2 or 0)
 	end
-	row.text:SetFontObject(entry.header and self.fonts.header or self.fonts.row)
+	row.text:SetFontObject(entry.header and style.header or style.row)
 	row.text:SetText(entry.text or "")
 	row.status:SetText(entry.status or "")
-	if entry.selected then row.selectedTex:Show() else row.selectedTex:Hide() end
 
 	row.tooltip, row.onClick, row.onDrop = entry.tooltip, entry.onClick, entry.onDrop
 	row:Show()
@@ -122,7 +148,7 @@ end
 
 function List:End()
 	for i = self.count + 1, #self.rows do self.rows[i]:Hide() end
-	self.content:SetHeight(math.max(1, self.count * List.ROW_H))
+	self.content:SetHeight(math.max(1, self.count * self.style.rowH))
 	self.scroll:UpdateScrollChildRect()
 end
 
