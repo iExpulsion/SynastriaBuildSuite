@@ -1,10 +1,12 @@
 local _, NS = ...
 local BF = NS.BF
 
-local Tabs = { render = {}, actions = {} }
+-- Per tab: render(list, build) fills the list and returns a summary line, diff(build) counts what differs
+-- from the character (for the tab badge), and actions are the footer buttons.
+local Tabs = { render = {}, actions = {}, diff = {} }
 BF.Tabs = Tabs
 
-local GREEN, YELLOW, RED, GREY = "|cff60ff60", "|cffffd040", "|cffff6060", "|cffaaaaaa"
+local GREEN, YELLOW, RED, GREY = "|cff6bdb6b", "|cffffc742", "|cffff6b6b", "|cff9999a8"
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local function color(c, text) return c .. text .. "|r" end
@@ -111,6 +113,15 @@ Tabs.render.perks = function(list, build)
 	return summary
 end
 
+Tabs.diff.perks = function(build)
+	local count
+	if PerkMgrPerks then
+		local plan = BF.Perks.Plan(build.perks)
+		count = #plan.activate + #plan.deactivate + #plan.options + #plan.spells
+	end
+	return count
+end
+
 Tabs.actions.perks = {
 	{ label = "Use My Perks", tooltip = "Replace this build's perks with the ones active on your character now.", run = function(build)
 		build.perks = BF.Perks.Capture()
@@ -191,6 +202,25 @@ Tabs.render.talents = function(list, build)
 	return summary
 end
 
+-- Only the class shown in the talent window can be compared without switching classes.
+Tabs.diff.talents = function(build)
+	local class = BF.Talents.SelectedClass()
+	local trees = build.talents and build.talents[class]
+	local count
+	if trees then
+		count = 0
+		local group = BF:ActiveGroup()
+		for tab = 1, GetNumTalentTabs(false, false) do
+			local want = trees[tab] or {}
+			for i = 1, GetNumTalents(tab, false, false) do
+				local rank = select(5, GetTalentInfo(tab, i, false, false, group)) or 0
+				if rank ~= (want[i] or 0) then count = count + 1 end
+			end
+		end
+	end
+	return count
+end
+
 Tabs.actions.talents = {
 	{ label = "Use My Talents", tooltip = "Replace this build's talents with your active spec's, for each of your classes.", run = function(build)
 		local talents, missed = BF.Talents.Capture()
@@ -231,6 +261,10 @@ Tabs.render.glyphs = function(list, build)
 	if count == 0 then return color(GREY, "This build has no glyphs.") end
 	return missing == 0 and color(GREEN, "Your glyphs match this build.")
 		or ("%d glyph(s) to socket. Glyphs are used up, so BuildForge leaves socketing to you."):format(missing)
+end
+
+Tabs.diff.glyphs = function(build)
+	return #BF.Glyphs.Plan(build.glyphs)
 end
 
 Tabs.actions.glyphs = {
@@ -335,6 +369,14 @@ Tabs.render.gear = function(list, build)
 	local summary = ("Wearing the Best item in %d of %d slots."):format(worn, slots)
 	if inBags > 0 then summary = summary .. (" %d higher-ranked item(s) in your bags."):format(inBags) end
 	return summary
+end
+
+Tabs.diff.gear = function(build)
+	local count = 0
+	for _, row in ipairs(BF.Gear.Status(build.gear)) do
+		if row.wearing ~= 1 then count = count + 1 end
+	end
+	return count
 end
 
 Tabs.actions.gear = {

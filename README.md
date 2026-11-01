@@ -6,16 +6,17 @@ name and notes.
 
 ## The Window
 
-`/bforge`, or the BuildForge button above the Perk window or the talent frame, opens the build window. It's
-built like the Achievement window and opens and closes like other Blizzard panels (Esc closes it):
+`/bforge`, or the BuildForge button above the Perk window or the talent frame, opens the build window. Drag
+its title bar to move it (it remembers where); Esc closes it.
 
-- **Build list (left):** builds grouped under class headers, like achievement categories; click a header to
-  expand or collapse it. Groups for classes you don't have start collapsed. The build last applied to this
-  spec says Applied. New saves your character as a new build; Import pastes one in.
-- **Details (right):** click the build's name to rename it and set its spec name (press Enter to keep).
-  Export gives the share string, Delete asks first, and Apply lists the changes in chat and asks first. The
-  top corner says whether the Perk window is open at an innkeeper, which perk activations need.
-- **Tabs (under the frame):** Perks, Talents, Glyphs, Gear and Notes.
+- **Sidebar:** search your builds, grouped by class; click a group to collapse it. Groups for classes you
+  don't have start collapsed. The build last applied to this spec says Applied. New Build saves your
+  character as a build; Import pastes one in.
+- **Build header:** click the name to rename it and set the spec name (press Enter to keep). Apply Build opens
+  a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
+  Export gives the share string; Delete asks first. The title bar shows whether the Perk window is open at an
+  innkeeper, which perk activations need.
+- **Tabs:** Perks, Talents, Glyphs, Gear and Notes. A badge on a tab counts what differs from your character.
 - **Perks, Talents, Glyphs:** what the build has, compared with your character right now (Active, To Activate,
   To Deactivate, points still to spend, glyphs to socket). Each tab can take your current setup for that part.
 - **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of
