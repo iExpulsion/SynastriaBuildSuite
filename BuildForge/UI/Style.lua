@@ -100,6 +100,10 @@ function S.Button(parent, label, kind, width, onClick, tooltip)
 	end)
 	b:HookScript("OnEnable", paint)
 	b:HookScript("OnDisable", paint)
+	function b:SetKind(newKind)
+		self.kind = newKind
+		paint(self)
+	end
 	function b:SetLabel(text)
 		self.label:SetText(text)
 		self:SetWidth(math.max(self.minWidth or 70, self.label:GetStringWidth() + 24))

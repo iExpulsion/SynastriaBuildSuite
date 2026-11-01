@@ -17,6 +17,10 @@ its title bar to move it (it remembers where); Esc closes it.
   Export gives the share string; Delete asks first. The title bar shows whether the Perk window is open at an
   innkeeper, which perk activations need.
 - **Tabs:** Perks, Talents, Glyphs, Gear and Notes. A badge on a tab counts what differs from your character.
+- **Talents:** a talent calculator for the build's classes, any class, not just yours. Left-click adds a point,
+  right-click removes one; tier, prerequisite and 71-point limits work like the talent frame, and the tooltip
+  shows your character's rank when it's the class shown in your talent window. Builds with two classes get a
+  button per class. Use My Talents copies your spec; Reset Class clears the class shown.
 - **Perks, Talents, Glyphs:** what the build has, compared with your character right now (Active, To Activate,
   To Deactivate, points still to spend, glyphs to socket). Each tab can take your current setup for that part.
 - **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of
@@ -39,6 +43,7 @@ its title bar to move it (it remembers where); Esc closes it.
 | `/bforge gear <name>` | Shows each slot: worn, in bags or missing, and attunement |
 | `/bforge equip <name>` | Equips the build's gear you're carrying |
 | `/bforge note <name> <text>` | Sets the build's notes |
+| `/bforge checktalents` | Checks the talent data against your live talents (for the class in your talent window) |
 | `/bforge delete <name>` | Deletes a build |
 
 Perk activations need the Perk window open at an innkeeper. Perk options and chosen abilities apply anywhere.
@@ -53,6 +58,13 @@ Run the offline tests (needs Python with `lupa`, and the client data next to thi
 
 ```bash
 py -I -X utf8 test/run.py
+```
+
+`BuildForge/Data/Talents.lua` is generated from client data; after re-running
+the data extractor, regenerate it with:
+
+```bash
+py -I -X utf8 tools/gen_talents.py
 ```
 
 `docs/DESIGN.md` covers the client APIs, the export format and what's still untested.

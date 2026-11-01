@@ -129,78 +129,7 @@ Tabs.actions.perks = {
 	end },
 }
 
--- Talents
-
-local function treePoints(trees)
-	local totals = {}
-	for i = 1, 3 do
-		local sum = 0
-		for _, r in ipairs(trees[i] or {}) do sum = sum + r end
-		totals[i] = sum
-	end
-	return totals
-end
-
-local function talentClasses(build)
-	local order, seen = {}, {}
-	for _, key in ipairs(build.classes or {}) do
-		if build.talents and build.talents[key] then order[#order + 1] = key; seen[key] = true end
-	end
-	for key in pairs(build.talents or {}) do
-		if not seen[key] then order[#order + 1] = key end
-	end
-	return order
-end
-
-Tabs.render.talents = function(list, build)
-	local shown = BF.Talents.SelectedClass()
-	local group = BF:ActiveGroup()
-	local toSpend, conflicts = 0, 0
-	for _, class in ipairs(talentClasses(build)) do
-		local trees = build.talents[class]
-		local totals = treePoints(trees)
-		local status = not BF:HasClass(class) and color(GREY, "Not Your Class") or nil
-		list:Add({ text = ("%s  %d / %d / %d"):format(BF.Window.ClassText({ class }, true), totals[1], totals[2], totals[3]), status = status, header = true })
-
-		if class == shown then
-			for tab = 1, GetNumTalentTabs(false, false) do
-				local tabName = GetTalentTabInfo(tab, false, false, group)
-				list:Add({ text = tabName or ("Tree " .. tab), header = true, indent = 8 })
-				local want = trees[tab] or {}
-				for i = 1, GetNumTalents(tab, false, false) do
-					local name, icon, _, _, rank, maxRank = GetTalentInfo(tab, i, false, false, group)
-					local target = want[i] or 0
-					if target > 0 or rank > 0 then
-						local rankStatus
-						if rank == target then rankStatus = color(GREEN, ("%d/%d"):format(rank, maxRank))
-						elseif rank < target then rankStatus = color(YELLOW, ("%d, build has %d"):format(rank, target)); toSpend = toSpend + target - rank
-						else rankStatus = color(RED, ("%d, build has %d"):format(rank, target)); conflicts = conflicts + 1 end
-						list:Add({
-							text = name, icon = icon, status = rankStatus, indent = 16,
-							tooltip = function(tt) tt:SetTalent(tab, i, false, false, group) end,
-						})
-					end
-				end
-			end
-		elseif BF:HasClass(class) then
-			list:Add({ text = color(GREY, "Select this class in the talent window to see its talents."), indent = 8 })
-		end
-	end
-
-	local summary
-	if not build.talents or next(build.talents) == nil then
-		summary = color(GREY, "This build has no talents.")
-	elseif conflicts > 0 then
-		summary = color(RED, ("%d talent(s) have more points than the build. Reset talents to apply it."):format(conflicts))
-	elseif toSpend > 0 then
-		local unspent = GetUnspentTalentPoints(false, false, group) or 0
-		summary = ("%d point(s) to spend, %d unspent."):format(toSpend, unspent)
-		if unspent < toSpend then summary = summary .. color(RED, " Not enough points yet; applying spends what it can.") end
-	else
-		summary = color(GREEN, "Your talents match this build.")
-	end
-	return summary
-end
+-- Talents (the tab itself is the calculator in UI/TalentEditor.lua)
 
 -- Only the class shown in the talent window can be compared without switching classes.
 Tabs.diff.talents = function(build)
@@ -229,6 +158,10 @@ Tabs.actions.talents = {
 		for _, class in ipairs(missed) do
 			BF:Print("|cffff6060Couldn't read %s talents; select it in the talent window and try again.|r", class)
 		end
+		BF:Changed()
+	end },
+	{ label = "Reset Class", tooltip = "Clear every point this build spends in the class shown here.", run = function(build)
+		BF.TalentCalc.Reset(build, BF.TalentEditor.state.class)
 		BF:Changed()
 	end },
 }

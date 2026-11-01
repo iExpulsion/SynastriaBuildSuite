@@ -207,6 +207,16 @@ handlers.export = withBuild(function(build) BF:Export(build) end)
 handlers.equip = withBuild(function(build) BF:EquipGear(build) end)
 handlers.delete = withBuild(function(build) BF:Delete(build) end)
 
+handlers.checktalents = function()
+	local problems, class = BF.TalentCalc.CheckLive()
+	if #problems == 0 then
+		BF:Print("Talent data matches the live %s talents.", tostring(class))
+	else
+		BF:Print("|cffff6060%d talent data mismatch(es) for %s:|r", #problems, tostring(class))
+		for i = 1, math.min(#problems, 10) do BF:Print("  %s", problems[i]) end
+	end
+end
+
 handlers.note = function(arg)
 	local name, text = arg:match("^(%S+)%s*(.*)$")
 	local build = BF:FindBuild(name)

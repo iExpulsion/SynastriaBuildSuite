@@ -10,7 +10,7 @@ BF.Window = Window
 local S = BF.Style
 local C = S.colors
 
-local W, H = 900, 560
+local W, H = 900, 640
 local TITLE_H, SIDEBAR_W, BUILD_H, TABS_H, FOOTER_H = 36, 240, 78, 32, 46
 local TABS = {
 	{ key = "perks", label = "Perks" },
@@ -158,9 +158,10 @@ local function renderTabs(build)
 		end
 		b:SetWidth(b.label:GetStringWidth() + (diff and diff > 0 and (b.badge:GetStringWidth() + 26) or 0) + 28)
 	end
-	local isNotes = state.tab == "notes"
+	local isNotes, isTalents = state.tab == "notes", state.tab == "talents"
 	setShown(frame.notes, isNotes)
-	if isNotes then frame.content:Hide() else frame.content:Show() end
+	setShown(frame.talentEditor, isTalents)
+	if isNotes or isTalents then frame.content:Hide() else frame.content:Show() end
 end
 
 local function renderActions(build)
@@ -200,6 +201,9 @@ local function renderBuild(build)
 	if state.tab == "notes" then
 		if not frame.notes.edit.focused then frame.notes.edit:SetText(build.notes or "") end
 		frame.summary:SetText(state.message or "")
+	elseif state.tab == "talents" then
+		local summary = BF.TalentEditor.Render(build)
+		frame.summary:SetText(state.message or summary or "")
 	else
 		frame.content:Begin()
 		local summary = BF.Tabs.render[state.tab](frame.content, build)
@@ -481,6 +485,8 @@ local function createMain(f)
 	f.content.scroll:SetPoint("TOPLEFT", 8, -bodyTop)
 	f.notes = createNotes(main, bodyW - 8, bodyH - 22)
 	f.notes:SetPoint("TOPLEFT", 16, -bodyTop - 18)
+	f.talentEditor = BF.TalentEditor.Create(main, bodyW - 8, bodyH - 4)
+	f.talentEditor:SetPoint("TOPLEFT", 16, -bodyTop)
 
 	local footer = CreateFrame("Frame", nil, main)
 	footer:SetPoint("BOTTOMLEFT")
