@@ -9,7 +9,7 @@ BF.Window = Window
 local W, H = 682, 447
 local LIST_X, LIST_Y, LIST_W, LIST_H = 19, -75, 298, 335
 local DETAIL_X, DETAIL_Y, DETAIL_W, DETAIL_H = 352, -77, 298, 333
-local HEADER_H, SUMMARY_H = 74, 22
+local HEADER_H, SUMMARY_H = 74, 28
 local CONTENT_H = DETAIL_H - HEADER_H - SUMMARY_H
 local TABS = {
 	{ key = "perks", label = "Perks" },
@@ -331,7 +331,7 @@ local function createTabs(f)
 		b:SetID(i)
 		b:SetText(tab.label)
 		if i == 1 then
-			b:SetPoint("TOPLEFT", f, "BOTTOMLEFT", DETAIL_X - 12, 4)
+			b:SetPoint("TOPLEFT", f, "BOTTOMLEFT", DETAIL_X - 12, 12)
 		else
 			b:SetPoint("LEFT", _G["BuildForgeFrameTab" .. (i - 1)], "RIGHT", -16, 0)
 		end
@@ -411,8 +411,8 @@ local function create()
 	f.notes:SetPoint("TOPLEFT", 0, -HEADER_H)
 
 	f.summary = detail:CreateFontString(nil, "ARTWORK", "QuestFontNormalSmall")
-	f.summary:SetPoint("BOTTOMLEFT", 4, 4)
-	f.summary:SetWidth(DETAIL_W - 8)
+	f.summary:SetPoint("BOTTOMLEFT", 6, 12)
+	f.summary:SetWidth(DETAIL_W - 22)
 	f.summary:SetJustifyH("LEFT")
 
 	f.apply = button(f, "Apply", 80, function() BF:ConfirmApply(selectedBuild()) end,

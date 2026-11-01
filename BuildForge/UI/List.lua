@@ -7,9 +7,10 @@ local List = {}
 BF.List = List
 List.ROW_H = 20
 
-local FONTS = {
-	dark = { header = "GameFontNormal", row = "GameFontHighlightSmall" },
-	parchment = { header = "QuestFont", row = "QuestFontNormalSmall" },
+-- The parchment's right edge is shaded, so its rows keep their status text further in.
+local STYLES = {
+	dark = { header = "GameFontNormal", row = "GameFontHighlightSmall", rightPad = 4 },
+	parchment = { header = "QuestFont", row = "QuestFontNormalSmall", rightPad = 16 },
 }
 local MINUS, PLUS = "Interface\\Buttons\\UI-MinusButton-UP", "Interface\\Buttons\\UI-PlusButton-UP"
 
@@ -53,7 +54,7 @@ local function newRow(self)
 	row.icon:SetSize(16, 16)
 
 	row.status = row:CreateFontString(nil, "ARTWORK", self.fonts.row)
-	row.status:SetPoint("RIGHT", -4, 0)
+	row.status:SetPoint("RIGHT", -self.fonts.rightPad, 0)
 	row.status:SetJustifyH("RIGHT")
 
 	row.text = row:CreateFontString(nil, "ARTWORK", self.fonts.row)
@@ -68,7 +69,7 @@ local function newRow(self)
 end
 
 function List.New(parent, name, width, height, style)
-	local self = setmetatable({ rows = {}, count = 0, fonts = FONTS[style or "dark"] }, { __index = List })
+	local self = setmetatable({ rows = {}, count = 0, fonts = STYLES[style or "dark"] }, { __index = List })
 	self.scroll = CreateFrame("ScrollFrame", name, parent, "UIPanelScrollFrameTemplate")
 	self.scroll:SetSize(width, height)
 	self.content = CreateFrame("Frame", nil, self.scroll)
