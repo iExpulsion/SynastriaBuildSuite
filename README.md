@@ -6,12 +6,16 @@ name and notes.
 
 ## The Window
 
-`/bforge`, or the BuildForge button above the Perk window or the talent frame, opens the build window:
+`/bforge`, or the BuildForge button above the Perk window or the talent frame, opens the build window. It's
+laid out like the Quest Log and opens and closes like other Blizzard panels (Esc closes it):
 
-- **Build list:** builds for your classes, with the one last applied to this spec marked. Tick Show Other
-  Classes to see the rest. Save Current saves your character as a new build; Import pastes one in.
-- **Header:** rename the build or set its spec name (type, then Enter). Apply lists the changes in chat and asks
-  first; Export gives the share string; Delete asks first.
+- **Build list (left):** builds grouped under class headers; groups for classes you don't have start
+  collapsed. The build last applied to this spec says Applied. New saves your character as a new build,
+  Import pastes one in, Export gives the share string, Delete asks first.
+- **Details (right):** click the build's name to rename it and set its spec name (press Enter to keep).
+  Apply lists the changes in chat and asks first. The top corner says whether the Perk window is open at an
+  innkeeper, which perk activations need.
+- **Tabs (under the frame):** Perks, Talents, Glyphs, Gear and Notes.
 - **Perks, Talents, Glyphs:** what the build has, compared with your character right now (Active, To Activate,
   To Deactivate, points still to spend, glyphs to socket). Each tab can take your current setup for that part.
 - **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of

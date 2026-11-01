@@ -2,9 +2,16 @@ local _, NS = ...
 local BF = NS.BF
 
 -- Scrolling list of pooled rows: icon, text, right-aligned status, optional tooltip, click and item drop.
+-- The "parchment" style uses the dark quest fonts for the Quest Log's detail pane.
 local List = {}
 BF.List = List
 List.ROW_H = 20
+
+local FONTS = {
+	dark = { header = "GameFontNormal", row = "GameFontHighlightSmall" },
+	parchment = { header = "QuestFont", row = "QuestFontNormalSmall" },
+}
+local MINUS, PLUS = "Interface\\Buttons\\UI-MinusButton-UP", "Interface\\Buttons\\UI-PlusButton-UP"
 
 local function runTooltip(row)
 	if row.tooltip then
@@ -35,18 +42,21 @@ local function newRow(self)
 
 	row.selectedTex = row:CreateTexture(nil, "BACKGROUND")
 	row.selectedTex:SetAllPoints()
-	row.selectedTex:SetTexture("Interface\\QuestFrame\\UI-QuestLogTitleHighlight")
+	row.selectedTex:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 	row.selectedTex:SetBlendMode("ADD")
-	row.selectedTex:SetVertexColor(1, 0.6, 0.2, 0.6)
+
+	row.toggle = row:CreateTexture(nil, "ARTWORK")
+	row.toggle:SetSize(16, 16)
+	row.toggle:SetPoint("LEFT", 3, 0)
 
 	row.icon = row:CreateTexture(nil, "ARTWORK")
 	row.icon:SetSize(16, 16)
 
-	row.status = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+	row.status = row:CreateFontString(nil, "ARTWORK", self.fonts.row)
 	row.status:SetPoint("RIGHT", -4, 0)
 	row.status:SetJustifyH("RIGHT")
 
-	row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+	row.text = row:CreateFontString(nil, "ARTWORK", self.fonts.row)
 	row.text:SetPoint("RIGHT", row.status, "LEFT", -6, 0)
 	row.text:SetJustifyH("LEFT")
 
@@ -57,8 +67,8 @@ local function newRow(self)
 	return row
 end
 
-function List.New(parent, name, width, height)
-	local self = setmetatable({ rows = {}, count = 0 }, { __index = List })
+function List.New(parent, name, width, height, style)
+	local self = setmetatable({ rows = {}, count = 0, fonts = FONTS[style or "dark"] }, { __index = List })
 	self.scroll = CreateFrame("ScrollFrame", name, parent, "UIPanelScrollFrameTemplate")
 	self.scroll:SetSize(width, height)
 	self.content = CreateFrame("Frame", nil, self.scroll)
@@ -71,7 +81,8 @@ function List:Begin()
 	self.count = 0
 end
 
--- entry: text, status, icon, header, indent, selected, tooltip(tt), onClick(row, button), onDrop(itemId)
+-- entry: text, status, icon, header, collapsed (true/false shows a +/- toggle), indent, selected,
+-- tooltip(tt), onClick(row, button), onDrop(itemId)
 function List:Add(entry)
 	self.count = self.count + 1
 	local row = self.rows[self.count]
@@ -82,6 +93,13 @@ function List:Add(entry)
 	row:SetPoint("TOP", self.content, "TOP", 0, -(self.count - 1) * List.ROW_H)
 
 	local indent = entry.indent or 0
+	if entry.collapsed ~= nil then
+		row.toggle:SetTexture(entry.collapsed and PLUS or MINUS)
+		row.toggle:Show()
+		indent = indent + 18
+	else
+		row.toggle:Hide()
+	end
 	row.icon:SetPoint("LEFT", 4 + indent, 0)
 	if entry.icon then
 		row.icon:SetTexture(entry.icon)
@@ -91,7 +109,7 @@ function List:Add(entry)
 		row.icon:Hide()
 		row.text:SetPoint("LEFT", 4 + indent, 0)
 	end
-	row.text:SetFontObject(entry.header and "GameFontNormal" or "GameFontHighlightSmall")
+	row.text:SetFontObject(entry.header and self.fonts.header or self.fonts.row)
 	row.text:SetText(entry.text or "")
 	row.status:SetText(entry.status or "")
 	if entry.selected then row.selectedTex:Show() else row.selectedTex:Hide() end

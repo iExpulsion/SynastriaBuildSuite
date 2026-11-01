@@ -4,7 +4,8 @@ local BF = NS.BF
 local Tabs = { render = {}, actions = {} }
 BF.Tabs = Tabs
 
-local GREEN, YELLOW, RED, GREY = "|cff60ff60", "|cffffd040", "|cffff6060", "|cffaaaaaa"
+-- Dark enough to read on the Quest Log's parchment.
+local GREEN, YELLOW, RED, GREY = "|cff106b10", "|cff7a4a00", "|cff9a0c0c", "|cff5e4b33"
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local function color(c, text) return c .. text .. "|r" end
@@ -20,7 +21,7 @@ local CATEGORY_NAMES = { [15] = "Offensive", [16] = "Defensive", [17] = "Support
 
 local function categoryName(cat)
 	local key = BF.CLASS_KEYS[cat]
-	return key and (BF.Window.ClassText({ key }) .. " Class") or CATEGORY_NAMES[cat] or "Other"
+	return key and (BF.Window.ClassText({ key }, true) .. " Class") or CATEGORY_NAMES[cat] or "Other"
 end
 
 local function perkTooltip(id, wanted, status)
@@ -112,7 +113,7 @@ Tabs.render.perks = function(list, build)
 end
 
 Tabs.actions.perks = {
-	{ label = "Use My Current Perks", run = function(build)
+	{ label = "Use My Perks", tooltip = "Replace this build's perks with the ones active on your character now.", run = function(build)
 		build.perks = BF.Perks.Capture()
 		BF:Changed()
 	end },
@@ -149,12 +150,12 @@ Tabs.render.talents = function(list, build)
 		local trees = build.talents[class]
 		local totals = treePoints(trees)
 		local status = not BF:HasClass(class) and color(GREY, "Not Your Class") or nil
-		list:Add({ text = ("%s  %d / %d / %d"):format(BF.Window.ClassText({ class }), totals[1], totals[2], totals[3]), status = status, header = true })
+		list:Add({ text = ("%s  %d / %d / %d"):format(BF.Window.ClassText({ class }, true), totals[1], totals[2], totals[3]), status = status, header = true })
 
 		if class == shown then
 			for tab = 1, GetNumTalentTabs(false, false) do
 				local tabName = GetTalentTabInfo(tab, false, false, group)
-				list:Add({ text = color("|cffffd100", tabName or ("Tree " .. tab)), indent = 8 })
+				list:Add({ text = tabName or ("Tree " .. tab), header = true, indent = 8 })
 				local want = trees[tab] or {}
 				for i = 1, GetNumTalents(tab, false, false) do
 					local name, icon, _, _, rank, maxRank = GetTalentInfo(tab, i, false, false, group)
@@ -192,7 +193,7 @@ Tabs.render.talents = function(list, build)
 end
 
 Tabs.actions.talents = {
-	{ label = "Use My Current Talents", run = function(build)
+	{ label = "Use My Talents", tooltip = "Replace this build's talents with your active spec's, for each of your classes.", run = function(build)
 		local talents, missed = BF.Talents.Capture()
 		build.talents = talents
 		build.classes = BF:PlayerClasses()
@@ -234,7 +235,7 @@ Tabs.render.glyphs = function(list, build)
 end
 
 Tabs.actions.glyphs = {
-	{ label = "Use My Current Glyphs", run = function(build)
+	{ label = "Use My Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec.", run = function(build)
 		build.glyphs = BF.Glyphs.Capture()
 		BF:Changed()
 	end },
@@ -338,8 +339,8 @@ Tabs.render.gear = function(list, build)
 end
 
 Tabs.actions.gear = {
-	{ label = "Equip from Bags", run = function(build) BF:EquipGear(build) end },
-	{ label = "Use My Equipped Gear", run = function(build)
+	{ label = "Equip from Bags", tooltip = "Put on the highest-ranked item you're carrying for each slot.", run = function(build) BF:EquipGear(build) end },
+	{ label = "Use My Gear", tooltip = "Replace this build's gear with what you have equipped. Alts are cleared.", run = function(build)
 		build.gear = BF.Gear.Capture()
 		BF:Changed()
 	end },
