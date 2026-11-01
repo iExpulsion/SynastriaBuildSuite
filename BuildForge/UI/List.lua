@@ -13,7 +13,8 @@ local STYLES = {
 }
 local CATEGORY_BG = "Interface\\AchievementFrame\\UI-Achievement-Category-Background"
 local CATEGORY_HIGHLIGHT = "Interface\\AchievementFrame\\UI-Achievement-Category-Highlight"
-local HEADER_INSET, CHILD_INSET = 10, 25
+-- Category strips run nearly the full column; children are 15px narrower, indented on the left.
+local ROW_LEFT, ROW_RIGHT, CHILD_INDENT = 4, 2, 15
 
 local function runTooltip(row)
 	if row.tooltip then
@@ -87,15 +88,31 @@ function List.New(parent, name, width, height, style)
 	self.content = CreateFrame("Frame", nil, self.scroll)
 	self.content:SetSize(width, height)
 	self.scroll:SetScrollChild(self.content)
+	self.updateBar = List.AutoHideBar(self.scroll, name)
 	return self
 end
 
--- Moves the scroll bar, e.g. to span a taller pane than the list itself.
-function List:DockScrollBar(relativeTo, top, bottom)
-	local bar = _G[self.name .. "ScrollBar"]
+-- Moves a scroll frame's bar, e.g. to span a taller pane than the list itself.
+function List.DockBar(scrollName, relativeTo, top, bottom)
+	local bar = _G[scrollName .. "ScrollBar"]
 	bar:ClearAllPoints()
 	bar:SetPoint("TOPLEFT", relativeTo, "TOPRIGHT", top[1], top[2])
 	bar:SetPoint("BOTTOMLEFT", relativeTo, "BOTTOMRIGHT", bottom[1], bottom[2])
+end
+
+-- Like Blizzard's hybrid scroll lists, the bar only shows when there's something to scroll.
+function List.AutoHideBar(scroll, scrollName)
+	local bar = _G[scrollName .. "ScrollBar"]
+	local function update()
+		if (scroll:GetVerticalScrollRange() or 0) > 0 then bar:Show() else bar:Hide() end
+	end
+	scroll:HookScript("OnScrollRangeChanged", update)
+	update()
+	return update
+end
+
+function List:DockScrollBar(relativeTo, top, bottom)
+	List.DockBar(self.name, relativeTo, top, bottom)
 end
 
 function List:Begin()
@@ -116,8 +133,9 @@ function List:Add(entry)
 	local indent = entry.indent or 0
 
 	if style.category then
-		row:SetPoint("TOPRIGHT", self.content, "TOPRIGHT", 0, top)
-		row:SetWidth(self.width - (entry.header and HEADER_INSET or CHILD_INSET))
+		local left = ROW_LEFT + (entry.header and 0 or CHILD_INDENT)
+		row:SetPoint("TOPLEFT", self.content, "TOPLEFT", left, top)
+		row:SetWidth(self.width - left - ROW_RIGHT)
 		local shade = entry.header and 1 or 0.6
 		row.background:SetVertexColor(shade, shade, shade)
 		if entry.selected then row:LockHighlight() else row:UnlockHighlight() end
@@ -150,6 +168,7 @@ function List:End()
 	for i = self.count + 1, #self.rows do self.rows[i]:Hide() end
 	self.content:SetHeight(math.max(1, self.count * self.style.rowH))
 	self.scroll:UpdateScrollChildRect()
+	self.updateBar()
 end
 
 function List:Show() self.scroll:Show() end

@@ -481,10 +481,8 @@ local function createContent(f, cats)
 	f.content:DockScrollBar(pane, { 1, -16 }, { 1, 12 })
 	f.notes = createNotes(detail, CONTENT_W - 24, listH)
 	f.notes:SetPoint("TOPLEFT", 12, -HEADER_H)
-	local notesBar = _G["BuildForgeNotesScrollScrollBar"]
-	notesBar:ClearAllPoints()
-	notesBar:SetPoint("TOPLEFT", pane, "TOPRIGHT", 1, -16)
-	notesBar:SetPoint("BOTTOMLEFT", pane, "BOTTOMRIGHT", 1, 12)
+	BF.List.DockBar("BuildForgeNotesScroll", pane, { 1, -16 }, { 1, 12 })
+	BF.List.AutoHideBar(f.notes, "BuildForgeNotesScroll")
 
 	f.summary = detail:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 	f.summary:SetPoint("BOTTOMLEFT", 14, 14)
