@@ -9,7 +9,7 @@ BF.Window = Window
 local W, H = 682, 447
 local LIST_X, LIST_Y, LIST_W, LIST_H = 19, -75, 298, 335
 local DETAIL_X, DETAIL_Y, DETAIL_W, DETAIL_H = 352, -77, 298, 333
-local HEADER_H, SUMMARY_H = 74, 28
+local HEADER_H, SUMMARY_H = 74, 34
 local CONTENT_H = DETAIL_H - HEADER_H - SUMMARY_H
 local TABS = {
 	{ key = "perks", label = "Perks" },
@@ -221,6 +221,15 @@ function Window.Refresh()
 	if frame then frame.dirty = true end
 end
 
+-- The art draws the scroll track down the whole detail pane, so the bar spans it too (as in the Quest Log),
+-- even though the list below the header is shorter.
+local function dockScrollBar(scrollName, detail)
+	local bar = _G[scrollName .. "ScrollBar"]
+	bar:ClearAllPoints()
+	bar:SetPoint("TOPLEFT", detail, "TOPRIGHT", 6, -16)
+	bar:SetPoint("BOTTOMLEFT", detail, "BOTTOMRIGHT", 6, 16)
+end
+
 local function createTitle(parent)
 	local e = CreateFrame("EditBox", "BuildForgeTitleBox", parent)
 	e:SetSize(DETAIL_W - 10, 26)
@@ -409,6 +418,8 @@ local function create()
 	f.content.scroll:SetPoint("TOPLEFT", 0, -HEADER_H)
 	f.notes = createNotes(detail)
 	f.notes:SetPoint("TOPLEFT", 0, -HEADER_H)
+	dockScrollBar("BuildForgeContentScroll", detail)
+	dockScrollBar("BuildForgeNotesScroll", detail)
 
 	f.summary = detail:CreateFontString(nil, "ARTWORK", "QuestFontNormalSmall")
 	f.summary:SetPoint("BOTTOMLEFT", 6, 12)
