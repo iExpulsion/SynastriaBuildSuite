@@ -14,9 +14,10 @@ name and notes.
   first; Export gives the share string; Delete asks first.
 - **Perks, Talents, Glyphs:** what the build has, compared with your character right now (Active, To Activate,
   To Deactivate, points still to spend, glyphs to socket). Each tab can take your current setup for that part.
-- **Gear:** the recommended item per slot, with alternatives, shown as worn, in bags or missing, plus
-  attunement. Drop an item on a slot to add it, right-click to remove, Ctrl-click to make it the top choice.
-  Equip from Bags puts on the best items you're carrying.
+- **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of
+  preference, each shown as worn, in bags or missing, plus attunement. Drop an item on a slot to add an Alt,
+  right-click to remove, Ctrl-click to make it Best. Equip from Bags puts on the highest-ranked item you're
+  carrying in each slot.
 - **Notes:** free text saved with the build and included in exports.
 
 ## Commands

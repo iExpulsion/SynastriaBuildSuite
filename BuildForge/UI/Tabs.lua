@@ -160,12 +160,12 @@ Tabs.render.talents = function(list, build)
 					local name, icon, _, _, rank, maxRank = GetTalentInfo(tab, i, false, false, group)
 					local target = want[i] or 0
 					if target > 0 or rank > 0 then
-						local status
-						if rank == target then status = color(GREEN, ("%d/%d"):format(rank, maxRank))
-						elseif rank < target then status = color(YELLOW, ("%d, build has %d"):format(rank, target)); toSpend = toSpend + target - rank
-						else status = color(RED, ("%d, build has %d"):format(rank, target)); conflicts = conflicts + 1 end
+						local rankStatus
+						if rank == target then rankStatus = color(GREEN, ("%d/%d"):format(rank, maxRank))
+						elseif rank < target then rankStatus = color(YELLOW, ("%d, build has %d"):format(rank, target)); toSpend = toSpend + target - rank
+						else rankStatus = color(RED, ("%d, build has %d"):format(rank, target)); conflicts = conflicts + 1 end
 						list:Add({
-							text = name, icon = icon, status = status, indent = 16,
+							text = name, icon = icon, status = rankStatus, indent = 16,
 							tooltip = function(tt) tt:SetTalent(tab, i, false, false, group) end,
 						})
 					end
@@ -312,15 +312,19 @@ Tabs.render.gear = function(list, build)
 					local name, link = GetItemInfo(item.id)
 					local where = item.equipped and color(GREEN, "Worn") or item.inBags and color(YELLOW, "In Bags") or color(GREY, "Missing")
 					local attune = item.attuned and color(GREEN, "Attuned") or color(GREY, ("%d%%"):format(item.progress or 0))
+					local label = rank == 1 and color(GREEN, "Best") or color(YELLOW, "Alt " .. (rank - 1))
 					list:Add({
-						text = (rank == 1 and slotName or color(GREY, "  or")) .. "  " .. (link or name or ("Item " .. item.id)),
+						text = (rank == 1 and slotName or "") .. "  " .. label .. "  " .. (link or name or ("Item " .. item.id)),
+						indent = rank == 1 and 0 or 40,
 						icon = GetItemIcon(item.id) or QUESTION,
 						status = where .. "  " .. attune,
 						onDrop = onDrop,
 						onClick = itemClick(build, slot, rank),
 						tooltip = function(tt)
 							tt:SetHyperlink("item:" .. item.id)
-							tt:AddLine("Drop an item here to add an alternative. Right-click removes it, Ctrl-click makes it the top choice.", 0.6, 0.8, 1, true)
+							tt:AddLine(" ")
+							tt:AddLine("Best is the item to aim for; Alts are stand-ins in order of preference. Equip from Bags puts on the highest-ranked one you carry.", 0.6, 0.8, 1, true)
+							tt:AddLine("Drop an item here to add an Alt. Right-click removes, Ctrl-click makes it Best.", 0.6, 0.8, 1, true)
 						end,
 					})
 				end
@@ -328,8 +332,8 @@ Tabs.render.gear = function(list, build)
 		end
 	end
 	if slots == 0 then return color(GREY, "Drag items onto a slot, or use your equipped gear.") end
-	local summary = ("%d of %d slots wear the top choice."):format(worn, slots)
-	if inBags > 0 then summary = summary .. (" %d better item(s) in your bags."):format(inBags) end
+	local summary = ("Wearing the Best item in %d of %d slots."):format(worn, slots)
+	if inBags > 0 then summary = summary .. (" %d higher-ranked item(s) in your bags."):format(inBags) end
 	return summary
 end
 
