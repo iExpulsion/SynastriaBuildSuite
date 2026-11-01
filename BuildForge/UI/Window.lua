@@ -207,12 +207,7 @@ local function create()
 	f:RegisterForDrag("LeftButton")
 	f:SetScript("OnDragStart", f.StartMoving)
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
-	f:SetBackdrop({
-		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-		tile = true, tileSize = 32, edgeSize = 32,
-		insets = { left = 11, right = 12, top = 12, bottom = 11 },
-	})
+	BF.Dialogs.SetBackdrop(f)
 	tinsert(UISpecialFrames, "BuildForgeFrame")
 
 	local title = f:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -262,8 +257,16 @@ local function create()
 	pane:SetPoint("BOTTOMRIGHT", -20, 14)
 	f.pane = pane
 
-	f.name = editBox(pane, "BuildForgeNameBox", 220, 40)
-	f.name:SetPoint("TOPLEFT", 6, -4)
+	local apply = button(pane, "Apply", 80, function() BF:ConfirmApply(selectedBuild()) end)
+	apply:SetPoint("TOPRIGHT", 0, -2)
+	local export = button(pane, "Export", 80, function() BF:Export(selectedBuild()) end)
+	export:SetPoint("RIGHT", apply, "LEFT", -4, 0)
+	local delete = button(pane, "Delete", 80, function() BF:Delete(selectedBuild()) end)
+	delete:SetPoint("TOPRIGHT", apply, "BOTTOMRIGHT", 0, -4)
+
+	-- row 1: name and classes, row 2: spec name; both stop short of the buttons on the right
+	f.name = editBox(pane, "BuildForgeNameBox", 200, 40)
+	f.name:SetPoint("TOPLEFT", 8, -4)
 	f.name:SetScript("OnEnterPressed", function(self)
 		local build = selectedBuild()
 		local newName = self:GetText():gsub("^%s+", ""):gsub("%s+$", "")
@@ -276,10 +279,10 @@ local function create()
 	end)
 
 	local specLabel = pane:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-	specLabel:SetPoint("LEFT", f.name, "RIGHT", 14, 0)
+	specLabel:SetPoint("TOPLEFT", f.name, "BOTTOMLEFT", -6, -10)
 	specLabel:SetText("Spec Name")
-	f.spec = editBox(pane, "BuildForgeSpecBox", 110, 14)
-	f.spec:SetPoint("LEFT", specLabel, "RIGHT", 10, 0)
+	f.spec = editBox(pane, "BuildForgeSpecBox", 120, 14)
+	f.spec:SetPoint("LEFT", specLabel, "RIGHT", 12, 0)
 	f.spec:SetScript("OnEnterPressed", function(self)
 		local build = selectedBuild()
 		if build then
@@ -290,14 +293,9 @@ local function create()
 	end)
 
 	f.classes = pane:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-	f.classes:SetPoint("TOPLEFT", f.name, "BOTTOMLEFT", -4, -6)
-
-	local apply = button(pane, "Apply", 80, function() BF:ConfirmApply(selectedBuild()) end)
-	apply:SetPoint("TOPRIGHT", 0, -2)
-	local export = button(pane, "Export", 80, function() BF:Export(selectedBuild()) end)
-	export:SetPoint("RIGHT", apply, "LEFT", -4, 0)
-	local delete = button(pane, "Delete", 80, function() BF:Delete(selectedBuild()) end)
-	delete:SetPoint("TOPRIGHT", apply, "BOTTOMRIGHT", 0, -4)
+	f.classes:SetPoint("LEFT", f.name, "RIGHT", 10, 0)
+	f.classes:SetPoint("RIGHT", export, "LEFT", -8, 0)
+	f.classes:SetJustifyH("LEFT")
 
 	f.tabs = {}
 	for i, tab in ipairs(TABS) do

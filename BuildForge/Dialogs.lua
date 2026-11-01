@@ -6,6 +6,17 @@ BF.Dialogs = Dialogs
 
 local textFrame
 
+-- The stock dialog background is mostly see-through, so fill with a near-opaque dark color instead.
+function Dialogs.SetBackdrop(f)
+	f:SetBackdrop({
+		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+		tile = true, tileSize = 32, edgeSize = 32,
+		insets = { left = 11, right = 12, top = 12, bottom = 11 },
+	})
+	f:SetBackdropColor(0.06, 0.06, 0.08, 0.95)
+end
+
 local function createTextFrame()
 	local f = CreateFrame("Frame", "BuildForgeTextFrame", UIParent)
 	f:SetSize(520, 260)
@@ -16,12 +27,7 @@ local function createTextFrame()
 	f:RegisterForDrag("LeftButton")
 	f:SetScript("OnDragStart", f.StartMoving)
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
-	f:SetBackdrop({
-		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-		tile = true, tileSize = 32, edgeSize = 32,
-		insets = { left = 11, right = 12, top = 12, bottom = 11 },
-	})
+	Dialogs.SetBackdrop(f)
 	tinsert(UISpecialFrames, "BuildForgeTextFrame")
 
 	f.title = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
