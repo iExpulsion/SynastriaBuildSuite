@@ -15,3 +15,7 @@ Gear.lua
 Build.lua
 Dialogs.lua
 Commands.lua
+UI\List.lua
+UI\Window.lua
+UI\Tabs.lua
+UI\Launchers.lua

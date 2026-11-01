@@ -99,6 +99,16 @@ StaticPopupDialogs["BUILDFORGE_OVERWRITE"] = {
 	hideOnEscape = true,
 }
 
+StaticPopupDialogs["BUILDFORGE_DELETE"] = {
+	text = "Delete build \"%s\"?",
+	button1 = DELETE,
+	button2 = CANCEL,
+	OnAccept = function(self) self.data() end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+}
+
 function Dialogs.Confirm(which, name, onAccept)
 	local popup = StaticPopup_Show(which, name)
 	if popup then popup.data = onAccept end
