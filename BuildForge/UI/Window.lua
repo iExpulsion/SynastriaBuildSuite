@@ -38,8 +38,26 @@ local function className(key)
 	return LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[key] or key
 end
 
--- Class names in class colors, or plain. A class picked twice shows once with a count.
+-- Synastria's name and color for a two-class pair, as its Character window shows them. The pair is packed as
+-- first class ID << 8 | second.
+local function comboName(classes)
+	local a, b = BF.CLASS_IDS[classes[1]], BF.CLASS_IDS[classes[2]]
+	local name, r, g, bl
+	if #classes == 2 and a and b and CMCGetClassNameFromPack then
+		local pack = a * 256 + b
+		name = CMCGetClassNameFromPack(pack)
+		if CMCGetClassNameColor then r, g, bl = CMCGetClassNameColor(pack) end
+	end
+	return name ~= "" and name or nil, r, g, bl
+end
+
+-- Class names in class colors, or plain: Synastria's name for a two-class pair, otherwise each class, with a class
+-- picked twice shown once with a count.
 function Window.ClassText(classes, plain)
+	local combo, r, g, b = comboName(classes or {})
+	if combo then
+		return (not plain and r) and ("|cff%02x%02x%02x%s|r"):format(r * 255, g * 255, b * 255, combo) or combo
+	end
 	local order, copies = {}, {}
 	for _, key in ipairs(classes or {}) do
 		if not copies[key] then order[#order + 1] = key end
