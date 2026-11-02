@@ -22,6 +22,7 @@ local TABS = {
 
 local frame
 local SPECS_KEY = "\1specs"
+local CLASSES_W = 150
 -- Tabs whose comparison depends on the active spec (gear and bags are the same in every spec).
 local PER_SPEC = { perks = true, talents = true, glyphs = true }
 -- The editor module behind each tab except Notes.
@@ -195,10 +196,15 @@ local function renderSidebar()
 		end
 	end
 
+	-- under a Saved Builds heading, class groups sit one step in so they read as part of it
 	local groups = groupedBuilds()
-	if #specs > 0 and #groups > 0 then
+	local nested = #specs > 0 and #groups > 0
+	if nested then
+		local saved = 0
+		for _, group in ipairs(groups) do saved = saved + #group.builds end
 		list:Add({
-			text = "Saved Builds", header = true,
+			text = "Saved Builds", header = true, indent = 16,
+			status = S.Hex(C.muted, saved),
 			tooltip = function(tt)
 				tt:AddLine("Saved Builds", 1, 1, 1)
 				tt:AddLine("Builds not linked to a spec on this character: templates, shared builds and other classes'. Applying one links it to your active spec.", 0.8, 0.8, 0.8, true)
@@ -211,7 +217,7 @@ local function renderSidebar()
 		list:Add({
 			text = label,
 			status = S.Hex(C.muted, #group.builds),
-			header = true, collapsed = collapsed,
+			header = true, collapsed = collapsed, indent = nested and 12 or 0,
 			onClick = function()
 				state.collapsed[group.key] = not collapsed
 				Window.Render()
@@ -230,7 +236,7 @@ local function renderSidebar()
 				list:Add({
 					text = build.name,
 					sub = spec ~= "" and spec ~= build.name and spec or nil,
-					indent = 12,
+					indent = nested and 24 or 12,
 					selected = build.name == state.selected,
 					onClick = function() Window.Select(build.name) end,
 				})
@@ -332,6 +338,8 @@ local function renderBuild(build)
 	local extras = build.pet and S.Hex(C.muted, "  (includes pet aspects)") or ""
 	frame.classes:SetText(shared and S.Hex(C.muted, "Misc perks every build applies, in every spec. Not included in exports.")
 		or Window.ClassText(build.classes) .. extras)
+	-- long class pairs would push Spec Name and Linked to off the header, so they're cut off with "..."
+	frame.classes:SetWidth(shared and frame.classes:GetStringWidth() + 4 or math.min(frame.classes:GetStringWidth() + 4, CLASSES_W))
 	frame.name:EnableMouse(not shared)
 	for _, w in ipairs({ frame.spec, frame.specLabel, frame.export, frame.delete }) do setShown(w, not shared) end
 	renderSpecLink(build)
@@ -509,6 +517,8 @@ local function createBuildHeader(main)
 
 	f.classes = S.Text(main, "small")
 	f.classes:SetPoint("TOPLEFT", f.name, "BOTTOMLEFT", 8, -6)
+	f.classes:SetHeight(12)
+	f.classes:SetWordWrap(false)
 
 	f.specLabel = S.Text(main, "small", C.muted)
 	f.specLabel:SetPoint("LEFT", f.classes, "RIGHT", 18, 0)

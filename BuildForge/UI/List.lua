@@ -51,7 +51,6 @@ local function newRow(self)
 	row.toggle = S.Text(row, "normal", S.colors.muted)
 	row.toggle:SetWidth(12)
 	row.toggle:SetJustifyH("CENTER")
-	row.toggle:SetPoint("LEFT", 8, 0)
 	row.check = S.Check(row, 14, function() if row.onCheck then row.onCheck(row) end end)
 	row.icon = row:CreateTexture(nil, "ARTWORK")
 	row.icon:SetSize(16, 16)
@@ -125,6 +124,8 @@ function List:Add(entry)
 	local x = 10 + (entry.indent or 0)
 	if entry.collapsed ~= nil then
 		row.toggle:SetText(entry.collapsed and "+" or "-")
+		row.toggle:ClearAllPoints()
+		row.toggle:SetPoint("LEFT", x - 2, 0)
 		row.toggle:Show()
 		x = x + 16
 	else
