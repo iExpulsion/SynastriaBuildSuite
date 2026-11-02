@@ -18,6 +18,8 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   that spec is active. New Build saves your character as a build; Import pastes one in.
 - **Build header:** click the name to rename it and set the spec name (press Enter to keep). Apply Build opens
   a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
+  Talents can only be added, so if your spec has more points in a talent than the build, the review lists them;
+  unlearn your talents at a class trainer and BuildForge reopens the review, ready to apply.
   Export gives the share string; Delete asks first. The title bar shows whether the Perk window is open at an
   innkeeper, which perk activations need.
 - **Specs:** Synastria keeps perks, talents and glyphs per talent spec (up to 8). With more than one spec, the

@@ -51,7 +51,7 @@ local function lines(plan)
 			talentLines[#talentLines + 1] = { name, S.Hex(C.bad, ("%d talent(s) above the build: reset talents first"):format(#entry.conflicts)),
 				function(tt)
 					tt:AddLine("Talents can only be added", 1, 1, 1)
-					tt:AddLine("Your spec has more points in these talents than the build. Unlearn your talents at a class trainer, then apply again. Or use Use My Talents on the Talents tab if your spec is the one to keep.", 0.8, 0.8, 0.8, true)
+					tt:AddLine("Your spec has more points in these talents than the build. Unlearn your talents at a class trainer and BuildForge reopens this review, ready to apply. Or use Use My Talents on the Talents tab if your spec is the one to keep.", 0.8, 0.8, 0.8, true)
 				end }
 			for _, c in ipairs(entry.conflicts) do
 				talentLines[#talentLines + 1] = { S.Hex(C.muted, "    " .. (c.name or "Talent")),
@@ -94,6 +94,9 @@ end
 
 function Review.Render()
 	local plan = BF.Build.Plan(current)
+	for _, entry in ipairs(plan.talents.classes) do
+		if #entry.conflicts > 0 then Review.pending = current.name end
+	end
 	sheet.title:SetText("Review Changes: " .. current.name)
 	sheet.list:Begin()
 	local rows = lines(plan)
@@ -119,6 +122,7 @@ end
 
 local function confirm()
 	local build = current
+	Review.pending = nil
 	local result = BF.Build.Apply(BF.Build.Plan(build))
 	local problems = #result.refused
 	for _, r in ipairs(result.refused) do BF:Print("|cffff6060Couldn't add %s (%s).|r", r.name, r.class) end
@@ -128,6 +132,29 @@ local function confirm()
 	BF.Window.Message(problems > 0 and S.Hex(C.warn, ("Applied, but %d talent(s) were refused; see chat."):format(problems))
 		or S.Hex(C.good, "Applied " .. build.name .. "."))
 end
+
+-- Talents can only be added, so a build whose talents conflict waits for a trainer reset. CONFIRM_TALENT_WIPE
+-- fires when the trainer offers it; once the spent points drop to 0, the review opens again for that build (or
+-- the build linked to this spec).
+local resetWatch = CreateFrame("Frame")
+resetWatch:RegisterEvent("CONFIRM_TALENT_WIPE")
+resetWatch:RegisterEvent("PLAYER_TALENT_UPDATE")
+resetWatch:RegisterEvent("CHARACTER_POINTS_CHANGED")
+resetWatch:SetScript("OnEvent", function(_, event)
+	if event == "CONFIRM_TALENT_WIPE" then
+		Review.wiping = true
+	elseif Review.wiping and BF.Talents.Spent() == 0 then
+		Review.wiping = false
+		local name = Review.pending or BF:Links()[BF:ActiveGroup()]
+		local build = name and BF.db.builds[name]
+		Review.pending = nil
+		if build then
+			BF.Window.Open(build.name)
+			Review.Open(build)
+			BF:Print("Talents reset. Review %s and click Apply Changes.", build.name)
+		end
+	end
+end)
 
 function Review.Create(parent, width, height)
 	sheet = CreateFrame("Frame", "BuildForgeReview", parent)

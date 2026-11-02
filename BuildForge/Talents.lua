@@ -92,6 +92,15 @@ function Talents.Plan(wanted)
 	return plan
 end
 
+-- Points spent in the class shown in the talent window, for the active spec.
+function Talents.Spent()
+	local spent = 0
+	for tab = 1, GetNumTalentTabs(false, false) do
+		spent = spent + select(3, GetTalentTabInfo(tab, false, false, BF:ActiveGroup()))
+	end
+	return spent
+end
+
 -- Adds preview points tier by tier and learns them. Returns the talents the client refused.
 function Talents.Apply(plan)
 	local group, shown = BF:ActiveGroup(), Talents.SelectedClass()
