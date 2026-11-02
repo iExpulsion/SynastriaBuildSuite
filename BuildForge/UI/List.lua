@@ -9,7 +9,7 @@ BF.List = List
 local S = BF.Style
 
 local STYLES = {
-	content = { rowH = 22, subRowH = 22, header = "GameFontNormalSmall", row = "GameFontHighlightSmall" },
+	content = { rowH = 22, subRowH = 36, header = "GameFontNormalSmall", row = "GameFontHighlightSmall" },
 	sidebar = { rowH = 22, subRowH = 36, header = "GameFontNormalSmall", row = "GameFontHighlight" },
 }
 
@@ -56,7 +56,7 @@ local function newRow(self)
 	row.icon:SetSize(16, 16)
 
 	row.status = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-	row.status:SetPoint("RIGHT", -8, 0)
+	row.status:SetPoint("RIGHT", -S.PAD, 0)
 	row.status:SetJustifyH("RIGHT")
 	row.text = row:CreateFontString(nil, "ARTWORK", style.row)
 	row.text:SetJustifyH("LEFT")
@@ -121,7 +121,7 @@ function List:Add(entry)
 	row:SetHeight(h)
 	self.height = self.height + h
 
-	local x = 10 + (entry.indent or 0)
+	local x = S.PAD + (entry.indent or 0)
 	if entry.collapsed ~= nil then
 		row.toggle:SetText(entry.collapsed and "+" or "-")
 		row.toggle:ClearAllPoints()
@@ -154,7 +154,8 @@ function List:Add(entry)
 		row.icon:Hide()
 	end
 	if entry.sub then
-		row.text:SetPoint("TOPLEFT", x, -5)
+		-- two lines (about 24px of text) centered in the taller row
+		row.text:SetPoint("TOPLEFT", x, -(style.subRowH - 24) / 2)
 		row.sub:SetText(entry.sub)
 		row.sub:Show()
 	else

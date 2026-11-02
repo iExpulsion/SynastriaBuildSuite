@@ -24,6 +24,10 @@ S.colors = {
 	bad = { 1, 0.42, 0.42, 1 },
 }
 
+-- One spacing scale for every panel: PAD inside a panel's edges (the same on all sides), GAP between neighboring
+-- controls, and one height for every button, input and dropdown so rows line up.
+S.PAD, S.GAP, S.CONTROL_H = 12, 8, 24
+
 -- "1 perk", "3 perks".
 function S.Count(n, singular, plural)
 	return ("%d %s"):format(n, n == 1 and singular or (plural or singular .. "s"))
@@ -109,7 +113,7 @@ end
 
 function S.Button(parent, label, kind, width, onClick, tooltip)
 	local b = CreateFrame("Button", nil, parent)
-	b:SetSize(width or 90, 24)
+	b:SetSize(width or 90, S.CONTROL_H)
 	b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
 	b.kind = kind or "secondary"
 	b.label = b:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
@@ -189,15 +193,14 @@ end
 -- { { value, text, tooltip } }; picking one calls onSelect(value) and closes the menu.
 function S.Dropdown(parent, width, onSelect)
 	local b = S.Button(parent, "", "secondary", width)
-	b:SetHeight(20)
 	b.label:ClearAllPoints()
 	b.label:SetPoint("LEFT", 8, 0)
-	b.label:SetPoint("RIGHT", -20, 0)
+	b.label:SetPoint("RIGHT", -24, 0)
 	b.label:SetJustifyH("LEFT")
 	local arrow = b:CreateTexture(nil, "OVERLAY")
 	arrow:SetTexture("Interface\\Buttons\\Arrow-Down-Up")
 	arrow:SetSize(12, 12)
-	arrow:SetPoint("RIGHT", -5, -2)
+	arrow:SetPoint("RIGHT", -8, -1)
 	arrow:SetDesaturated(true)
 	arrow:SetVertexColor(unpack(S.colors.muted))
 
@@ -216,9 +219,9 @@ function S.Dropdown(parent, width, onSelect)
 			local item = self.items[i]
 			if not item then
 				item = CreateFrame("Button", nil, menu)
-				item:SetHeight(20)
-				item:SetPoint("TOPLEFT", 1, -1 - (i - 1) * 20)
-				item:SetPoint("TOPRIGHT", -1, -1 - (i - 1) * 20)
+				item:SetHeight(S.CONTROL_H)
+				item:SetPoint("TOPLEFT", 1, -1 - (i - 1) * S.CONTROL_H)
+				item:SetPoint("TOPRIGHT", -1, -1 - (i - 1) * S.CONTROL_H)
 				local hover = S.Solid(item, "HIGHLIGHT", S.colors.hover)
 				hover:SetAllPoints()
 				item.text = S.Text(item, "small")
@@ -243,7 +246,7 @@ function S.Dropdown(parent, width, onSelect)
 			item:Show()
 		end
 		for i = #options + 1, #self.items do self.items[i]:Hide() end
-		menu:SetHeight(#options * 20 + 2)
+		menu:SetHeight(#options * S.CONTROL_H + 2)
 	end
 	b:SetScript("OnClick", function()
 		if menu:IsShown() then menu:Hide() else menu:Show() end
@@ -255,7 +258,7 @@ end
 -- Single-line input with a placeholder shown while it's empty and unfocused. Never takes focus on its own.
 function S.Input(parent, name, width, placeholder, maxLetters)
 	local e = CreateFrame("EditBox", name, parent)
-	e:SetSize(width, 22)
+	e:SetSize(width, S.CONTROL_H)
 	e:SetAutoFocus(false)
 	e:SetMaxLetters(maxLetters or 40)
 	e:SetFontObject(GameFontHighlightSmall)

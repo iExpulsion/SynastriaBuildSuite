@@ -11,7 +11,11 @@ local S = BF.Style
 local C = S.colors
 
 local W, H = 900, 640
-local TITLE_H, SIDEBAR_W, BUILD_H, TABS_H, FOOTER_H = 36, 240, 78, 32, 46
+local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
+-- the header is two control rows, the footer one, each with PAD around it
+local TITLE_H, SIDEBAR_W, TABS_H = 36, 240, 32
+local BUILD_H = PAD + CONTROL_H + GAP + CONTROL_H + GAP
+local FOOTER_H = PAD + CONTROL_H + PAD
 local TABS = {
 	{ key = "perks", label = "Perks" },
 	{ key = "talents", label = "Talents" },
@@ -290,7 +294,8 @@ local function renderTabs(build)
 			b.badgeBg:Hide()
 			b.badge:Hide()
 		end
-		b:SetWidth(b.label:GetStringWidth() + (diff and diff > 0 and (b.badge:GetStringWidth() + 26) or 0) + 28)
+		local badgeW = diff and diff > 0 and (GAP + b.badge:GetStringWidth() + 10) or 0
+		b:SetWidth(PAD + b.label:GetStringWidth() + badgeW + PAD)
 	end
 	setShown(frame.notes, state.tab == "notes")
 	for key, editor in pairs(frame.editors) do setShown(editor, key == state.tab) end
@@ -367,7 +372,7 @@ local function renderBuild(build)
 	renderActions(build)
 	if state.tab == "notes" then
 		if not frame.notes.edit.focused then frame.notes.edit:SetText(build.notes or "") end
-		frame.summary:SetText(state.message or "")
+		frame.summary:SetText(state.message or S.Hex(C.muted, "Saved as You Type, Included in Exports"))
 	else
 		local summary = BF[EDITORS[state.tab]].Render(build)
 		if PER_SPEC[state.tab] and not Window.IsComparing(build) then summary = Window.InactiveNote(build) end
@@ -440,20 +445,22 @@ local function createTitleBar(f)
 	S.Rule(bar, "BOTTOM")
 
 	local title = S.Text(bar, "normal")
-	title:SetPoint("LEFT", 14, 0)
+	title:SetPoint("LEFT", PAD, 0)
 	title:SetText(S.Hex(C.accent, "Build") .. "Forge")
 	local version = S.Text(bar, "small", C.muted)
-	version:SetPoint("LEFT", title, "RIGHT", 8, -1)
+	version:SetPoint("LEFT", title, "RIGHT", GAP, 0)
 	version:SetText("v" .. BF.version)
 
+	-- the close button's box sits as far from the right edge as from the top and bottom
+	local inset = (TITLE_H - CONTROL_H) / 2
 	local close = S.Button(bar, "Close", "ghost", 56, function() f:Hide() end)
-	close:SetPoint("RIGHT", -8, 0)
+	close:SetPoint("RIGHT", -inset, 0)
 
 	f.innText = S.Text(bar, "small", C.muted)
-	f.innText:SetPoint("RIGHT", close, "LEFT", -12, 0)
+	f.innText:SetPoint("RIGHT", close, "LEFT", -GAP, 0)
 	f.innDot = S.Solid(bar, "ARTWORK", C.muted)
 	f.innDot:SetSize(8, 8)
-	f.innDot:SetPoint("RIGHT", f.innText, "LEFT", -6, 0)
+	f.innDot:SetPoint("RIGHT", f.innText, "LEFT", -GAP, 0)
 end
 
 local function createSidebar(f)
@@ -467,40 +474,56 @@ local function createSidebar(f)
 	edge:SetPoint("TOPRIGHT")
 	edge:SetPoint("BOTTOMRIGHT")
 
-	f.search = S.Input(side, "BuildForgeSearch", SIDEBAR_W - 24, "Search Builds", 40)
-	f.search:SetPoint("TOPLEFT", 12, -12)
+	f.search = S.Input(side, "BuildForgeSearch", SIDEBAR_W - 2 * PAD, "Search Builds", 40)
+	f.search:SetPoint("TOPLEFT", PAD, -PAD)
 	f.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()
 		Window.Render()
 	end)
 
-	local listH = H - TITLE_H - 46 - 48
-	f.list = BF.List.New(side, "BuildForgeListScroll", SIDEBAR_W - 22, listH, "sidebar")
-	f.list.scroll:SetPoint("TOPLEFT", 0, -46)
+	-- the list runs from below the search box to the footer, which lines up with the build pane's footer
+	local listTop = PAD + CONTROL_H + GAP
+	f.list = BF.List.New(side, "BuildForgeListScroll", SIDEBAR_W - 14, H - TITLE_H - listTop - FOOTER_H, "sidebar")
+	f.list.scroll:SetPoint("TOPLEFT", 0, -listTop)
 
 	f.noMatches = S.Text(side, "small", C.muted)
-	f.noMatches:SetPoint("TOP", 0, -64)
+	f.noMatches:SetPoint("TOP", 0, -(listTop + PAD))
 	f.noMatches:SetText("No builds match your search.")
 
-	local half = (SIDEBAR_W - 30) / 2
-	local new = S.Button(side, "New Build", "primary", half, newBuild,
+	local footer = CreateFrame("Frame", nil, side)
+	footer:SetPoint("BOTTOMLEFT")
+	footer:SetPoint("BOTTOMRIGHT")
+	footer:SetHeight(FOOTER_H)
+	S.Rule(footer, "TOP")
+	local half = (SIDEBAR_W - 2 * PAD - GAP) / 2
+	local new = S.Button(footer, "New Build", "primary", half, newBuild,
 		"Save your character's current perks, talents, glyphs and gear as a new build.")
-	new:SetPoint("BOTTOMLEFT", 12, 12)
-	local import = S.Button(side, "Import", "secondary", half, importBuild,
+	new:SetPoint("LEFT", PAD, 0)
+	local import = S.Button(footer, "Import", "secondary", half, importBuild,
 		"Paste a BuildForge string.")
-	import:SetPoint("LEFT", new, "RIGHT", 6, 0)
+	import:SetPoint("LEFT", new, "RIGHT", GAP, 0)
 end
 
 local function createBuildHeader(main)
 	local f = frame
-	-- reads as a title until hovered or edited
+	-- two rows of controls, each element centered on its row: name and actions, then classes and spec
+	local row1 = CreateFrame("Frame", nil, main)
+	row1:SetPoint("TOPLEFT", PAD, -PAD)
+	row1:SetPoint("TOPRIGHT", -PAD, -PAD)
+	row1:SetHeight(CONTROL_H)
+	local row2 = CreateFrame("Frame", nil, main)
+	row2:SetPoint("TOPLEFT", row1, "BOTTOMLEFT", 0, -GAP)
+	row2:SetPoint("TOPRIGHT", row1, "BOTTOMRIGHT", 0, -GAP)
+	row2:SetHeight(CONTROL_H)
+
+	-- reads as a title until hovered or edited; its text lines up with the rows below
 	f.name = CreateFrame("EditBox", "BuildForgeNameBox", main)
-	f.name:SetSize(280, 30)
+	f.name:SetSize(280, CONTROL_H)
 	f.name:SetAutoFocus(false)
 	f.name:SetMaxLetters(40)
 	f.name:SetFontObject(GameFontHighlightLarge)
-	f.name:SetTextInsets(8, 8, 0, 0)
-	f.name:SetPoint("TOPLEFT", 16, -14)
+	f.name:SetTextInsets(GAP, GAP, 0, 0)
+	f.name:SetPoint("LEFT", row1, "LEFT", -GAP, 0)
 	S.Panel(f.name, { 0, 0, 0, 0 }, { 0, 0, 0, 0 })
 	f.name:SetScript("OnEditFocusGained", function(self)
 		self.focused = true
@@ -536,16 +559,15 @@ local function createBuildHeader(main)
 	end)
 
 	f.classes = S.Text(main, "small")
-	f.classes:SetPoint("TOPLEFT", f.name, "BOTTOMLEFT", 8, -6)
+	f.classes:SetPoint("LEFT", row2, "LEFT", 0, 0)
 	f.classes:SetHeight(12)
 	f.classes:SetWordWrap(false)
 
 	f.specLabel = S.Text(main, "small", C.muted)
-	f.specLabel:SetPoint("LEFT", f.classes, "RIGHT", 18, 0)
+	f.specLabel:SetPoint("LEFT", f.classes, "RIGHT", 2 * GAP, 0)
 	f.specLabel:SetText("Spec Name")
 	f.spec = S.Input(main, "BuildForgeSpecBox", 110, "None", 14)
-	f.spec:SetHeight(20)
-	f.spec:SetPoint("LEFT", f.specLabel, "RIGHT", 8, 0)
+	f.spec:SetPoint("LEFT", f.specLabel, "RIGHT", GAP, 0)
 	f.spec:SetScript("OnEscapePressed", function(self)
 		self:SetText(self.committed or "")
 		self:ClearFocus()
@@ -561,17 +583,17 @@ local function createBuildHeader(main)
 	end)
 
 	f.specLinkLabel = S.Text(main, "small", C.muted)
-	f.specLinkLabel:SetPoint("LEFT", f.spec, "RIGHT", 16, 0)
+	f.specLinkLabel:SetPoint("LEFT", f.spec, "RIGHT", 2 * GAP, 0)
 	f.specLinkLabel:SetText("Linked to")
 	f.specLink = S.Dropdown(main, 140, function(group)
 		local build = selectedBuild()
 		if build then BF:LinkSpec(build.name, group ~= 0 and group or nil) end
 		Window.Render()
 	end)
-	f.specLink:SetPoint("LEFT", f.specLinkLabel, "RIGHT", 8, 0)
+	f.specLink:SetPoint("LEFT", f.specLinkLabel, "RIGHT", GAP, 0)
 	f.specLink.tooltipText = "The talent spec on this character this build is for. Applying a build links it to the active spec."
 	f.specActive = S.Text(main, "small", C.good)
-	f.specActive:SetPoint("LEFT", f.specLink, "RIGHT", 10, 0)
+	f.specActive:SetPoint("LEFT", f.specLink, "RIGHT", GAP, 0)
 	f.specActive:SetText("Active Spec")
 
 	-- Apply Build, or Switch to Spec N for a build whose spec isn't active (applying it here would overwrite
@@ -579,18 +601,18 @@ local function createBuildHeader(main)
 	f.apply = S.Button(main, "Apply Build", "primary", 110, function(self)
 		if self.target then Window.SwitchSpec(self.target) else BF.Review.Open(selectedBuild()) end
 	end)
-	f.apply:SetPoint("TOPRIGHT", -16, -16)
+	f.apply:SetPoint("RIGHT", row1, "RIGHT", 0, 0)
 	f.export = S.Button(main, "Export", "secondary", 70, function() BF:Export(selectedBuild()) end,
 		"Copy this build as a one-line string to share.")
-	f.export:SetPoint("RIGHT", f.apply, "LEFT", -6, 0)
+	f.export:SetPoint("RIGHT", f.apply, "LEFT", -GAP, 0)
 	f.duplicate = S.Button(main, "Duplicate", "secondary", 80, function()
 		local dup = BF:Duplicate(selectedBuild())
 		state.collapsed[table.concat(dup.classes or {}, "/")] = false
 		Window.Select(dup.name)
 	end, "Make a copy of this build to try changes on. The copy isn't linked to a spec.")
-	f.duplicate:SetPoint("RIGHT", f.export, "LEFT", -6, 0)
+	f.duplicate:SetPoint("RIGHT", f.export, "LEFT", -GAP, 0)
 	f.delete = S.Button(main, "Delete", "danger", 70, function() BF:Delete(selectedBuild()) end)
-	f.delete:SetPoint("RIGHT", f.duplicate, "LEFT", -6, 0)
+	f.delete:SetPoint("RIGHT", f.duplicate, "LEFT", -GAP, 0)
 end
 
 local function createTabBar(main)
@@ -604,13 +626,14 @@ local function createTabBar(main)
 	for i, tab in ipairs(TABS) do
 		local b = CreateFrame("Button", nil, bar)
 		b:SetHeight(TABS_H)
-		if i == 1 then b:SetPoint("BOTTOMLEFT", 8, 0) else b:SetPoint("LEFT", f.tabs[i - 1], "RIGHT", 0, 0) end
+		-- the first tab's label starts at PAD, in line with the header text above
+		if i == 1 then b:SetPoint("BOTTOMLEFT", 0, 0) else b:SetPoint("LEFT", f.tabs[i - 1], "RIGHT", 0, 0) end
 		b.label = S.Text(b, "normal", C.muted)
-		b.label:SetPoint("LEFT", 14, 0)
+		b.label:SetPoint("LEFT", PAD, 0)
 		b.label:SetText(tab.label)
 		b.badgeBg = S.Solid(b, "ARTWORK", { 1, 0.5, 0.13, 0.25 })
 		b.badgeBg:SetHeight(14)
-		b.badgeBg:SetPoint("LEFT", b.label, "RIGHT", 6, 0)
+		b.badgeBg:SetPoint("LEFT", b.label, "RIGHT", GAP, 0)
 		b.badge = S.Text(b, "small", C.accentHover, "OVERLAY")
 		b.badge:SetPoint("CENTER", b.badgeBg, "CENTER", 0, 0)
 		b.underline = S.Solid(b, "OVERLAY", C.accent)
@@ -634,13 +657,13 @@ local function createNotes(main, width, height)
 	box:SetSize(width, height)
 	S.Panel(box, { 0.04, 0.04, 0.05, 1 }, C.border)
 	local scroll = CreateFrame("ScrollFrame", "BuildForgeNotesScroll", box, "UIPanelScrollFrameTemplate")
-	scroll:SetPoint("TOPLEFT", 10, -8)
-	scroll:SetPoint("BOTTOMRIGHT", -28, 8)
+	scroll:SetPoint("TOPLEFT", PAD, -PAD)
+	scroll:SetPoint("BOTTOMRIGHT", -PAD - 10, PAD)
 	local edit = CreateFrame("EditBox", nil, scroll)
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
 	edit:SetFontObject(GameFontHighlight)
-	edit:SetWidth(width - 44)
+	edit:SetWidth(width - 2 * PAD - 10)
 	edit:SetScript("OnEscapePressed", edit.ClearFocus)
 	edit:SetScript("OnEditFocusGained", function(self) self.focused = true end)
 	edit:SetScript("OnEditFocusLost", function(self) self.focused = false end)
@@ -652,9 +675,6 @@ local function createNotes(main, width, height)
 	BF.List.AutoHideBar(scroll, "BuildForgeNotesScroll")
 	box:EnableMouse(true)
 	box:SetScript("OnMouseDown", function() edit:SetFocus() end)
-	local hint = S.Text(box, "small", C.muted)
-	hint:SetPoint("BOTTOMRIGHT", box, "TOPRIGHT", 0, 4)
-	hint:SetText("Saved as you type, and included in exports.")
 	box.edit = edit
 	return box
 end
@@ -668,15 +688,16 @@ local function createMain(f)
 	createBuildHeader(main)
 	createTabBar(main)
 
-	local bodyTop = BUILD_H + TABS_H + 8
-	local bodyH = H - TITLE_H - bodyTop - FOOTER_H
-	local bodyW = W - SIDEBAR_W - 24
-	f.notes = createNotes(main, bodyW - 8, bodyH - 22)
-	f.notes:SetPoint("TOPLEFT", 16, -bodyTop - 18)
+	-- the tab's body sits PAD inside the pane on every side, between the tab bar and the footer
+	local bodyTop = BUILD_H + TABS_H + PAD
+	local bodyW = W - SIDEBAR_W - 2 * PAD
+	local bodyH = H - TITLE_H - bodyTop - FOOTER_H - PAD
+	f.notes = createNotes(main, bodyW, bodyH)
+	f.notes:SetPoint("TOPLEFT", PAD, -bodyTop)
 	f.editors = {}
 	for key, module in pairs(EDITORS) do
-		f.editors[key] = BF[module].Create(main, bodyW - 8, bodyH - 4)
-		f.editors[key]:SetPoint("TOPLEFT", 16, -bodyTop)
+		f.editors[key] = BF[module].Create(main, bodyW, bodyH)
+		f.editors[key]:SetPoint("TOPLEFT", PAD, -bodyTop)
 	end
 
 	local footer = CreateFrame("Frame", nil, main)
@@ -687,12 +708,12 @@ local function createMain(f)
 	f.actions = {}
 	for i = 1, 2 do
 		local b = S.Button(footer, "", "secondary", 90)
-		if i == 1 then b:SetPoint("RIGHT", -16, 0) else b:SetPoint("RIGHT", f.actions[i - 1], "LEFT", -6, 0) end
+		if i == 1 then b:SetPoint("RIGHT", -PAD, 0) else b:SetPoint("RIGHT", f.actions[i - 1], "LEFT", -GAP, 0) end
 		f.actions[i] = b
 	end
 	f.summary = S.Text(footer, "small", C.muted)
-	f.summary:SetPoint("LEFT", 16, 0)
-	f.summary:SetPoint("RIGHT", f.actions[2], "LEFT", -12, 0)
+	f.summary:SetPoint("LEFT", PAD, 0)
+	f.summary:SetPoint("RIGHT", f.actions[2], "LEFT", -PAD, 0)
 end
 
 local function createEmpty(f)

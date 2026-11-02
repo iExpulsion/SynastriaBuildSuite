@@ -9,7 +9,7 @@ BF.Dialogs = Dialogs
 -- string has and imports only the checked ones, as a new build or into the selected build.
 local box
 
-local W, H, PAD = 560, 340, 16
+local W, H, TOGGLE_W = 560, 340, 80
 
 local function chosen()
 	local sections = {}
@@ -66,12 +66,12 @@ end
 local function newToggle(parent, section)
 	local S = BF.Style
 	local row = CreateFrame("Button", nil, parent)
-	row:SetSize(84, 20)
+	row:SetSize(TOGGLE_W, S.CONTROL_H)
 	row.key = section.key
 	row.check = S.Check(row, 14, function() row:Click() end)
 	row.check:SetPoint("LEFT", 0, 0)
 	row.label = S.Text(row, "small")
-	row.label:SetPoint("LEFT", row.check, "RIGHT", 6, 0)
+	row.label:SetPoint("LEFT", row.check, "RIGHT", S.GAP, 0)
 	row.label:SetText(section.label)
 	row:SetScript("OnClick", function(self)
 		if self.check.usable then toggled(self) end
@@ -88,7 +88,14 @@ end
 
 local function create()
 	local S, C = BF.Style, BF.Style.colors
+	local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
+	-- rows top to bottom: title and sub line, the Include row, the string, (import: the Name row), the buttons
+	local includeY = PAD + 16 + 4 + 12 + GAP + CONTROL_H / 2
+	local wellTop = includeY + CONTROL_H / 2 + GAP
+	local footerH = PAD + CONTROL_H + PAD
 	local f = CreateFrame("Frame", "BuildForgeTextFrame", UIParent)
+	f.pad = PAD
+	f.wellBottom = { export = footerH, import = footerH + CONTROL_H + PAD }
 	f:SetSize(W, H)
 	f:SetPoint("CENTER")
 	f:SetFrameStrata("DIALOG")
@@ -104,46 +111,48 @@ local function create()
 	f.title:SetPoint("TOPLEFT", PAD, -PAD)
 	f.sub = S.Text(f, "small", C.muted)
 	f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
+	-- the close button's box lines up with the title's middle
 	local close = S.Button(f, "Close", "ghost", 56, function() f:Hide() end)
-	close:SetPoint("TOPRIGHT", -8, -10)
+	close:SetPoint("TOPRIGHT", -PAD, -(PAD - 4))
 
 	local include = S.Text(f, "small", C.muted)
-	include:SetPoint("TOPLEFT", PAD, -62)
+	include:SetPoint("LEFT", f, "TOPLEFT", PAD, -includeY)
 	include:SetText("Include")
 	f.toggles = {}
 	for i, section in ipairs(BF.Codec.SECTIONS) do
 		local t = newToggle(f, section)
-		t:SetPoint("LEFT", include, "RIGHT", 12 + (i - 1) * 88, 0)
+		t:SetPoint("LEFT", include, "RIGHT", PAD + (i - 1) * (TOGGLE_W + GAP), 0)
 		f.toggles[i] = t
 	end
 
 	local well = CreateFrame("Frame", nil, f)
-	well:SetPoint("TOPLEFT", PAD, -84)
-	well:SetPoint("BOTTOMRIGHT", -PAD, 52)
+	well:SetPoint("TOPLEFT", PAD, -wellTop)
+	well:SetPoint("BOTTOMRIGHT", -PAD, f.wellBottom.export)
 	f.well = well
 
+	-- import only: the Name row, centered between the string and the buttons
 	f.nameLabel = S.Text(f, "small", C.muted)
-	f.nameLabel:SetPoint("BOTTOMLEFT", PAD, 60)
+	f.nameLabel:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, footerH + CONTROL_H / 2)
 	f.nameLabel:SetText("Name")
 	f.name = S.Input(f, "BuildForgeImportName", 240, "Build Name", 40)
-	f.name:SetPoint("LEFT", f.nameLabel, "RIGHT", 10, 0)
+	f.name:SetPoint("LEFT", f.nameLabel, "RIGHT", GAP, 0)
 	f.name:HookScript("OnTextChanged", function(_, userInput)
 		if userInput then box.nameEdited = true end
 	end)
 	f.nameHint = S.Text(f, "small", C.muted)
-	f.nameHint:SetPoint("LEFT", f.name, "RIGHT", 10, 0)
+	f.nameHint:SetPoint("LEFT", f.name, "RIGHT", GAP, 0)
 	f.nameHint:SetText("For Import as New.")
 	S.Panel(well, { 0.04, 0.04, 0.05, 1 }, C.border)
 	well:EnableMouse(true)
 	local scroll = CreateFrame("ScrollFrame", "BuildForgeTextScroll", well, "UIPanelScrollFrameTemplate")
-	scroll:SetPoint("TOPLEFT", 8, -8)
-	scroll:SetPoint("BOTTOMRIGHT", -16, 8)
+	scroll:SetPoint("TOPLEFT", PAD, -PAD)
+	scroll:SetPoint("BOTTOMRIGHT", -PAD - 10, PAD)
 	BF.List.AutoHideBar(scroll, "BuildForgeTextScroll")
 	local edit = CreateFrame("EditBox", nil, scroll)
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
 	edit:SetFontObject(ChatFontNormal)
-	edit:SetWidth(W - 2 * PAD - 32)
+	edit:SetWidth(W - 4 * PAD - 10)
 	edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 	edit:SetScript("OnTextChanged", function(self, userInput)
 		if box.mode == "import" then
@@ -167,23 +176,23 @@ local function create()
 	f.placeholder:SetText("Click here, then press Ctrl+V.")
 
 	f.note = S.Text(f, "small", C.muted)
-	f.note:SetPoint("BOTTOMLEFT", PAD, 20)
+	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, footerH / 2)
 	f.primary = S.Button(f, "Import as New", "primary", 110, function()
 		local name = box.name:GetText():gsub("^%s+", ""):gsub("%s+$", "")
 		if box.onImport then box.onImport(box.edit:GetText(), chosen(), false, name ~= "" and name or nil) end
 	end, "Make a new build from the checked sections, under the name above.")
-	f.primary:SetPoint("BOTTOMRIGHT", -PAD, 14)
+	f.primary:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 	f.secondary = S.Button(f, "Into Build", "secondary", 110, function()
 		if box.onImport then box.onImport(box.edit:GetText(), chosen(), true) end
 	end)
-	f.secondary:SetPoint("RIGHT", f.primary, "LEFT", -6, 0)
-	f.note:SetPoint("RIGHT", f.secondary, "LEFT", -12, 0)
+	f.secondary:SetPoint("RIGHT", f.primary, "LEFT", -GAP, 0)
+	f.note:SetPoint("RIGHT", f.secondary, "LEFT", -PAD, 0)
 	f.selectAll = S.Button(f, "Select All", "primary", 100, function()
 		box.edit:SetFocus()
 		box.edit:HighlightText()
 		box.note:SetText(S.Hex(C.warn, "Selected: Press Ctrl+C to Copy"))
 	end, "Select the whole string, ready for Ctrl+C.")
-	f.selectAll:SetPoint("BOTTOMRIGHT", -PAD, 14)
+	f.selectAll:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 	return f
 end
 
@@ -202,7 +211,7 @@ function Dialogs.ShowExport(build)
 	box.selectAll:Show()
 	box.placeholder:Hide()
 	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Hide() end
-	box.well:SetPoint("BOTTOMRIGHT", -PAD, 52)
+	box.well:SetPoint("BOTTOMRIGHT", -box.pad, box.wellBottom.export)
 	refreshExport()
 	box:Show()
 end
@@ -217,7 +226,7 @@ function Dialogs.ShowImport(onImport, targetName)
 	box.selectAll:Hide()
 	box.placeholder:Show()
 	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Show() end
-	box.well:SetPoint("BOTTOMRIGHT", -PAD, 84)
+	box.well:SetPoint("BOTTOMRIGHT", -box.pad, box.wellBottom.import)
 	box.nameEdited = false
 	box.name:SetText("")
 	box.name:UpdatePlaceholder()

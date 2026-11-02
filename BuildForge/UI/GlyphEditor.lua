@@ -11,7 +11,8 @@ local S = BF.Style
 local C = S.colors
 local Glyphs
 
-local SOCKETS_W, ICON, ROW, PAD, SEARCH_H = 300, 40, 62, 12, 30
+local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
+local SOCKETS_W, ICON, ROW, SEARCH_H = 300, 40, 60, S.CONTROL_H + S.GAP
 local COLUMNS = { { title = "Major Glyphs", sockets = { 1, 4, 6 } }, { title = "Minor Glyphs", sockets = { 2, 3, 5 } } }
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 local EMPTY = "Interface\\Icons\\INV_Misc_Rune_01"
@@ -86,7 +87,8 @@ local function newSocket(parent, socket, width)
 	b.icon:SetPoint("BOTTOMRIGHT", -2, 2)
 	b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 	b.name = S.Text(b, "small")
-	b.name:SetPoint("TOPLEFT", b.frame, "TOPRIGHT", 8, -4)
+	-- name and status (about 26px together) centered beside the icon
+	b.name:SetPoint("TOPLEFT", b.frame, "TOPRIGHT", GAP, -(ICON - 26) / 2)
 	b.name:SetWidth(width - ICON - 20)
 	b.name:SetHeight(12)
 	b.name:SetWordWrap(false)
@@ -212,34 +214,35 @@ function Editor.Create(parent, width, height)
 	panel:SetSize(width, height)
 	panel.sockets = {}
 
-	local colW = SOCKETS_W
+	-- each column: a title line, then its three sockets; PAD between the Major and Minor blocks
+	local TITLE_LINE = 14 + GAP
 	for c, column in ipairs(COLUMNS) do
-		local top = (c - 1) * (24 + #column.sockets * ROW + 12)
+		local top = (c - 1) * (TITLE_LINE + #column.sockets * ROW + PAD)
 		local title = S.Text(panel, "normal")
 		title:SetPoint("TOPLEFT", 4, -top)
 		title:SetText(column.title)
 		for i, socket in ipairs(column.sockets) do
-			local b = newSocket(panel, socket, colW)
-			b:SetPoint("TOPLEFT", 0, -(top + 22 + (i - 1) * ROW))
+			local b = newSocket(panel, socket, SOCKETS_W)
+			b:SetPoint("TOPLEFT", 0, -(top + TITLE_LINE + (i - 1) * ROW))
 			panel.sockets[socket] = b
 		end
 	end
 
-	local pickW = width - SOCKETS_W - 16
+	local pickW = width - SOCKETS_W - PAD
 	local pick = CreateFrame("Frame", nil, panel)
 	pick:SetSize(pickW, height)
-	pick:SetPoint("TOPLEFT", SOCKETS_W + 16, 0)
+	pick:SetPoint("TOPLEFT", SOCKETS_W + PAD, 0)
 	S.Panel(pick, { 0.04, 0.04, 0.05, 1 }, C.border)
 	panel.pickTitle = S.Text(pick, "normal")
 	panel.pickTitle:SetPoint("TOPLEFT", PAD, -PAD)
 	panel.search = S.Input(pick, "BuildForgeGlyphSearch", pickW - 2 * PAD, "Search Glyphs", 40)
-	panel.search:SetPoint("TOPLEFT", PAD, -(PAD + 22))
+	panel.search:SetPoint("TOPLEFT", PAD, -(PAD + TITLE_LINE))
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()
 		BF.Window.Render()
 	end)
-	local listTop = PAD + 22 + SEARCH_H
-	panel.picker = BF.List.New(pick, "BuildForgeGlyphPicker", pickW - 22, height - listTop - 46)
+	local listTop = PAD + TITLE_LINE + SEARCH_H
+	panel.picker = BF.List.New(pick, "BuildForgeGlyphPicker", pickW - 22, height - listTop - (PAD + CONTROL_H + GAP))
 	panel.picker.scroll:SetPoint("TOPLEFT", 1, -listTop)
 	panel.clear = S.Button(pick, "Clear Socket", "secondary", 100, function()
 		Glyphs.Clear(current, state.socket)

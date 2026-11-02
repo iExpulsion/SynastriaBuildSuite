@@ -10,7 +10,8 @@ local S = BF.Style
 local C = S.colors
 local Gear
 
-local DOLL_W, ICON, ROW, PAD = 320, 36, 42, 12
+local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
+local DOLL_W, ICON, ROW = 320, 36, 42
 local LEFT = { 1, 2, 3, 15, 5, 9 }
 local RIGHT = { 10, 6, 7, 8, 11, 12, 13, 14 }
 local BOTTOM = { 16, 17, 18 }
@@ -262,7 +263,7 @@ local function createDetail(width, height)
 	d.list = BF.List.New(d, "BuildForgeGearDetail", width - 22, height - 52 - 92)
 	d.list.scroll:SetPoint("TOPLEFT", 1, -52)
 	d.hint = S.Text(d, "small", C.muted)
-	d.hint:SetPoint("BOTTOMLEFT", PAD, 44)
+	d.hint:SetPoint("BOTTOMLEFT", PAD, PAD + CONTROL_H + GAP)
 	d.hint:SetWidth(width - 2 * PAD)
 	d.hint:SetText("Drop an item anywhere on this tab to add it to its slot. Rings, trinkets and one-hand weapons fill an empty slot of the pair first.")
 	d.best = S.Button(d, "Make Best", "secondary", 90, function()
@@ -275,7 +276,7 @@ local function createDetail(width, height)
 		Gear.Remove(current, state.slot, state.rank)
 		BF:Changed()
 	end, "Take the selected item out of this slot.")
-	d.remove:SetPoint("LEFT", d.best, "RIGHT", 6, 0)
+	d.remove:SetPoint("LEFT", d.best, "RIGHT", GAP, 0)
 	return d
 end
 
@@ -313,7 +314,7 @@ function Editor.Create(parent, width, height)
 		panel.slots[slot] = b
 	end
 
-	panel.detail = createDetail(width - DOLL_W - 16, height)
-	panel.detail:SetPoint("TOPLEFT", DOLL_W + 16, 0)
+	panel.detail = createDetail(width - DOLL_W - PAD, height)
+	panel.detail:SetPoint("TOPLEFT", DOLL_W + PAD, 0)
 	return panel
 end

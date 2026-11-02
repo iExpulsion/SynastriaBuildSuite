@@ -11,7 +11,14 @@ local S = BF.Style
 local C = S.colors
 local Perks
 
-local LIST_W, TOOLBAR_H, PAD = 330, 30, 12
+local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
+-- the list column ends at LIST_W - 4 (its scroll bar's right edge); the detail pane starts PAD after it, the same
+-- gap as between the gear doll or glyph sockets and their panes
+local LIST_W, TOOLBAR_H = 330, CONTROL_H + GAP
+local LIST_RIGHT = LIST_W - 4
+-- detail pane: the icon row, then the toggle row, then the sections
+local ICON_ROW, TOGGLE_Y = 36, PAD + 36 + PAD
+local SECTIONS_Y = TOGGLE_Y + CONTROL_H + PAD
 local ICON, ICON_GAP = 28, 4
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
@@ -286,7 +293,7 @@ local function renderDetail(build, mask, look)
 		d.state:SetText(rowStatus(id, entry, look) or look.off and "" or (onChar and S.Hex(C.muted, "On for your character")
 			or S.Hex(C.muted, "Off for your character")))
 
-		local y = PAD + 36 + 10 + 24 + 14
+		local y = SECTIONS_Y
 		local function header(fs, text)
 			fs:ClearAllPoints()
 			fs:SetPoint("TOPLEFT", PAD, -y)
@@ -300,7 +307,7 @@ local function renderDetail(build, mask, look)
 			fs:SetWidth(width)
 			fs:SetText(text)
 			fs:Show()
-			y = y + (fs:GetStringHeight() or 14) + 14
+			y = y + (fs:GetStringHeight() or 14) + PAD
 		end
 
 		local desc = Perks.Description(id, rank or 1)
@@ -331,7 +338,7 @@ local function renderDetail(build, mask, look)
 			d.abilityNote:SetText(spell and ("Chosen: " .. (GetSpellInfo(spell) or spell))
 				or S.Hex(C.muted, entry and "None chosen yet." or "Add the perk to choose an ability."))
 			d.abilityNote:Show()
-			y = y + 18 + math.ceil(#abilities / perRow) * (ICON + ICON_GAP) + 14
+			y = y + 18 + math.ceil(#abilities / perRow) * (ICON + ICON_GAP) + PAD
 		else
 			d.abilityHead:Hide()
 			d.abilityNote:Hide()
@@ -352,7 +359,7 @@ local function renderDetail(build, mask, look)
 		for i = #options + 1, #d.options do d.options[i]:Hide() end
 		if #options > 0 then
 			header(d.optionHead, "Options")
-			y = y + #options * 22 + 14
+			y = y + #options * 22 + PAD
 		else
 			d.optionHead:Hide()
 		end
@@ -383,10 +390,10 @@ local function renderToolbar()
 	panel.search:ClearAllPoints()
 	if shared then
 		panel.search:SetPoint("TOPLEFT", 0, 0)
-		panel.search:SetWidth(LIST_W - 14)
+		panel.search:SetWidth(LIST_RIGHT)
 	else
-		panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", 8, 0)
-		panel.search:SetWidth(LIST_W - 186)
+		panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", GAP, 0)
+		panel.search:SetWidth(LIST_RIGHT - 2 * 80 - 2 * GAP)
 	end
 end
 
@@ -453,19 +460,20 @@ local function createDetail(width, height)
 	d.none:SetText("Select a perk to see its details.")
 
 	d.icon = child:CreateTexture(nil, "ARTWORK")
-	d.icon:SetSize(36, 36)
+	d.icon:SetSize(ICON_ROW, ICON_ROW)
 	d.icon:SetPoint("TOPLEFT", PAD, -PAD)
 	d.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	-- name and sub line (about 30px together) centered beside the icon
 	d.name = S.Text(child, "large")
-	d.name:SetPoint("TOPLEFT", d.icon, "TOPRIGHT", 10, -2)
+	d.name:SetPoint("TOPLEFT", d.icon, "TOPRIGHT", GAP, -3)
 	d.name:SetPoint("RIGHT", -PAD, 0)
 	d.sub = S.Text(child, "small", C.muted)
 	d.sub:SetPoint("TOPLEFT", d.name, "BOTTOMLEFT", 0, -4)
 	d.sub:SetPoint("RIGHT", -PAD, 0)
 	d.toggle = S.Button(child, "Add to Build", "primary", 130, function() toggle(state.selected) end)
-	d.toggle:SetPoint("TOPLEFT", PAD, -(PAD + 36 + 10))
+	d.toggle:SetPoint("TOPLEFT", PAD, -TOGGLE_Y)
 	d.state = S.Text(child, "small")
-	d.state:SetPoint("LEFT", d.toggle, "RIGHT", 10, 0)
+	d.state:SetPoint("LEFT", d.toggle, "RIGHT", GAP, 0)
 	d.state:SetPoint("RIGHT", -PAD, 0)
 
 	d.effectHead = S.Text(child, "normal")
@@ -488,16 +496,14 @@ function Editor.Create(parent, width, height)
 		state.filter = "build"
 		BF.Window.Render()
 	end, "Show the perks in this build, and any it would turn off.")
-	panel.showBuild:SetHeight(22)
 	panel.showBuild:SetPoint("TOPLEFT", 0, 0)
 	panel.showAll = S.Button(panel, "All Perks", "secondary", 80, function()
 		state.filter = "all"
 		BF.Window.Render()
 	end, "Show every perk the build's classes can use.")
-	panel.showAll:SetHeight(22)
-	panel.showAll:SetPoint("LEFT", panel.showBuild, "RIGHT", 4, 0)
-	panel.search = S.Input(panel, "BuildForgePerkSearch", LIST_W - 186, "Search Perks", 40)
-	panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", 8, 0)
+	panel.showAll:SetPoint("LEFT", panel.showBuild, "RIGHT", GAP, 0)
+	panel.search = S.Input(panel, "BuildForgePerkSearch", LIST_RIGHT - 2 * 80 - 2 * GAP, "Search Perks", 40)
+	panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", GAP, 0)
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()
 		BF.Window.Render()
@@ -506,7 +512,7 @@ function Editor.Create(parent, width, height)
 	panel.list = BF.List.New(panel, "BuildForgePerkList", LIST_W - 14, height - TOOLBAR_H)
 	panel.list.scroll:SetPoint("TOPLEFT", 0, -TOOLBAR_H)
 
-	panel.detail = createDetail(width - LIST_W - 4, height)
-	panel.detail:SetPoint("TOPLEFT", LIST_W + 4, 0)
+	panel.detail = createDetail(width - LIST_RIGHT - PAD, height)
+	panel.detail:SetPoint("TOPLEFT", LIST_RIGHT + PAD, 0)
 	return panel
 end

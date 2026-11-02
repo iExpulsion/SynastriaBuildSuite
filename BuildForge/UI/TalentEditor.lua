@@ -11,7 +11,9 @@ local C = S.colors
 local Calc
 
 local TIERS, COLUMNS = 11, 4
-local HEADER_H, CLASSBAR_H, GAP = 26, 26, 8
+local GAP = S.GAP
+-- the class buttons only take a row when the build has more than one class
+local HEADER_H, CLASSBAR_H = 26, S.CONTROL_H + S.GAP
 local BORDER = {
 	locked = { 0.25, 0.25, 0.28, 1 },
 	open = { 0.35, 0.8, 0.35, 1 },
@@ -224,11 +226,26 @@ local function renderClassBar(classes)
 	end
 end
 
+-- Places the tree columns below the class buttons, or at the top when there's only one class.
+local function placeColumns(top)
+	if panel.top ~= top then
+		panel.top = top
+		for _, col in ipairs(panel.columns) do
+			col:ClearAllPoints()
+			col:SetPoint("TOPLEFT", col.x, -top)
+			col:SetHeight(panel.height - top)
+			col.gridH = panel.height - top - HEADER_H - 4
+			col.layoutKey = nil
+		end
+	end
+end
+
 function Editor.Render(build)
 	current = build
 	Calc = Calc or BF.TalentCalc
 	local classes = buildClasses(build)
 	local summary
+	placeColumns(#classes > 1 and CLASSBAR_H or 0)
 	if #classes == 0 then
 		for _, col in ipairs(panel.columns) do col:Hide() end
 		renderClassBar({})
@@ -269,18 +286,17 @@ function Editor.Create(parent, width, height)
 			state.class = self.key
 			BF:Changed()
 		end)
-		b:SetHeight(20)
-		if i == 1 then b:SetPoint("TOPLEFT", 0, 0) else b:SetPoint("LEFT", panel.classButtons[i - 1], "RIGHT", 4, 0) end
+		if i == 1 then b:SetPoint("TOPLEFT", 0, 0) else b:SetPoint("LEFT", panel.classButtons[i - 1], "RIGHT", GAP, 0) end
 		panel.classButtons[i] = b
 	end
 
-	local top = CLASSBAR_H
+	panel.width, panel.height = width, height
 	local colW = math.floor((width - 2 * GAP) / 3)
 	panel.columns = {}
 	for tab = 1, 3 do
 		local col = CreateFrame("Frame", nil, panel)
-		col:SetSize(colW, height - top)
-		col:SetPoint("TOPLEFT", (tab - 1) * (colW + GAP), -top)
+		col:SetWidth(colW)
+		col.x = (tab - 1) * (colW + GAP)
 		S.Panel(col, { 0.04, 0.04, 0.05, 1 }, C.border)
 		col.bg = col:CreateTexture(nil, "BACKGROUND")
 		col.bg:SetPoint("TOPLEFT", 1, -HEADER_H)
@@ -290,16 +306,17 @@ function Editor.Create(parent, width, height)
 		head:SetPoint("TOPLEFT", 1, -1)
 		head:SetPoint("TOPRIGHT", -1, -1)
 		head:SetHeight(HEADER_H - 1)
+		-- the tree icon sits as far from the column's edge as from the header's top and bottom
+		local inset = (HEADER_H - 18) / 2
 		col.icon = col:CreateTexture(nil, "ARTWORK")
 		col.icon:SetSize(18, 18)
-		col.icon:SetPoint("TOPLEFT", 6, -4)
+		col.icon:SetPoint("TOPLEFT", inset, -inset)
 		col.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 		col.title = S.Text(col, "normal")
-		col.title:SetPoint("LEFT", col.icon, "RIGHT", 6, 0)
+		col.title:SetPoint("LEFT", col.icon, "RIGHT", GAP, 0)
 		col.points = S.Text(col, "normal")
-		col.points:SetPoint("TOPRIGHT", -8, -6)
+		col.points:SetPoint("RIGHT", col, "TOPRIGHT", -GAP, -HEADER_H / 2)
 		col.gridW = colW
-		col.gridH = height - top - HEADER_H - 4
 		col.buttons, col.arrows = {}, {}
 		panel.columns[tab] = col
 	end
