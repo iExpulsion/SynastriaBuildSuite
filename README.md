@@ -7,7 +7,8 @@ name and notes.
 ## The Window
 
 `/bforge`, the minimap button, or the BuildForge button above the Perk Manager or the talent frame opens the
-build window. Drag its title bar to move it (it remembers where); Esc closes it.
+build window. Drag its title bar to move it (it remembers where); Esc closes it. At an innkeeper, the Open
+BuildForge line under "Manage perks" opens the Perk Manager and BuildForge together, ready to apply perks.
 
 The minimap button's left-click opens or closes the window; right-click opens the build linked to your active
 spec. Drag it around the minimap's edge to move it, and `/bforge minimap` hides or shows it. With a

@@ -28,6 +28,47 @@ function Launchers.Check()
 	return perks and talents
 end
 
+-- An "Open BuildForge" line under an innkeeper's "Manage perks" gossip option: it opens the Perk Manager, so
+-- perk changes can apply, and BuildForge with it. The line is client-side and drawn after Blizzard's buttons.
+local MANAGE_PERKS = "manage perks"
+local gossip
+
+local function managePerksOption(...)
+	for i = 1, select("#", ...), 2 do
+		if select(i, ...):lower():find(MANAGE_PERKS, 1, true) then return (i + 1) / 2 end
+	end
+end
+
+local function createGossip()
+	local b = CreateFrame("Button", "BuildForgeGossipButton", GossipGreetingScrollChildFrame, "GossipTitleButtonTemplate")
+	b:SetText("Open BuildForge")
+	BuildForgeGossipButtonGossipIcon:SetTexture("Interface\\GossipFrame\\GossipGossipIcon")
+	b:SetScript("OnClick", function(self)
+		SelectGossipOption(self.option)
+		BF.Window.Open()
+	end)
+	return b
+end
+
+function Launchers.UpdateGossip()
+	local option = managePerksOption(GetGossipOptions())
+	local last = _G["GossipTitleButton" .. (GossipFrame.buttonIndex - 1)]
+	if option and last then
+		gossip = gossip or createGossip()
+		gossip.option = option
+		gossip:ClearAllPoints()
+		gossip:SetPoint("TOPLEFT", last, "BOTTOMLEFT")
+		GossipResize(gossip)
+		gossip:Show()
+		GossipSpacerFrame:SetPoint("TOP", gossip, "BOTTOM")
+		GossipGreetingScrollFrame:UpdateScrollChildRect()
+	elseif gossip then
+		gossip:Hide()
+	end
+end
+
+hooksecurefunc("GossipFrameUpdate", Launchers.UpdateGossip)
+
 local watcher = CreateFrame("Frame")
 local elapsed, total = 0, 0
 watcher:SetScript("OnUpdate", function(self, dt)
