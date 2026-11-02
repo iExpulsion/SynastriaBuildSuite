@@ -6,7 +6,7 @@ name and notes.
 
 ## The Window
 
-`/bforge`, the minimap button, or the BuildForge button above the Perk window or the talent frame opens the
+`/bforge`, the minimap button, or the BuildForge button above the Perk Manager or the talent frame opens the
 build window. Drag its title bar to move it (it remembers where); Esc closes it.
 
 The minimap button's left-click opens or closes the window; right-click opens the build linked to your active
@@ -20,7 +20,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
   Talents can only be added, so if your spec has more points in a talent than the build, the review lists them;
   unlearn your talents at a class trainer and BuildForge reopens the review, ready to apply.
-  Export gives the share string; Delete asks first. The title bar shows whether the Perk window is open at an
+  Export gives the share string; Delete asks first. The title bar shows whether the Perk Manager is open at an
   innkeeper, which perk activations need.
 - **Export and Import by section:** both boxes have Perks, Talents, Glyphs, Gear and Notes checkboxes. Export
   rebuilds the string as you check and uncheck them, and remembers the choice; Select All selects the string so
@@ -84,7 +84,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 | `/bforge checktalents` | Checks the talent data against your live talents (for the class in your talent window) |
 | `/bforge delete <name>` | Deletes a build |
 
-Perk activations need the Perk window open at an innkeeper. Perk options and chosen abilities apply anywhere.
+Perk activations need the Perk Manager open at an innkeeper. Perk options and chosen abilities apply anywhere.
 Glyphs are listed for you to socket, since they're used up.
 
 ## Development

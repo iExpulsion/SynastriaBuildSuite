@@ -399,7 +399,7 @@ local function summary(look)
 	else
 		text = ("%d to activate, %d to deactivate, %d option change(s)."):format(#plan.activate, #plan.deactivate, #plan.options + #plan.spells)
 		if changes > 0 and not Perks.Writable() then
-			text = text .. S.Hex(C.bad, " Activations need the Perk window at an innkeeper.")
+			text = text .. S.Hex(C.bad, " Activations need the Perk Manager at an innkeeper.")
 		end
 	end
 	return text
@@ -490,7 +490,7 @@ function Editor.Create(parent, width, height)
 	end, "Show every perk the build's classes can use.")
 	panel.showAll:SetHeight(22)
 	panel.showAll:SetPoint("LEFT", panel.showBuild, "RIGHT", 4, 0)
-	panel.search = S.Input(panel, "BuildForgePerkSearch", LIST_W - 186, "Search perks", 40)
+	panel.search = S.Input(panel, "BuildForgePerkSearch", LIST_W - 186, "Search Perks", 40)
 	panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", 8, 0)
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()

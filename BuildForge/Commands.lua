@@ -41,7 +41,7 @@ function BF:Report(plan)
 	for _, id in ipairs(p.deactivate) do self:Print("  Perk off: %s", BF.Perks.Name(id)) end
 	for _, id in ipairs(p.activate) do self:Print("  Perk on: %s", BF.Perks.Name(id)) end
 	if p.needsInnkeeper and not BF.Perks.Writable() then
-		self:Print("  |cffff6060Perk activations need the Perk window open at an innkeeper; they'll be skipped.|r")
+		self:Print("  |cffff6060Perk activations need the Perk Manager open at an innkeeper; they'll be skipped.|r")
 	end
 	if #p.options > 0 then self:Print("  Perk option changes: %d", #p.options) end
 	for _, s in ipairs(p.spells) do

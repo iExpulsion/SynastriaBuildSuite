@@ -89,7 +89,7 @@ local BUTTONS = {
 	ghost = { bg = { 0, 0, 0, 0 }, hover = S.colors.hover, border = { 0, 0, 0, 0 }, text = S.colors.muted },
 }
 
--- Disabled buttons of every kind look the same: flat grey, so faded text never sits on a bright fill.
+-- Disabled buttons of every kind look the same: flat gray, so faded text never sits on a bright fill.
 local DISABLED = { bg = { 0.13, 0.13, 0.16, 1 }, border = S.colors.border, text = { 0.45, 0.45, 0.5, 1 } }
 
 local function paint(b)

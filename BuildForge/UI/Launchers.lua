@@ -1,7 +1,7 @@
 local _, NS = ...
 local BF = NS.BF
 
--- "BuildForge" buttons above the Perk window and the talent frame. The server sends the Perk window's Lua
+-- "BuildForge" buttons above the Perk Manager and the talent frame. The server sends the Perk Manager's Lua
 -- after login and the talent frame may load on demand, so this checks until both exist.
 local Launchers = {}
 BF.Launchers = Launchers

@@ -177,7 +177,7 @@ function Perks.Plan(wanted, inScope)
 	return plan
 end
 
--- Options and chosen abilities apply anywhere; activations only with the Perk window open at an innkeeper.
+-- Options and chosen abilities apply anywhere; activations only with the Perk Manager open at an innkeeper.
 -- Returns true when activations were sent.
 function Perks.Apply(plan)
 	local writable = Perks.Writable()
@@ -365,7 +365,7 @@ end
 
 local DESC_COLORS = { text = "|cffffffff", symbol = "|cff8080ff", symbol2 = "|cffffffff" }
 
--- The perk's effect at a rank, built the way the Perk window builds it (GeneratePerkDescription is local there).
+-- The perk's effect at a rank, built the way the Perk Manager builds it (GeneratePerkDescription is local there).
 function Perks.Description(id, rank)
 	local perk = PerkMgrPerks[id]
 	local level = perk and perk.levels and (perk.levels[rank] or perk.levels[1])
@@ -382,7 +382,7 @@ function Perks.Description(id, rank)
 	return text
 end
 
--- The Perk window's "Additional information" notes, by perk.info bit (ProcessInfo is local there).
+-- The Perk Manager's "Additional information" notes, by perk.info bit (ProcessInfo is local there).
 local INFO = {
 	[0x1] = "This amount is based on your character level.",
 	[0x8] = "Resource means mana, energy, rage, runic power or focus.",

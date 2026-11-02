@@ -27,7 +27,7 @@ local function lines(plan)
 	if relink then
 		add(("Applying links this build to %s"):format(BF:SpecName(plan.group)),
 			linked and BF.db.builds[linked] and S.Hex(C.warn, "Replaces " .. linked) or S.Hex(C.good, "New Link"), false, function(tt)
-				tt:AddLine("Spec link", 1, 1, 1)
+				tt:AddLine("Spec Link", 1, 1, 1)
 				tt:AddLine("The build joins Your Specs for this spec. A build linked to it before loses that link.", 0.8, 0.8, 0.8, true)
 			end)
 	end
@@ -43,8 +43,8 @@ local function lines(plan)
 	if #p.activate + #p.deactivate + #p.options + #p.spells + #p.skipped > 0 then
 		add("Perks", nil, true)
 		if p.needsInnkeeper and not BF.Perks.Writable() then
-			add(S.Hex(C.warn, "Turning perks on or off needs the Perk window open at an innkeeper."), nil, false, function(tt)
-				tt:AddLine("Away from an innkeeper", 1, 1, 1)
+			add(S.Hex(C.warn, "Turning perks on or off needs the Perk Manager open at an innkeeper."), nil, false, function(tt)
+				tt:AddLine("Away from an Innkeeper", 1, 1, 1)
 				tt:AddLine("Those changes are skipped. Options and chosen abilities still apply; apply again at an innkeeper for the rest.", 0.8, 0.8, 0.8, true)
 			end)
 		end
@@ -73,7 +73,7 @@ local function lines(plan)
 			end
 		elseif entry.points > 0 then
 			local short = entry.points > entry.unspent and S.Hex(C.bad, (" (only %d unspent)"):format(entry.unspent)) or ""
-			talentLines[#talentLines + 1] = { name, S.Hex(C.good, ("Spend %d point(s)"):format(entry.points)) .. short }
+			talentLines[#talentLines + 1] = { name, S.Hex(C.good, ("Spend %d Point(s)"):format(entry.points)) .. short }
 		end
 	end
 	for _, s in ipairs(t.skipped) do talentLines[#talentLines + 1] = { BF.Window.ClassText({ s.class }), S.Hex(C.muted, "Skipped: " .. s.reason) } end
@@ -89,8 +89,8 @@ local function lines(plan)
 
 	if plan.pet or plan.spec then
 		add("Other", nil, true)
-		if plan.pet then add("Hunter pet aspects", S.Hex(C.good, "Change")) end
-		if plan.spec then add("Spec name", S.Hex(C.good, plan.spec)) end
+		if plan.pet then add("Hunter Pet Aspects", S.Hex(C.good, "Change")) end
+		if plan.spec then add("Spec Name", S.Hex(C.good, plan.spec)) end
 	end
 	return out
 end

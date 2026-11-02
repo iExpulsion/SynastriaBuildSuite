@@ -125,7 +125,7 @@ local function create()
 	f.nameLabel = S.Text(f, "small", C.muted)
 	f.nameLabel:SetPoint("BOTTOMLEFT", PAD, 60)
 	f.nameLabel:SetText("Name")
-	f.name = S.Input(f, "BuildForgeImportName", 240, "Build name", 40)
+	f.name = S.Input(f, "BuildForgeImportName", 240, "Build Name", 40)
 	f.name:SetPoint("LEFT", f.nameLabel, "RIGHT", 10, 0)
 	f.name:HookScript("OnTextChanged", function(_, userInput)
 		if userInput then box.nameEdited = true end

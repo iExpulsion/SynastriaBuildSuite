@@ -290,7 +290,7 @@ end
 local function renderInnkeeper()
 	local at = BF.Perks.Writable()
 	frame.innDot:SetVertexColor(unpack(at and C.good or C.muted))
-	frame.innText:SetText(at and "Perk window open at an innkeeper" or "Perk activations need an innkeeper")
+	frame.innText:SetText(at and "Perk Manager open at an innkeeper" or "Perk activations need an innkeeper")
 	frame.innText:SetTextColor(unpack(at and C.good or C.muted))
 end
 
@@ -439,7 +439,7 @@ local function createSidebar(f)
 	edge:SetPoint("TOPRIGHT")
 	edge:SetPoint("BOTTOMRIGHT")
 
-	f.search = S.Input(side, "BuildForgeSearch", SIDEBAR_W - 24, "Search builds", 40)
+	f.search = S.Input(side, "BuildForgeSearch", SIDEBAR_W - 24, "Search Builds", 40)
 	f.search:SetPoint("TOPLEFT", 12, -12)
 	f.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()
@@ -512,7 +512,7 @@ local function createBuildHeader(main)
 
 	f.specLabel = S.Text(main, "small", C.muted)
 	f.specLabel:SetPoint("LEFT", f.classes, "RIGHT", 18, 0)
-	f.specLabel:SetText("Spec name")
+	f.specLabel:SetText("Spec Name")
 	f.spec = S.Input(main, "BuildForgeSpecBox", 110, "None", 14)
 	f.spec:SetHeight(20)
 	f.spec:SetPoint("LEFT", f.specLabel, "RIGHT", 8, 0)
