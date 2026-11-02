@@ -99,22 +99,26 @@ function BF:Rename(build, newName)
 	return ok
 end
 
--- Imports a pasted string. Calls onDone(build) once it's stored.
-function BF:Import(text, onDone)
-	local build, err = BF.Codec.Decode(text)
-	if not build then
+local function sectionNames(sections)
+	local names = {}
+	for _, section in ipairs(BF.Codec.SECTIONS) do
+		if sections[section.key] then names[#names + 1] = section.label end
+	end
+	return table.concat(names, ", ")
+end
+
+-- Imports a pasted string, keeping only the chosen sections ({ key = true }, nil for all). With `into`, those
+-- sections replace the same sections of that build instead of making a new one. Calls onDone(build) once stored.
+function BF:Import(text, onDone, sections, into)
+	local decoded, err = BF.Codec.Decode(text)
+	if not decoded then
 		self:Print("|cffff6060Import failed: %s.|r", err)
 	else
-		build.name = build.name or ("Imported " .. date("%Y-%m-%d %H:%M"))
-		if not build.classes or #build.classes == 0 then build.classes = BF.Build.InferClasses(build) end
+		local has = BF.Codec.Has(decoded)
+		local build = BF.Codec.Pick(decoded, sections)
 		local own, misc = BF.Perks.Split(build.perks)
-		build.perks = own
-		local function store()
-			self.db.builds[build.name] = build
-			BF.Dialogs.HideText()
-			self:Print("Imported %s.", build.name)
-			self:Changed()
-			if onDone then onDone(build) end
+		if build.perks then build.perks = own end
+		local function offerShared()
 			if #misc > 0 then
 				BF.Dialogs.Confirm("BUILDFORGE_SHARED", #misc, function()
 					self:Print("Added %d perk(s) to Shared Perks.", BF.Perks.AddShared(misc))
@@ -122,10 +126,37 @@ function BF:Import(text, onDone)
 				end)
 			end
 		end
-		if self.db.builds[build.name] then
-			BF.Dialogs.Confirm("BUILDFORGE_OVERWRITE", build.name, store)
+		if into then
+			-- only sections the string has replace the build's, so a talents-only string leaves the rest alone
+			local replaced = {}
+			for _, section in ipairs(BF.Codec.SECTIONS) do
+				if has[section.key] and (not sections or sections[section.key]) then
+					replaced[section.key] = true
+					for _, field in ipairs(section.fields) do into[field] = build[field] end
+				end
+			end
+			if not into.classes or #into.classes == 0 then into.classes = build.classes end
+			BF.Dialogs.HideText()
+			self:Print("Imported %s into %s.", sectionNames(replaced), into.name)
+			self:Changed()
+			if onDone then onDone(into) end
+			offerShared()
 		else
-			store()
+			build.name = build.name or ("Imported " .. date("%Y-%m-%d %H:%M"))
+			if not build.classes or #build.classes == 0 then build.classes = BF.Build.InferClasses(build) end
+			local function store()
+				self.db.builds[build.name] = build
+				BF.Dialogs.HideText()
+				self:Print("Imported %s.", build.name)
+				self:Changed()
+				if onDone then onDone(build) end
+				offerShared()
+			end
+			if self.db.builds[build.name] then
+				BF.Dialogs.Confirm("BUILDFORGE_OVERWRITE", build.name, store)
+			else
+				store()
+			end
 		end
 	end
 end
@@ -140,10 +171,10 @@ function BF:ConfirmApply(build)
 	end)
 end
 
--- Shared perks are personal setup, so exports leave them out.
+-- Shared perks are personal setup, so exports leave them out. The export box picks which sections go.
 function BF:Export(build)
 	BF.Perks.MoveShared(build)
-	BF.Dialogs.ShowExport(build.name, BF.Codec.Encode(build))
+	BF.Dialogs.ShowExport(build)
 end
 
 function BF:EquipGear(build)
@@ -197,7 +228,7 @@ local handlers = {}
 handlers[""] = function() BF.Window.Toggle() end
 handlers.help = help
 handlers.list = list
-handlers.import = function() BF.Dialogs.ShowImport(function(text) BF:Import(text) end) end
+handlers.import = function() BF.Dialogs.ShowImport(function(text, sections) BF:Import(text, nil, sections) end) end
 
 handlers.save = function(arg)
 	if arg == "" then

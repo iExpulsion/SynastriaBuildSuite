@@ -380,13 +380,16 @@ local function newBuild()
 	Window.Select(build.name)
 end
 
+-- Import offers to bring sections into the selected build as well as making a new one.
 local function importBuild()
-	BF.Dialogs.ShowImport(function(text)
+	local target = selectedBuild()
+	if target and target.sharedOnly then target = nil end
+	BF.Dialogs.ShowImport(function(text, sections, into)
 		BF:Import(text, function(build)
 			state.collapsed[table.concat(build.classes or {}, "/")] = false
 			Window.Select(build.name)
-		end)
-	end)
+		end, sections, into and target or nil)
+	end, target and target.name)
 end
 
 local function savePosition(f)

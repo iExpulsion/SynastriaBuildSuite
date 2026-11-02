@@ -60,6 +60,42 @@ local function sortedKeys(t)
 	return keys
 end
 
+-- The parts of a build that export and import can include or leave out. Name, classes and spec name always go.
+-- Hunter pet aspects travel with perks.
+Codec.SECTIONS = {
+	{ key = "perks", label = "Perks", fields = { "perks", "pet" } },
+	{ key = "talents", label = "Talents", fields = { "talents" } },
+	{ key = "glyphs", label = "Glyphs", fields = { "glyphs" } },
+	{ key = "gear", label = "Gear", fields = { "gear" } },
+	{ key = "notes", label = "Notes", fields = { "notes" } },
+}
+
+local function filled(value)
+	return value ~= nil and value ~= "" and not (type(value) == "table" and next(value) == nil)
+end
+
+-- Which sections the build has anything in, as { key = true }.
+function Codec.Has(build)
+	local has = {}
+	for _, section in ipairs(Codec.SECTIONS) do
+		for _, field in ipairs(section.fields) do
+			if filled(build[field]) then has[section.key] = true end
+		end
+	end
+	return has
+end
+
+-- A copy of the build with only the chosen sections ({ key = true }); nil keeps them all.
+function Codec.Pick(build, sections)
+	local out = { name = build.name, classes = build.classes, spec = build.spec }
+	for _, section in ipairs(Codec.SECTIONS) do
+		if not sections or sections[section.key] then
+			for _, field in ipairs(section.fields) do out[field] = build[field] end
+		end
+	end
+	return out
+end
+
 function Codec.Encode(build)
 	local f = {}
 	f[#f + 1] = "n=" .. esc(build.name)

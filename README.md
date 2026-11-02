@@ -22,6 +22,11 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   unlearn your talents at a class trainer and BuildForge reopens the review, ready to apply.
   Export gives the share string; Delete asks first. The title bar shows whether the Perk window is open at an
   innkeeper, which perk activations need.
+- **Export and Import by section:** both boxes have Perks, Talents, Glyphs, Gear and Notes checkboxes. Export
+  rebuilds the string as you check and uncheck them, and remembers the choice. Import shows which sections the
+  pasted string has; Import as New makes a build from the checked ones, and Into (the selected build) replaces
+  just those sections of it, leaving the rest. Hunter pet aspects go with Perks; the name, classes and spec name
+  always go.
 - **Specs:** Synastria keeps perks, talents and glyphs per talent spec (up to 8). With more than one spec, the
   header's Assign to menu ties a saved build to one of this character's specs (it then reads Linked to, with
   Active Spec when that spec is active), and applying a build links it to the active spec; Review Changes says
@@ -68,8 +73,8 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 | `/bforge list` | Lists saved builds; builds for other classes are marked |
 | `/bforge save <name>` | Saves your active spec as a build |
 | `/bforge apply <name>` | Lists what would change in chat, then asks before applying |
-| `/bforge export <name>` | Shows the build as a one-line string to copy |
-| `/bforge import` | Opens a box to paste a BuildForge or SynastriaPerkManager string |
+| `/bforge export <name>` | Shows the build as a one-line string to copy, with section checkboxes |
+| `/bforge import` | Opens a box to paste a BuildForge or SynastriaPerkManager string and pick its sections |
 | `/bforge gear <name>` | Shows each slot: worn, in bags or missing |
 | `/bforge equip <name>` | Equips the build's gear you're carrying |
 | `/bforge note <name> <text>` | Sets the build's notes |

@@ -4,22 +4,87 @@ local BF = NS.BF
 local Dialogs = {}
 BF.Dialogs = Dialogs
 
-local textFrame
+-- The export / import box: a row of section checkboxes (Perks, Talents, Glyphs, Gear, Notes) over the string.
+-- Export re-encodes as sections are toggled and remembers the choice; import shows which sections the pasted
+-- string has and imports only the checked ones, as a new build or into the selected build.
+local box
 
--- The stock dialog background is mostly see-through, so fill with a near-opaque dark color instead.
-function Dialogs.SetBackdrop(f)
-	f:SetBackdrop({
-		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-		tile = true, tileSize = 32, edgeSize = 32,
-		insets = { left = 11, right = 12, top = 12, bottom = 11 },
-	})
-	f:SetBackdropColor(0.06, 0.06, 0.08, 0.95)
+local W, H, PAD = 560, 340, 16
+
+local function chosen()
+	local sections = {}
+	for _, t in ipairs(box.toggles) do
+		if t.check.on and t.check.usable then sections[t.key] = true end
+	end
+	return sections
 end
 
-local function createTextFrame()
+local function setToggles(available, checked)
+	for _, t in ipairs(box.toggles) do
+		t.check:SetEnabled(available[t.key])
+		t.check:SetChecked(available[t.key] and checked[t.key])
+		t.label:SetTextColor(unpack(available[t.key] and BF.Style.colors.text or BF.Style.colors.muted))
+	end
+end
+
+local function refreshExport()
+	local text = BF.Codec.Encode(BF.Codec.Pick(box.build, chosen()))
+	box.edit:SetText(text)
+	box.edit:SetCursorPosition(0)
+	box.note:SetText(("%d characters."):format(#text))
+end
+
+local function refreshImport()
+	local decoded, err = BF.Codec.Decode(box.edit:GetText())
+	local text = box.edit:GetText():gsub("%s", "")
+	local has = decoded and BF.Codec.Has(decoded) or {}
+	setToggles(has, has)
+	box.decoded = decoded
+	local S, C = BF.Style, BF.Style.colors
+	if decoded then
+		local who = decoded.classes and #decoded.classes > 0 and BF.Window.ClassText(decoded.classes, true) or "no classes listed"
+		box.note:SetText(S.Hex(C.good, (decoded.name or "Perk string") .. ": ") .. who)
+	else
+		box.note:SetText(text == "" and "" or S.Hex(C.bad, err))
+	end
+	if decoded then box.primary:Enable() box.secondary:Enable() else box.primary:Disable() box.secondary:Disable() end
+end
+
+local function toggled(row)
+	row.check:SetChecked(not row.check.on)
+	if box.mode == "export" then
+		BF.db.exportSections = chosen()
+		refreshExport()
+	end
+end
+
+local function newToggle(parent, section)
+	local S = BF.Style
+	local row = CreateFrame("Button", nil, parent)
+	row:SetSize(84, 20)
+	row.key = section.key
+	row.check = S.Check(row, 14, function() row:Click() end)
+	row.check:SetPoint("LEFT", 0, 0)
+	row.label = S.Text(row, "small")
+	row.label:SetPoint("LEFT", row.check, "RIGHT", 6, 0)
+	row.label:SetText(section.label)
+	row:SetScript("OnClick", function(self)
+		if self.check.usable then toggled(self) end
+	end)
+	row:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_TOP")
+		GameTooltip:SetText(self.check.usable and ("Include %s."):format(section.label)
+			or (box.mode == "export" and "This build has none." or "The string has none."), nil, nil, nil, nil, true)
+		GameTooltip:Show()
+	end)
+	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	return row
+end
+
+local function create()
+	local S, C = BF.Style, BF.Style.colors
 	local f = CreateFrame("Frame", "BuildForgeTextFrame", UIParent)
-	f:SetSize(520, 260)
+	f:SetSize(W, H)
 	f:SetPoint("CENTER")
 	f:SetFrameStrata("DIALOG")
 	f:EnableMouse(true)
@@ -27,62 +92,104 @@ local function createTextFrame()
 	f:RegisterForDrag("LeftButton")
 	f:SetScript("OnDragStart", f.StartMoving)
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
-	Dialogs.SetBackdrop(f)
+	S.Panel(f, { C.window[1], C.window[2], C.window[3], 1 }, C.border)
 	tinsert(UISpecialFrames, "BuildForgeTextFrame")
 
-	f.title = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	f.title:SetPoint("TOP", 0, -16)
+	f.title = S.Text(f, "large")
+	f.title:SetPoint("TOPLEFT", PAD, -PAD)
+	f.sub = S.Text(f, "small", C.muted)
+	f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
+	local close = S.Button(f, "Close", "ghost", 56, function() f:Hide() end)
+	close:SetPoint("TOPRIGHT", -8, -10)
 
-	local scroll = CreateFrame("ScrollFrame", "BuildForgeTextScroll", f, "UIPanelScrollFrameTemplate")
-	scroll:SetPoint("TOPLEFT", 20, -38)
-	scroll:SetPoint("BOTTOMRIGHT", -40, 48)
+	local include = S.Text(f, "small", C.muted)
+	include:SetPoint("TOPLEFT", PAD, -62)
+	include:SetText("Include")
+	f.toggles = {}
+	for i, section in ipairs(BF.Codec.SECTIONS) do
+		local t = newToggle(f, section)
+		t:SetPoint("LEFT", include, "RIGHT", 12 + (i - 1) * 88, 0)
+		f.toggles[i] = t
+	end
 
+	local well = CreateFrame("Frame", nil, f)
+	well:SetPoint("TOPLEFT", PAD, -84)
+	well:SetPoint("BOTTOMRIGHT", -PAD, 52)
+	S.Panel(well, { 0.04, 0.04, 0.05, 1 }, C.border)
+	well:EnableMouse(true)
+	local scroll = CreateFrame("ScrollFrame", "BuildForgeTextScroll", well, "UIPanelScrollFrameTemplate")
+	scroll:SetPoint("TOPLEFT", 8, -8)
+	scroll:SetPoint("BOTTOMRIGHT", -16, 8)
+	BF.List.AutoHideBar(scroll, "BuildForgeTextScroll")
 	local edit = CreateFrame("EditBox", nil, scroll)
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
 	edit:SetFontObject(ChatFontNormal)
-	edit:SetWidth(450)
+	edit:SetWidth(W - 2 * PAD - 32)
 	edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+	edit:SetScript("OnTextChanged", function(self, userInput)
+		if box.mode == "import" then
+			refreshImport()
+		elseif userInput then
+			refreshExport()
+		end
+	end)
 	scroll:SetScrollChild(edit)
+	well:SetScript("OnMouseDown", function() edit:SetFocus() end)
 	f.edit = edit
 
-	local close = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-	close:SetSize(90, 22)
-	close:SetPoint("BOTTOMRIGHT", -18, 16)
-	close:SetText(CLOSE)
-	close:SetScript("OnClick", function() f:Hide() end)
-
-	f.action = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-	f.action:SetSize(90, 22)
-	f.action:SetPoint("RIGHT", close, "LEFT", -6, 0)
-	f.action:SetText("Import")
+	f.note = S.Text(f, "small", C.muted)
+	f.note:SetPoint("BOTTOMLEFT", PAD, 20)
+	f.primary = S.Button(f, "Import as New", "primary", 110, function()
+		if box.onImport then box.onImport(box.edit:GetText(), chosen(), false) end
+	end, "Make a new build from the checked sections.")
+	f.primary:SetPoint("BOTTOMRIGHT", -PAD, 14)
+	f.secondary = S.Button(f, "Into Build", "secondary", 110, function()
+		if box.onImport then box.onImport(box.edit:GetText(), chosen(), true) end
+	end)
+	f.secondary:SetPoint("RIGHT", f.primary, "LEFT", -6, 0)
+	f.note:SetPoint("RIGHT", f.secondary, "LEFT", -12, 0)
 	return f
 end
 
-local function showText(title, text, onImport)
-	textFrame = textFrame or createTextFrame()
-	textFrame.title:SetText(title)
-	textFrame.edit:SetText(text or "")
-	textFrame.edit:SetCursorPosition(0)
-	if onImport then
-		textFrame.action:SetScript("OnClick", function() onImport(textFrame.edit:GetText()) end)
-		textFrame.action:Show()
-	else
-		textFrame.action:Hide()
-	end
-	textFrame:Show()
+-- Shows the build as a string, with the sections last chosen for export.
+function Dialogs.ShowExport(build)
+	box = box or create()
+	box.mode, box.build, box.onImport = "export", build, nil
+	box.title:SetText("Export: " .. build.name)
+	box.sub:SetText("Click the box, then Ctrl+A and Ctrl+C to copy. Uncheck what you'd rather not share.")
+	local remembered = BF.db.exportSections
+	local checked = {}
+	for _, section in ipairs(BF.Codec.SECTIONS) do checked[section.key] = not remembered or remembered[section.key] == true end
+	setToggles(BF.Codec.Has(build), checked)
+	box.primary:Hide()
+	box.secondary:Hide()
+	refreshExport()
+	box:Show()
 end
 
-function Dialogs.ShowExport(name, text)
-	showText("Export: " .. name .. " (click, Ctrl+A, Ctrl+C)", text)
-end
-
-function Dialogs.ShowImport(onImport)
-	showText("Import a Build (paste, then Import)", "", onImport)
+-- Asks for a string; onImport(text, sections, into) runs with the checked sections, `into` true when the user
+-- chose to import into `targetName` (the selected build) rather than as a new build.
+function Dialogs.ShowImport(onImport, targetName)
+	box = box or create()
+	box.mode, box.build, box.onImport = "import", nil, onImport
+	box.title:SetText("Import a Build")
+	box.sub:SetText("Paste a BuildForge or SynastriaPerkManager string, then pick the sections to bring in.")
+	box.primary:Show()
+	box.secondary:SetLabel(targetName and ("Into " .. targetName) or "Into Build")
+	box.secondary.tooltipText = targetName and ("Replace those sections of %s with the string's."):format(targetName) or nil
+	if targetName then box.secondary:Show() else box.secondary:Hide() end
+	box.edit:SetText("")
+	refreshImport()
+	box:Show()
 end
 
 function Dialogs.HideText()
-	if textFrame then textFrame:Hide() end
+	if box then box:Hide() end
+end
+
+function Dialogs.Frame()
+	return box
 end
 
 StaticPopupDialogs["BUILDFORGE_APPLY"] = {
