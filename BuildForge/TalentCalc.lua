@@ -13,6 +13,16 @@ function Calc.Trees(class)
 	return NS.TalentData and NS.TalentData[class]
 end
 
+-- Each copy of a class brings its own 71 points to that class's trees, so a Warrior/Warrior build has 142.
+function Calc.MaxPoints(build, class)
+	local classes = build.classes and #build.classes > 0 and build.classes or BF:PlayerClasses()
+	local copies = 0
+	for _, key in ipairs(classes) do
+		if key == class then copies = copies + 1 end
+	end
+	return math.max(copies, 1) * Calc.MAX_POINTS
+end
+
 -- The build's ranks for a class, created and padded to every talent so the editor can index them directly.
 function Calc.Ensure(build, class)
 	build.talents = build.talents or {}
@@ -46,17 +56,18 @@ local function pointsBelowTier(tree, ranks, tier)
 	return sum
 end
 
--- Whether one more point can go into talent i of tree tab, and why not.
-function Calc.CanAdd(class, trees, tab, i)
+-- Whether one more point can go into talent i of tree tab, and why not. `cap` defaults to one class's points.
+function Calc.CanAdd(class, trees, tab, i, cap)
 	local tree = Calc.Trees(class)[tab]
 	local t, ranks = tree.talents[i], trees[tab]
 	local rank = ranks[i] or 0
 	local need = (t[1] - 1) * Calc.POINTS_PER_TIER
+	cap = cap or Calc.MAX_POINTS
 	local ok, reason = true, nil
 	if rank >= #t[3] then
 		ok, reason = false, "Maximum rank"
-	elseif Calc.TotalPoints(trees) >= Calc.MAX_POINTS then
-		ok, reason = false, ("All %d points are spent"):format(Calc.MAX_POINTS)
+	elseif Calc.TotalPoints(trees) >= cap then
+		ok, reason = false, ("All %d points are spent"):format(cap)
 	elseif Calc.TreePoints(ranks) < need then
 		ok, reason = false, ("Requires %d points in %s"):format(need, tree.name)
 	elseif t[4] and (ranks[t[4]] or 0) < t[5] then
@@ -93,8 +104,8 @@ function Calc.CanRemove(class, trees, tab, i)
 	return ok, reason
 end
 
-function Calc.Add(class, trees, tab, i)
-	local ok = Calc.CanAdd(class, trees, tab, i)
+function Calc.Add(class, trees, tab, i, cap)
+	local ok = Calc.CanAdd(class, trees, tab, i, cap)
 	if ok then trees[tab][i] = trees[tab][i] + 1 end
 	return ok
 end

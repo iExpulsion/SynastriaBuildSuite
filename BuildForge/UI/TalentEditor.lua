@@ -58,7 +58,7 @@ local function showTooltip(button)
 	if rank > 0 and rank < max then
 		GameTooltip:AddLine("Next rank: " .. (GetSpellInfo(t[3][rank + 1]) or "") .. " (rank " .. (rank + 1) .. ")", 0.6, 0.8, 1)
 	end
-	local canAdd, addReason = Calc.CanAdd(class, trees, tab, i)
+	local canAdd, addReason = Calc.CanAdd(class, trees, tab, i, Calc.MaxPoints(current, class))
 	if not canAdd and addReason and rank < max then GameTooltip:AddLine(addReason, 1, 0.4, 0.4, true) end
 	local live = liveRank(class, tab, i)
 	if live then GameTooltip:AddLine(("Your character: %d/%d"):format(live, max), live == rank and 0.4 or 1, live == rank and 0.85 or 0.8, live == rank and 0.4 or 0.3) end
@@ -68,13 +68,14 @@ end
 
 local function onClick(button, mouse)
 	local trees = current.talents[state.class]
+	local cap = Calc.MaxPoints(current, state.class)
 	local changed, reason
 	if mouse == "RightButton" then
 		changed = Calc.Remove(state.class, trees, button.tab, button.index)
 		if not changed then reason = select(2, Calc.CanRemove(state.class, trees, button.tab, button.index)) end
 	else
-		changed = Calc.Add(state.class, trees, button.tab, button.index)
-		if not changed then reason = select(2, Calc.CanAdd(state.class, trees, button.tab, button.index)) end
+		changed = Calc.Add(state.class, trees, button.tab, button.index, cap)
+		if not changed then reason = select(2, Calc.CanAdd(state.class, trees, button.tab, button.index, cap)) end
 	end
 	if changed then
 		PlaySound("igMainMenuOptionCheckBoxOn")
@@ -175,7 +176,7 @@ local function layoutTree(col, class, tab)
 	col.layoutKey = class .. tab
 end
 
-local function paintTree(col, class, tab, trees)
+local function paintTree(col, class, tab, trees, cap)
 	local tree = Calc.Trees(class)[tab]
 	local ranks = trees[tab]
 	for i, t in ipairs(tree.talents) do
@@ -184,7 +185,7 @@ local function paintTree(col, class, tab, trees)
 		local look
 		if rank >= max then look = "maxed"
 		elseif rank > 0 then look = "partial"
-		elseif Calc.CanAdd(class, trees, tab, i) then look = "open"
+		elseif Calc.CanAdd(class, trees, tab, i, cap) then look = "open"
 		else look = "locked" end
 		b.look = look
 		b:SetBackdropBorderColor(unpack(BORDER[look]))
@@ -238,11 +239,12 @@ function Editor.Render(build)
 		if not found then state.class = classes[1] end
 		renderClassBar(classes)
 		local trees = Calc.Ensure(build, state.class)
+		local cap = Calc.MaxPoints(build, state.class)
 		local parts = {}
 		for tab, col in ipairs(panel.columns) do
 			if Calc.Trees(state.class)[tab] then
 				if col.layoutKey ~= state.class .. tab then layoutTree(col, state.class, tab) end
-				paintTree(col, state.class, tab, trees)
+				paintTree(col, state.class, tab, trees, cap)
 				col:Show()
 				parts[#parts + 1] = Calc.TreePoints(trees[tab])
 			else
@@ -251,7 +253,7 @@ function Editor.Render(build)
 		end
 		local total = Calc.TotalPoints(trees)
 		summary = ("%s  %s   %s"):format(BF.Window.ClassText({ state.class }), table.concat(parts, " / "),
-			S.Hex(total == Calc.MAX_POINTS and C.good or C.muted, ("%d of %d points"):format(total, Calc.MAX_POINTS)))
+			S.Hex(total == cap and C.good or C.muted, ("%d of %d points"):format(total, cap)))
 	end
 	return summary
 end

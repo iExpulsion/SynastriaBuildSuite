@@ -18,9 +18,10 @@ its title bar to move it (it remembers where); Esc closes it.
   innkeeper, which perk activations need.
 - **Tabs:** Perks, Talents, Glyphs, Gear and Notes. A badge on a tab counts what differs from your character.
 - **Talents:** a talent calculator for the build's classes, any class, not just yours. Left-click adds a point,
-  right-click removes one; tier, prerequisite and 71-point limits work like the talent frame, and the tooltip
-  shows your character's rank when it's the class shown in your talent window. Builds with two classes get a
-  button per class. Use My Talents copies your spec; Reset Class clears the class shown.
+  right-click removes one; tier, prerequisite and point limits work like the talent frame, and the tooltip
+  shows your character's rank when it's the class shown in your talent window. Each class gets 71 points for
+  its own trees, so a same-class dual (Warrior x2) gets 142. Builds with two different classes get a button
+  per class. Use My Talents copies your spec; Reset Class clears the class shown.
 - **Perks, Talents, Glyphs:** what the build has, compared with your character right now (Active, To Activate,
   To Deactivate, points still to spend, glyphs to socket). Each tab can take your current setup for that part.
 - **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of

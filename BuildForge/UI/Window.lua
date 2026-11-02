@@ -32,12 +32,18 @@ local function className(key)
 	return LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[key] or key
 end
 
--- Class names in class colors, or plain.
+-- Class names in class colors, or plain. A class picked twice shows once with a count.
 function Window.ClassText(classes, plain)
-	local parts = {}
+	local order, copies = {}, {}
 	for _, key in ipairs(classes or {}) do
+		if not copies[key] then order[#order + 1] = key end
+		copies[key] = (copies[key] or 0) + 1
+	end
+	local parts = {}
+	for _, key in ipairs(order) do
 		local c = not plain and RAID_CLASS_COLORS[key]
-		parts[#parts + 1] = c and ("|cff%02x%02x%02x%s|r"):format(c.r * 255, c.g * 255, c.b * 255, className(key)) or className(key)
+		local name = className(key) .. (copies[key] > 1 and (" x" .. copies[key]) or "")
+		parts[#parts + 1] = c and ("|cff%02x%02x%02x%s|r"):format(c.r * 255, c.g * 255, c.b * 255, name) or name
 	end
 	return table.concat(parts, " / ")
 end
