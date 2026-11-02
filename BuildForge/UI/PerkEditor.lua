@@ -58,6 +58,14 @@ local function rowStatus(id, entry, look)
 	return status
 end
 
+-- The perk's name with the character's rank after it; unlearned perks show 0 in yellow.
+local function rowText(perk)
+	local rank, maxRank = GetPerkAcquired(perk.id), perk.levels and #perk.levels or 0
+	local text = rank and tostring(rank) or "0"
+	if maxRank > 0 then text = text .. "/" .. maxRank end
+	return perk.name .. "  " .. S.Hex(rank and C.muted or C.warn, text)
+end
+
 local function toggle(id)
 	local perk = PerkMgrPerks[id]
 	if perk and not Perks.Locked(perk) then
@@ -141,7 +149,7 @@ local function renderList(build, mask, look)
 				local entry = Perks.Entry(build, id)
 				local locked = Perks.Locked(perk)
 				list:Add({
-					text = perk.name, icon = spellIcon(perk.icon), indent = 4,
+					text = rowText(perk), icon = spellIcon(perk.icon), indent = 4,
 					check = entry ~= nil, checkEnabled = not locked,
 					checkTooltip = locked and "This perk can't be turned on or off." or nil,
 					onCheck = function() toggle(id) end,
