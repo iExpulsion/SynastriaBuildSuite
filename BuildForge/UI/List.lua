@@ -164,7 +164,8 @@ function List:Add(entry)
 
 	row.text:SetFontObject(entry.header and style.header or style.row)
 	row.text:SetText(entry.text or "")
-	if not entry.header then row.text:SetTextColor(unpack(S.colors.text)) end
+	-- rows are reused, so both kinds set their color; a header left to its font would keep a build row's white
+	row.text:SetTextColor(unpack(entry.header and S.colors.heading or S.colors.text))
 	row.status:SetText(entry.status or "")
 	if entry.selected then
 		row.selectedTex:Show()
