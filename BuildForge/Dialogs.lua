@@ -44,6 +44,11 @@ local function refreshImport()
 	if decoded then
 		local who = decoded.classes and #decoded.classes > 0 and BF.Window.ClassText(decoded.classes, true) or "no classes listed"
 		box.note:SetText(S.Hex(C.good, (decoded.name or "Perk string") .. ": ") .. who)
+		-- the string's name, made unique so importing never replaces a build by accident, until the user types one
+		if not box.nameEdited then
+			box.name:SetText(BF:UniqueName(decoded.name or "Imported Build"))
+			box.name:UpdatePlaceholder()
+		end
 	else
 		box.note:SetText(text == "" and "" or S.Hex(C.bad, err))
 	end
@@ -115,6 +120,19 @@ local function create()
 	local well = CreateFrame("Frame", nil, f)
 	well:SetPoint("TOPLEFT", PAD, -84)
 	well:SetPoint("BOTTOMRIGHT", -PAD, 52)
+	f.well = well
+
+	f.nameLabel = S.Text(f, "small", C.muted)
+	f.nameLabel:SetPoint("BOTTOMLEFT", PAD, 60)
+	f.nameLabel:SetText("Name")
+	f.name = S.Input(f, "BuildForgeImportName", 240, "Build name", 40)
+	f.name:SetPoint("LEFT", f.nameLabel, "RIGHT", 10, 0)
+	f.name:HookScript("OnTextChanged", function(_, userInput)
+		if userInput then box.nameEdited = true end
+	end)
+	f.nameHint = S.Text(f, "small", C.muted)
+	f.nameHint:SetPoint("LEFT", f.name, "RIGHT", 10, 0)
+	f.nameHint:SetText("For Import as New.")
 	S.Panel(well, { 0.04, 0.04, 0.05, 1 }, C.border)
 	well:EnableMouse(true)
 	local scroll = CreateFrame("ScrollFrame", "BuildForgeTextScroll", well, "UIPanelScrollFrameTemplate")
@@ -151,8 +169,9 @@ local function create()
 	f.note = S.Text(f, "small", C.muted)
 	f.note:SetPoint("BOTTOMLEFT", PAD, 20)
 	f.primary = S.Button(f, "Import as New", "primary", 110, function()
-		if box.onImport then box.onImport(box.edit:GetText(), chosen(), false) end
-	end, "Make a new build from the checked sections.")
+		local name = box.name:GetText():gsub("^%s+", ""):gsub("%s+$", "")
+		if box.onImport then box.onImport(box.edit:GetText(), chosen(), false, name ~= "" and name or nil) end
+	end, "Make a new build from the checked sections, under the name above.")
 	f.primary:SetPoint("BOTTOMRIGHT", -PAD, 14)
 	f.secondary = S.Button(f, "Into Build", "secondary", 110, function()
 		if box.onImport then box.onImport(box.edit:GetText(), chosen(), true) end
@@ -182,12 +201,14 @@ function Dialogs.ShowExport(build)
 	box.secondary:Hide()
 	box.selectAll:Show()
 	box.placeholder:Hide()
+	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Hide() end
+	box.well:SetPoint("BOTTOMRIGHT", -PAD, 52)
 	refreshExport()
 	box:Show()
 end
 
--- Asks for a string; onImport(text, sections, into) runs with the checked sections, `into` true when the user
--- chose to import into `targetName` (the selected build) rather than as a new build.
+-- Asks for a string; onImport(text, sections, into, name) runs with the checked sections, `into` true when the
+-- user chose to import into `targetName` (the selected build) rather than as a new build named `name`.
 function Dialogs.ShowImport(onImport, targetName)
 	box = box or create()
 	box.mode, box.build, box.onImport = "import", nil, onImport
@@ -195,6 +216,11 @@ function Dialogs.ShowImport(onImport, targetName)
 	box.sub:SetText("Paste a BuildForge or SynastriaPerkManager string, then pick the sections to bring in.")
 	box.selectAll:Hide()
 	box.placeholder:Show()
+	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Show() end
+	box.well:SetPoint("BOTTOMRIGHT", -PAD, 84)
+	box.nameEdited = false
+	box.name:SetText("")
+	box.name:UpdatePlaceholder()
 	box.primary:Show()
 	box.secondary:SetLabel(targetName and ("Into " .. targetName) or "Into Build")
 	box.secondary.tooltipText = targetName and ("Replace those sections of %s with the string's."):format(targetName) or nil

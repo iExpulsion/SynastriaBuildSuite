@@ -108,8 +108,9 @@ local function sectionNames(sections)
 end
 
 -- Imports a pasted string, keeping only the chosen sections ({ key = true }, nil for all). With `into`, those
--- sections replace the same sections of that build instead of making a new one. Calls onDone(build) once stored.
-function BF:Import(text, onDone, sections, into)
+-- sections replace the same sections of that build instead of making a new one; otherwise the new build is
+-- called `name` (default: the string's). Calls onDone(build) once stored.
+function BF:Import(text, onDone, sections, into, name)
 	local decoded, err = BF.Codec.Decode(text)
 	if not decoded then
 		self:Print("|cffff6060Import failed: %s.|r", err)
@@ -142,7 +143,7 @@ function BF:Import(text, onDone, sections, into)
 			if onDone then onDone(into) end
 			offerShared()
 		else
-			build.name = build.name or ("Imported " .. date("%Y-%m-%d %H:%M"))
+			build.name = name or build.name or ("Imported " .. date("%Y-%m-%d %H:%M"))
 			if not build.classes or #build.classes == 0 then build.classes = BF.Build.InferClasses(build) end
 			local function store()
 				self.db.builds[build.name] = build
@@ -228,7 +229,9 @@ local handlers = {}
 handlers[""] = function() BF.Window.Toggle() end
 handlers.help = help
 handlers.list = list
-handlers.import = function() BF.Dialogs.ShowImport(function(text, sections) BF:Import(text, nil, sections) end) end
+handlers.import = function()
+	BF.Dialogs.ShowImport(function(text, sections, _, name) BF:Import(text, nil, sections, nil, name) end)
+end
 
 handlers.save = function(arg)
 	if arg == "" then

@@ -384,11 +384,11 @@ end
 local function importBuild()
 	local target = selectedBuild()
 	if target and target.sharedOnly then target = nil end
-	BF.Dialogs.ShowImport(function(text, sections, into)
+	BF.Dialogs.ShowImport(function(text, sections, into, name)
 		BF:Import(text, function(build)
 			state.collapsed[table.concat(build.classes or {}, "/")] = false
 			Window.Select(build.name)
-		end, sections, into and target or nil)
+		end, sections, into and target or nil, name)
 	end, target and target.name)
 end
 

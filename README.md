@@ -25,7 +25,8 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 - **Export and Import by section:** both boxes have Perks, Talents, Glyphs, Gear and Notes checkboxes. Export
   rebuilds the string as you check and uncheck them, and remembers the choice; Select All selects the string so
   Ctrl+C copies it (WoW gives addons no clipboard access, so the key press is yours). Import shows which sections the
-  pasted string has; Import as New makes a build from the checked ones, and Into (the selected build) replaces
+  pasted string has; Import as New makes a build from the checked ones, named in the Name field (filled with the
+  string's build name, numbered if you already have one by that name), and Into (the selected build) replaces
   just those sections of it, leaving the rest. Hunter pet aspects go with Perks; the name, classes and spec name
   always go.
 - **Specs:** Synastria keeps perks, talents and glyphs per talent spec (up to 8). With more than one spec, the
