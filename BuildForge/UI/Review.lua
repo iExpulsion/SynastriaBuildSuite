@@ -48,7 +48,15 @@ local function lines(plan)
 	for _, entry in ipairs(t.classes) do
 		local name = BF.Window.ClassText({ entry.class })
 		if #entry.conflicts > 0 then
-			talentLines[#talentLines + 1] = { name, S.Hex(C.bad, ("%d talent(s) above the build: reset talents first"):format(#entry.conflicts)) }
+			talentLines[#talentLines + 1] = { name, S.Hex(C.bad, ("%d talent(s) above the build: reset talents first"):format(#entry.conflicts)),
+				function(tt)
+					tt:AddLine("Talents can only be added", 1, 1, 1)
+					tt:AddLine("Your spec has more points in these talents than the build. Unlearn your talents at a class trainer, then apply again. Or use Use My Talents on the Talents tab if your spec is the one to keep.", 0.8, 0.8, 0.8, true)
+				end }
+			for _, c in ipairs(entry.conflicts) do
+				talentLines[#talentLines + 1] = { S.Hex(C.muted, "    " .. (c.name or "Talent")),
+					S.Hex(C.bad, ("You have %d, build has %d"):format(c.have, c.want)) }
+			end
 		elseif entry.points > 0 then
 			local short = entry.points > entry.unspent and S.Hex(C.bad, (" (only %d unspent)"):format(entry.unspent)) or ""
 			talentLines[#talentLines + 1] = { name, S.Hex(C.good, ("Spend %d point(s)"):format(entry.points)) .. short }
@@ -57,7 +65,7 @@ local function lines(plan)
 	for _, s in ipairs(t.skipped) do talentLines[#talentLines + 1] = { BF.Window.ClassText({ s.class }), S.Hex(C.muted, "Skipped: " .. s.reason) } end
 	if #talentLines > 0 then
 		add("Talents", nil, true)
-		for _, l in ipairs(talentLines) do add(l[1], l[2]) end
+		for _, l in ipairs(talentLines) do add(l[1], l[2], false, l[3]) end
 	end
 
 	if #plan.glyphs > 0 then
