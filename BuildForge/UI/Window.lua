@@ -318,7 +318,7 @@ end
 
 local function renderInnkeeper()
 	local at = BF.Perks.Writable()
-	frame.innDot:SetVertexColor(unpack(at and C.good or C.muted))
+	frame.innDot:SetVertexColor(unpack(at and C.good or C.warn))
 	frame.innText:SetText(at and "Perk Manager Open at an Innkeeper" or "Perk Activations Need an Innkeeper")
 	frame.innText:SetTextColor(unpack(at and C.good or C.muted))
 end
