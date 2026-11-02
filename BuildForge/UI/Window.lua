@@ -21,6 +21,8 @@ local TABS = {
 }
 
 local frame
+-- The editor module behind each tab except Notes.
+local EDITORS = { perks = "PerkEditor", talents = "TalentEditor", glyphs = "GlyphEditor", gear = "GearEditor" }
 local state = { selected = nil, tab = "perks", collapsed = {}, search = "" }
 Window.state = state
 
@@ -192,12 +194,8 @@ local function renderTabs(build)
 		end
 		b:SetWidth(b.label:GetStringWidth() + (diff and diff > 0 and (b.badge:GetStringWidth() + 26) or 0) + 28)
 	end
-	local isNotes, isTalents, isPerks, isGear = state.tab == "notes", state.tab == "talents", state.tab == "perks", state.tab == "gear"
-	setShown(frame.notes, isNotes)
-	setShown(frame.talentEditor, isTalents)
-	setShown(frame.perkEditor, isPerks)
-	setShown(frame.gearEditor, isGear)
-	if isNotes or isTalents or isPerks or isGear then frame.content:Hide() else frame.content:Show() end
+	setShown(frame.notes, state.tab == "notes")
+	for key, editor in pairs(frame.editors) do setShown(editor, key == state.tab) end
 end
 
 local function renderActions(build)
@@ -258,19 +256,8 @@ local function renderBuild(build)
 	if state.tab == "notes" then
 		if not frame.notes.edit.focused then frame.notes.edit:SetText(build.notes or "") end
 		frame.summary:SetText(state.message or "")
-	elseif state.tab == "talents" then
-		local summary = BF.TalentEditor.Render(build)
-		frame.summary:SetText(state.message or summary or "")
-	elseif state.tab == "perks" then
-		local summary = BF.PerkEditor.Render(build)
-		frame.summary:SetText(state.message or summary or "")
-	elseif state.tab == "gear" then
-		local summary = BF.GearEditor.Render(build)
-		frame.summary:SetText(state.message or summary or "")
 	else
-		frame.content:Begin()
-		local summary = BF.Tabs.render[state.tab](frame.content, build)
-		frame.content:End()
+		local summary = BF[EDITORS[state.tab]].Render(build)
 		frame.summary:SetText(state.message or summary or "")
 	end
 end
@@ -560,16 +547,13 @@ local function createMain(f)
 	local bodyTop = BUILD_H + TABS_H + 8
 	local bodyH = H - TITLE_H - bodyTop - FOOTER_H
 	local bodyW = W - SIDEBAR_W - 24
-	f.content = BF.List.New(main, "BuildForgeContentScroll", bodyW - 20, bodyH)
-	f.content.scroll:SetPoint("TOPLEFT", 8, -bodyTop)
 	f.notes = createNotes(main, bodyW - 8, bodyH - 22)
 	f.notes:SetPoint("TOPLEFT", 16, -bodyTop - 18)
-	f.talentEditor = BF.TalentEditor.Create(main, bodyW - 8, bodyH - 4)
-	f.talentEditor:SetPoint("TOPLEFT", 16, -bodyTop)
-	f.perkEditor = BF.PerkEditor.Create(main, bodyW - 8, bodyH - 4)
-	f.perkEditor:SetPoint("TOPLEFT", 16, -bodyTop)
-	f.gearEditor = BF.GearEditor.Create(main, bodyW - 8, bodyH - 4)
-	f.gearEditor:SetPoint("TOPLEFT", 16, -bodyTop)
+	f.editors = {}
+	for key, module in pairs(EDITORS) do
+		f.editors[key] = BF[module].Create(main, bodyW - 8, bodyH - 4)
+		f.editors[key]:SetPoint("TOPLEFT", 16, -bodyTop)
+	end
 
 	local footer = CreateFrame("Frame", nil, main)
 	footer:SetPoint("BOTTOMLEFT")

@@ -1,19 +1,10 @@
 local _, NS = ...
 local BF = NS.BF
 
--- Per tab: render(list, build) fills the list and returns a summary line, diff(build) counts what differs
--- from the character (for the tab badge), and actions are the footer buttons.
-local Tabs = { render = {}, actions = {}, diff = {} }
+-- Per tab: diff(build) counts what differs from the character (for the tab badge), and actions are the footer
+-- buttons. Each tab's content is its editor in UI/.
+local Tabs = { actions = {}, diff = {} }
 BF.Tabs = Tabs
-
-local GREEN, YELLOW, GREY = "|cff6bdb6b", "|cffffc742", "|cff9999a8"
-local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
-
-local function color(c, text) return c .. text .. "|r" end
-
-local function spellIcon(id)
-	return id and select(3, GetSpellInfo(id)) or QUESTION
-end
 
 -- Perks
 
@@ -75,41 +66,16 @@ Tabs.actions.talents = {
 	end },
 }
 
--- Glyphs
-
-Tabs.render.glyphs = function(list, build)
-	local group, missing, count = BF:ActiveGroup(), 0, 0
-	local sockets = {}
-	for socket in pairs(build.glyphs or {}) do sockets[#sockets + 1] = socket end
-	table.sort(sockets)
-	for _, socket in ipairs(sockets) do
-		local spell = build.glyphs[socket]
-		local _, glyphType, have = GetGlyphSocketInfo(socket, group)
-		local kind = glyphType == 1 and "Major" or "Minor"
-		local status
-		count = count + 1
-		if have == spell then
-			status = color(GREY, "Socketed")
-		else
-			missing = missing + 1
-			status = have and color(YELLOW, "Socket has " .. (GetSpellInfo(have) or have)) or color(YELLOW, "Empty Socket")
-		end
-		list:Add({
-			text = ("%s  %s"):format(color(GREY, kind), GetSpellInfo(spell) or ("Glyph " .. spell)),
-			icon = spellIcon(spell), status = status,
-			tooltip = function(tt) tt:SetHyperlink("spell:" .. spell) end,
-		})
-	end
-	if count == 0 then return color(GREY, "This build has no glyphs.") end
-	return missing == 0 and color(GREEN, "Your glyphs match this build.")
-		or ("%d glyph(s) to socket. Glyphs are used up, so BuildForge leaves socketing to you."):format(missing)
-end
+-- Glyphs (the tab itself is the socket editor in UI/GlyphEditor.lua)
 
 Tabs.diff.glyphs = function(build)
 	return #BF.Glyphs.Plan(build.glyphs)
 end
 
 Tabs.actions.glyphs = {
+	{ label = "Open Glyph Frame", tooltip = "Open the game's glyph window to socket the glyphs you're carrying.", run = function()
+		ToggleGlyphFrame()
+	end },
 	{ label = "Use My Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec.", run = function(build)
 		build.glyphs = BF.Glyphs.Capture()
 		BF:Changed()

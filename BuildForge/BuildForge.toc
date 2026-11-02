@@ -8,6 +8,7 @@
 
 Data\Talents.lua
 Data\Abilities.lua
+Data\Glyphs.lua
 Core.lua
 Codec.lua
 Perks.lua
@@ -24,6 +25,7 @@ UI\Review.lua
 UI\TalentEditor.lua
 UI\PerkEditor.lua
 UI\GearEditor.lua
+UI\GlyphEditor.lua
 UI\Window.lua
 UI\Tabs.lua
 UI\Launchers.lua

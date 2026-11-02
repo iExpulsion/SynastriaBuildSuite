@@ -38,8 +38,11 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 - **Shared Perks:** Misc perks aren't saved in builds. They're in one Shared Perks list, shown as "Misc (Shared
   by All Builds)", that every build applies, so each spec gets them. Use My Perks also replaces it with your
   active Misc perks. Exports leave it out; importing a string with Misc perks asks before adding them.
-- **Talents, Glyphs:** compared with your character right now (points still to spend, glyphs to socket). Each
-  tab can take your current setup for that part.
+- **Glyphs:** the six sockets, Major and Minor, each with a green border when the glyph is socketed in your
+  active spec, yellow when the glyph item is in your bags and red when you don't have it. Click a socket to
+  list the build's classes' glyphs of that kind (with a search box) and click one to choose it; right-click a
+  socket or use Clear Socket to empty it. A glyph can only be in one socket. Glyphs are used up when socketed,
+  so BuildForge leaves that to you: Open Glyph Frame opens the game's glyph window. Use My Glyphs copies yours.
 - **Gear:** a paper doll of the build's Best item per slot, with a green border when you're wearing it, yellow
   when it's in your bags and red when you don't have it; a badge counts the slot's Alts (stand-ins, in order of
   preference). Click a slot to list its Best and Alts beside the doll, where Make Best and Remove (or Ctrl-click
@@ -85,6 +88,13 @@ the data extractor, regenerate it with:
 
 ```bash
 py -I -X utf8 tools/gen_talents.py
+```
+
+`BuildForge/Data/Glyphs.lua` (every class's glyphs and their items) comes from client data
+the client data:
+
+```bash
+py -I -X utf8 tools/gen_glyphs.py
 ```
 
 `BuildForge/Data/Abilities.lua` (the abilities perks like Master of Precision can grant) comes from client data
