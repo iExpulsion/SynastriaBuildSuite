@@ -164,10 +164,11 @@ local function renderTabs(build)
 		end
 		b:SetWidth(b.label:GetStringWidth() + (diff and diff > 0 and (b.badge:GetStringWidth() + 26) or 0) + 28)
 	end
-	local isNotes, isTalents = state.tab == "notes", state.tab == "talents"
+	local isNotes, isTalents, isPerks = state.tab == "notes", state.tab == "talents", state.tab == "perks"
 	setShown(frame.notes, isNotes)
 	setShown(frame.talentEditor, isTalents)
-	if isNotes or isTalents then frame.content:Hide() else frame.content:Show() end
+	setShown(frame.perkEditor, isPerks)
+	if isNotes or isTalents or isPerks then frame.content:Hide() else frame.content:Show() end
 end
 
 local function renderActions(build)
@@ -209,6 +210,9 @@ local function renderBuild(build)
 		frame.summary:SetText(state.message or "")
 	elseif state.tab == "talents" then
 		local summary = BF.TalentEditor.Render(build)
+		frame.summary:SetText(state.message or summary or "")
+	elseif state.tab == "perks" then
+		local summary = BF.PerkEditor.Render(build)
 		frame.summary:SetText(state.message or summary or "")
 	else
 		frame.content:Begin()
@@ -493,6 +497,8 @@ local function createMain(f)
 	f.notes:SetPoint("TOPLEFT", 16, -bodyTop - 18)
 	f.talentEditor = BF.TalentEditor.Create(main, bodyW - 8, bodyH - 4)
 	f.talentEditor:SetPoint("TOPLEFT", 16, -bodyTop)
+	f.perkEditor = BF.PerkEditor.Create(main, bodyW - 8, bodyH - 4)
+	f.perkEditor:SetPoint("TOPLEFT", 16, -bodyTop)
 
 	local footer = CreateFrame("Frame", nil, main)
 	footer:SetPoint("BOTTOMLEFT")

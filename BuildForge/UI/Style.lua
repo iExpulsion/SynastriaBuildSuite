@@ -138,6 +138,45 @@ function S.Button(parent, label, kind, width, onClick, tooltip)
 	return b
 end
 
+local function paintCheck(b)
+	if b.on then b.fill:Show() else b.fill:Hide() end
+	b.fill:SetAlpha(b.usable and 1 or 0.4)
+	b:SetBackdropBorderColor(unpack(b.hovered and b.usable and S.colors.accent or S.colors.border))
+end
+
+-- Square flat checkbox: SetChecked(on) and SetEnabled(on) repaint it; clicks go to onClick(box).
+function S.Check(parent, size, onClick)
+	local b = CreateFrame("Button", nil, parent)
+	b:SetSize(size or 14, size or 14)
+	S.Panel(b, { 0.04, 0.04, 0.05, 1 }, S.colors.border)
+	b.fill = S.Solid(b, "ARTWORK", S.colors.accent)
+	b.fill:SetPoint("TOPLEFT", 3, -3)
+	b.fill:SetPoint("BOTTOMRIGHT", -3, 3)
+	b.fill:Hide()
+	b.on, b.usable = false, true
+	function b:SetChecked(on) self.on = on and true or false paintCheck(self) end
+	function b:SetEnabled(on) self.usable = on and true or false paintCheck(self) end
+	b:SetScript("OnEnter", function(self)
+		self.hovered = true
+		paintCheck(self)
+		if self.tooltipText then
+			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+			GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
+			GameTooltip:Show()
+		end
+	end)
+	b:SetScript("OnLeave", function(self)
+		self.hovered = false
+		paintCheck(self)
+		GameTooltip:Hide()
+	end)
+	b:SetScript("OnClick", function(self)
+		if self.usable and onClick then onClick(self) end
+	end)
+	paintCheck(b)
+	return b
+end
+
 -- Single-line input with a placeholder shown while it's empty and unfocused. Never takes focus on its own.
 function S.Input(parent, name, width, placeholder, maxLetters)
 	local e = CreateFrame("EditBox", name, parent)

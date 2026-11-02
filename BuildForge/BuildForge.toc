@@ -7,6 +7,7 @@
 ## SavedVariablesPerCharacter: BuildForgeCharDB
 
 Data\Talents.lua
+Data\Abilities.lua
 Core.lua
 Codec.lua
 Perks.lua
@@ -21,6 +22,7 @@ UI\Style.lua
 UI\List.lua
 UI\Review.lua
 UI\TalentEditor.lua
+UI\PerkEditor.lua
 UI\Window.lua
 UI\Tabs.lua
 UI\Launchers.lua

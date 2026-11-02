@@ -52,6 +52,7 @@ local function newRow(self)
 	row.toggle:SetWidth(12)
 	row.toggle:SetJustifyH("CENTER")
 	row.toggle:SetPoint("LEFT", 8, 0)
+	row.check = S.Check(row, 14, function() if row.onCheck then row.onCheck(row) end end)
 	row.icon = row:CreateTexture(nil, "ARTWORK")
 	row.icon:SetSize(16, 16)
 
@@ -103,6 +104,7 @@ function List:Begin()
 end
 
 -- entry: text, sub, status, icon, header, collapsed (true/false shows +/-), indent, selected,
+-- check (true/false shows a checkbox), checkEnabled, checkTooltip, onCheck(row),
 -- tooltip(tt), onClick(row, button), onDrop(itemId)
 function List:Add(entry)
 	local style = self.style
@@ -127,6 +129,17 @@ function List:Add(entry)
 		x = x + 16
 	else
 		row.toggle:Hide()
+	end
+	if entry.check ~= nil then
+		row.check:ClearAllPoints()
+		row.check:SetPoint("LEFT", x, 0)
+		row.check:SetChecked(entry.check)
+		row.check:SetEnabled(entry.checkEnabled ~= false)
+		row.check.tooltipText = entry.checkTooltip
+		row.check:Show()
+		x = x + 20
+	else
+		row.check:Hide()
 	end
 	row.icon:ClearAllPoints()
 	row.text:ClearAllPoints()
@@ -160,7 +173,7 @@ function List:Add(entry)
 		row.bar:Hide()
 	end
 
-	row.tooltip, row.onClick, row.onDrop = entry.tooltip, entry.onClick, entry.onDrop
+	row.tooltip, row.onClick, row.onDrop, row.onCheck = entry.tooltip, entry.onClick, entry.onDrop, entry.onCheck
 	row:Show()
 	return row
 end

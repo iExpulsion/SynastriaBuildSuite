@@ -42,10 +42,35 @@ function Perks.IsHidden(perk)
 		or (bit.band(flags, 0x4000) ~= 0 and GetCustomGameData(29, perk.id) == 0)
 end
 
--- Class perks carry no class mask; their category is the class ID.
+-- IsHidden's rules for any set of classes, so builds for other classes can be edited. Class perks carry no class
+-- mask; their category is the class ID.
+function Perks.UsableFor(perk, mask)
+	local flags, req, cat = perk.flags or 0, bit.band(perk.req or 0, 0x7FF), perk.cat or 0
+	local all = bit.band(flags, 0x8000) ~= 0
+	local classOk = bit.band(flags, 0x200) ~= 0 or req == 0
+		or (not all and bit.band(req, mask) ~= 0)
+		or (all and bit.band(req, mask) == req)
+	return classOk
+		and bit.band(flags, 0x400) == 0
+		and not (bit.band(flags, 0x4000) ~= 0 and GetCustomGameData(29, perk.id) == 0)
+		and (cat > 11 or cat == 0 or bit.band(mask, bit.lshift(1, cat - 1)) ~= 0)
+end
+
 function Perks.Usable(perk)
-	local cat = perk.cat or 0
-	return not Perks.IsHidden(perk) and (cat > 11 or cat == 0 or CustomIsClassMask(bit.lshift(1, cat - 1)))
+	return Perks.UsableFor(perk, CustomGetClassMask())
+end
+
+function Perks.ClassMask(classes)
+	local mask = 0
+	for _, key in ipairs(classes or {}) do
+		local id = BF.CLASS_IDS[key]
+		if id then mask = bit.bor(mask, bit.lshift(1, id - 1)) end
+	end
+	return mask
+end
+
+function Perks.Locked(perk)
+	return bit.band(perk.flags or 0, FLAG_LOCKED) ~= 0
 end
 
 function Perks.Writable()
@@ -178,4 +203,167 @@ end
 function Perks.Name(id)
 	local perk = PerkMgrPerks and PerkMgrPerks[id]
 	return perk and perk.name or ("Perk " .. id)
+end
+
+-- Editing a build -------------------------------------------------------------------------------------------
+
+function Perks.Entry(build, id)
+	for _, w in ipairs(build.perks or {}) do
+		if w.id == id then return w end
+	end
+end
+
+-- Adds the perk (starting from the character's own options and ability) or removes it. Returns whether it's in.
+function Perks.Toggle(build, id)
+	build.perks = build.perks or {}
+	local entry = Perks.Entry(build, id)
+	if entry then
+		for i, w in ipairs(build.perks) do
+			if w == entry then
+				table.remove(build.perks, i)
+				break
+			end
+		end
+	else
+		entry = { id = id, opt = GetPerkOptions(id) or 0, spell = GetDruidSpec and GetDruidSpec(id) or 0 }
+		build.perks[#build.perks + 1] = entry
+		table.sort(build.perks, function(a, b) return a.id < b.id end)
+	end
+	return Perks.Entry(build, id) ~= nil
+end
+
+-- Perks in the build that share a limit with `cat`.
+function Perks.CategoryCount(build, cat, mask)
+	local n = 0
+	for _, w in ipairs(build.perks or {}) do
+		local p = PerkMgrPerks[w.id]
+		if p and Perks.SameCategory(cat, p.cat) and Perks.UsableFor(p, mask) then n = n + 1 end
+	end
+	return n
+end
+
+-- The options a build can set: the client's toggles for these classes, not its one-off action buttons. `group`
+-- options are pick-one; a group of 256 or more always keeps one picked. `index` is the option's bit, 1-based.
+function Perks.Options(id, mask)
+	local list = {}
+	local perk = PerkMgrPerks[id]
+	local info = perk and (perk.options or 0) ~= 0 and GetPerkOptionsInfo and GetPerkOptionsInfo(id)
+	if info then
+		for i = 1, MAX_OPTION do
+			local opt = info[i]
+			if opt and opt.n ~= "NULL" and not opt.b
+				and (not opt.cl or bit.band(mask, bit.lshift(1, opt.cl - 1)) ~= 0)
+				and (not opt.cond or opt.cond()) then
+				list[#list + 1] = { index = i, name = opt.n, tip = opt.t, group = opt.grp, required = (opt.grp or 0) >= 256 }
+			end
+		end
+	end
+	return list
+end
+
+-- Sets one option on a build entry, clearing the rest of its group like ChangePerkOption. Returns whether it changed.
+function Perks.SetOption(entry, options, index, on)
+	local target
+	for _, o in ipairs(options) do
+		if o.index == index then target = o end
+	end
+	local before = entry.opt or 0
+	local opt, mask = before, bit.lshift(1, index - 1)
+	if target and on then
+		for _, o in ipairs(options) do
+			local m = bit.lshift(1, o.index - 1)
+			if target.group and o.group == target.group and o.index ~= index and bit.band(opt, m) ~= 0 then opt = opt - m end
+		end
+		opt = bit.bor(opt, mask)
+	elseif target and not target.required and bit.band(opt, mask) ~= 0 then
+		opt = opt - mask
+	end
+	entry.opt = opt
+	return opt ~= before
+end
+
+local ABILITY_PERK_FIRST, ABILITY_PERK_LAST = 1561, 1568
+
+function Perks.HasAbility(perk)
+	return bit.band(perk.flags or 0, 0x10000) ~= 0
+end
+
+-- Abilities perk `id` can grant to these classes, as {spell, flags}; flags 1 = deals damage, 2 = heals.
+function Perks.Abilities(id, mask)
+	local list = {}
+	if id >= ABILITY_PERK_FIRST and id <= ABILITY_PERK_LAST then
+		local perkMask = bit.lshift(1, id - ABILITY_PERK_FIRST)
+		for _, a in ipairs(NS.AbilityData or {}) do
+			if (a[2] == 0 or bit.band(mask, bit.lshift(1, a[2] - 1)) ~= 0) and bit.band(a[3], perkMask) ~= 0 then
+				list[#list + 1] = { spell = a[1], flags = a[4] }
+			end
+		end
+	end
+	return list
+end
+
+local DESC_COLORS = { text = "|cffffffff", symbol = "|cff8080ff", symbol2 = "|cffffffff" }
+
+-- The perk's effect at a rank, built the way the Perk window builds it (GeneratePerkDescription is local there).
+function Perks.Description(id, rank)
+	local perk = PerkMgrPerks[id]
+	local level = perk and perk.levels and (perk.levels[rank] or perk.levels[1])
+	local text
+	if level and CustomGenerateDescription then
+		local raw = (IsPerkDouble and IsPerkDouble(perk) and level.amounts2 or level.amounts) or {}
+		local amounts = {}
+		for i = 1, 5 do
+			amounts[i] = GetModifiedPerkValue and GetModifiedPerkValue(raw[i] or 0, id, i) or raw[i] or 0
+		end
+		amounts[6] = GetCustomGameData(29, id)
+		text = CustomGenerateDescription(perk.desc or "", amounts, DESC_COLORS)
+	end
+	return text
+end
+
+-- The Perk window's "Additional information" notes, by perk.info bit (ProcessInfo is local there).
+local INFO = {
+	[0x1] = "This amount is based on your character level.",
+	[0x8] = "Resource means mana, energy, rage, runic power or focus.",
+	[0x10] = "Pets also include totems, minions and guardians.",
+	[0x20] = "Slower weapons have higher chance to proc.",
+	[0x40] = "Ally means party member or anyone you summoned.",
+	[0x80] = "Enemy means anyone you are currently in combat with.",
+	[0x100] = "Enemies with breakable crowd control effect are not targeted.",
+	[0x200] = "This does not work in battlegrounds, arena or duel.",
+	[0x400] = "This does not count as a healing effect.",
+	[0x800] = "Effects that increase regeneration do not count as generating resources.",
+	[0x1000] = "This effect does not stack.",
+	[0x2000] = "Highest amount is selected at any given moment.",
+	[0x4000] = "This effect does not cause any threat.",
+	[0x8000] = "This doesn't work for pets.",
+	[0x10000] = "This effect does not stack if applied from multiple characters.",
+	[0x20000] = "Only applied when manually using the ability.",
+	[0x40000] = "Same target can be chosen more than once.",
+	[0x80000] = "Slower weapons have higher effect.",
+	[0x100000] = "You need to have learned the ability for this effect to work.",
+	[0x200000] = "This can not critically hit.",
+	[0x400000] = "Ability means skill, spell, talent or item, but NOT perk.",
+}
+local CHANCE_NOTE = "Chance above 100 per-cent means it can happen more than once."
+
+function Perks.Info(id)
+	local perk = PerkMgrPerks[id]
+	local lines = {}
+	local info = perk and perk.info or 0
+	local first = perk and perk.levels and perk.levels[1] and perk.levels[1].amounts
+	for bitValue = 0, 22 do
+		local flag = bit.lshift(1, bitValue)
+		if flag == 2 then
+			if bit.band(info, 2) ~= 0 or (bit.band(info, 4) ~= 0 and first and (first[1] or 0) > 100) then
+				lines[#lines + 1] = CHANCE_NOTE
+			end
+		elseif bit.band(info, flag) ~= 0 and INFO[flag] then
+			lines[#lines + 1] = INFO[flag]
+		end
+	end
+	for _, x in ipairs(GetPerkInfoInfo and GetPerkInfoInfo(id) or {}) do
+		if x and x.t and x.t ~= "" then lines[#lines + 1] = x.t end
+	end
+	return lines
 end

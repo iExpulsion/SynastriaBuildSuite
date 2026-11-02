@@ -22,8 +22,14 @@ its title bar to move it (it remembers where); Esc closes it.
   shows your character's rank when it's the class shown in your talent window. Each class gets 71 points for
   its own trees, so a same-class dual (Warrior x2) gets 142. Builds with two different classes get a button
   per class. Use My Talents copies your spec; Reset Class clears the class shown.
-- **Perks, Talents, Glyphs:** what the build has, compared with your character right now (Active, To Activate,
-  To Deactivate, points still to spend, glyphs to socket). Each tab can take your current setup for that part.
+- **Perks:** a perk editor for the build's classes, any class, not just yours. In Build lists the build's perks
+  (and any it would turn off); All Perks lists every perk the classes can use, with a search box. Check a perk
+  to add it to the build. Click a perk to see its effect, notes, options and, for perks that grant one, the
+  ability to choose; options and abilities are set on the build's copy of the perk. Category headers count the
+  build's perks against how many your character can have on. Each row shows what applying the build would do
+  (Active, To Activate, To Deactivate, Options Differ). Nothing changes on your character until Apply Build.
+- **Talents, Glyphs:** compared with your character right now (points still to spend, glyphs to socket). Each
+  tab can take your current setup for that part.
 - **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of
   preference, each shown as worn, in bags or missing, plus attunement. Drop an item on a slot to add an Alt,
   right-click to remove, Ctrl-click to make it Best. Equip from Bags puts on the highest-ranked item you're
@@ -66,6 +72,13 @@ the data extractor, regenerate it with:
 
 ```bash
 py -I -X utf8 tools/gen_talents.py
+```
+
+`BuildForge/Data/Abilities.lua` (the abilities perks like Master of Precision can grant) comes from client data
+the client data:
+
+```bash
+py -I -X utf8 tools/gen_abilities.py
 ```
 
 `docs/DESIGN.md` covers the client APIs, the export format and what's still untested.

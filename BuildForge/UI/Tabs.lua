@@ -6,7 +6,7 @@ local BF = NS.BF
 local Tabs = { render = {}, actions = {}, diff = {} }
 BF.Tabs = Tabs
 
-local GREEN, YELLOW, RED, GREY = "|cff6bdb6b", "|cffffc742", "|cffff6b6b", "|cff9999a8"
+local GREEN, YELLOW, GREY = "|cff6bdb6b", "|cffffc742", "|cff9999a8"
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local function color(c, text) return c .. text .. "|r" end
@@ -17,101 +17,7 @@ end
 
 -- Perks
 
-local CATEGORY_ORDER = { 15, 16, 17, 18, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 13, 19 }
-local CATEGORY_NAMES = { [15] = "Offensive", [16] = "Defensive", [17] = "Support", [18] = "Utility", [13] = "Class", [19] = "Misc" }
-
-local function categoryName(cat)
-	local key = BF.CLASS_KEYS[cat]
-	return key and (BF.Window.ClassText({ key }, true) .. " Class") or CATEGORY_NAMES[cat] or "Other"
-end
-
-local function perkTooltip(id, wanted, status)
-	return function(tt)
-		local perk = PerkMgrPerks and PerkMgrPerks[id]
-		tt:AddLine(BF.Perks.Name(id), 1, 1, 1)
-		if perk then
-			tt:AddLine(categoryName(perk.cat))
-			local rank = GetPerkAcquired(id) or 0
-			tt:AddLine(("Rank %d/%d"):format(rank, perk.levels and #perk.levels or 0), 0.8, 0.8, 0.8)
-			local options = wanted and wanted.opt ~= 0 and GetPerkOptionsInfo and GetPerkOptionsInfo(id)
-			for i, opt in ipairs(options or {}) do
-				if bit.band(wanted.opt, bit.lshift(1, i - 1)) ~= 0 then tt:AddLine("Option: " .. (opt.n or i), 0.6, 0.8, 1) end
-			end
-			if wanted and (wanted.spell or 0) ~= 0 then
-				tt:AddLine("Ability: " .. (GetSpellInfo(wanted.spell) or wanted.spell), 0.6, 0.8, 1)
-			end
-		end
-		if status then tt:AddLine(status, 1, 0.8, 0.3, true) end
-	end
-end
-
-Tabs.render.perks = function(list, build)
-	local summary
-	if not PerkMgrPerks then
-		list:Add({ text = color(GREY, "Perk data hasn't arrived from the server yet.") })
-	else
-		local plan = BF.Perks.Plan(build.perks)
-		local activate, skipped, optionsDiffer, spellDiffers = {}, {}, {}, {}
-		for _, id in ipairs(plan.activate) do activate[id] = true end
-		for _, s in ipairs(plan.skipped) do skipped[s.id] = s.reason end
-		for _, o in ipairs(plan.options) do optionsDiffer[o.id] = true end
-		for _, s in ipairs(plan.spells) do spellDiffers[s.id] = true end
-
-		local byCat = {}
-		for _, w in ipairs(build.perks or {}) do
-			local perk = PerkMgrPerks[w.id]
-			local cat = perk and perk.cat or 0
-			byCat[cat] = byCat[cat] or {}
-			table.insert(byCat[cat], w)
-		end
-
-		local order = {}
-		for _, cat in ipairs(CATEGORY_ORDER) do order[#order + 1] = cat end
-		order[#order + 1] = 0
-		for _, cat in ipairs(order) do
-			local perks = byCat[cat]
-			if perks then
-				list:Add({ text = categoryName(cat), header = true })
-				table.sort(perks, function(a, b) return BF.Perks.Name(a.id) < BF.Perks.Name(b.id) end)
-				for _, w in ipairs(perks) do
-					local perk = PerkMgrPerks[w.id]
-					local status
-					if skipped[w.id] then status = color(GREY, skipped[w.id])
-					elseif activate[w.id] then status = color(YELLOW, "To Activate")
-					else status = color(GREY, "Active") end
-					if optionsDiffer[w.id] or spellDiffers[w.id] then status = status .. color(YELLOW, ", Options Differ") end
-					list:Add({
-						text = BF.Perks.Name(w.id), status = status, indent = 8,
-						icon = perk and spellIcon(perk.icon) or QUESTION,
-						tooltip = perkTooltip(w.id, w, skipped[w.id]),
-					})
-				end
-			end
-		end
-
-		if #plan.deactivate > 0 then
-			list:Add({ text = "Active but Not in This Build", header = true })
-			for _, id in ipairs(plan.deactivate) do
-				list:Add({
-					text = BF.Perks.Name(id), status = color(RED, "To Deactivate"), indent = 8,
-					icon = spellIcon(PerkMgrPerks[id].icon),
-					tooltip = perkTooltip(id, nil, "Applying this build turns this perk off."),
-				})
-			end
-		end
-
-		local changes = #plan.activate + #plan.deactivate
-		if changes + #plan.options + #plan.spells == 0 then
-			summary = color(GREEN, "Your perks match this build.")
-		else
-			summary = ("%d to activate, %d to deactivate, %d option change(s)."):format(#plan.activate, #plan.deactivate, #plan.options + #plan.spells)
-			if changes > 0 and not BF.Perks.Writable() then
-				summary = summary .. color(RED, " Activations need the Perk window at an innkeeper.")
-			end
-		end
-	end
-	return summary
-end
+-- (the tab itself is the editor in UI/PerkEditor.lua)
 
 Tabs.diff.perks = function(build)
 	local count
