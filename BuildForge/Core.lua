@@ -11,6 +11,39 @@ BF.CLASS_KEYS = {
 BF.CLASS_IDS = {}
 for id, key in pairs(BF.CLASS_KEYS) do BF.CLASS_IDS[key] = id end
 
+-- Synastria's names for two-class pairs, from its GlueXML AccountLogin.lua (SL_DUAL_CLASSES). Looked up by
+-- BF:ComboName in either order.
+local COMBOS = {
+	Champion = { "WARRIOR", "PALADIN" }, Soldier = { "WARRIOR", "HUNTER" }, Blademaster = { "WARRIOR", "ROGUE" },
+	Crusader = { "WARRIOR", "PRIEST" }, Butcher = { "WARRIOR", "DEATHKNIGHT" }, Ravager = { "WARRIOR", "SHAMAN" },
+	Battlemage = { "WARRIOR", "MAGE" }, Vanquisher = { "WARRIOR", "WARLOCK" }, Barbarian = { "WARRIOR", "DRUID" },
+	Avenger = { "PALADIN", "HUNTER" }, Agent = { "PALADIN", "ROGUE" }, Martyr = { "PALADIN", "PRIEST" },
+	Enforcer = { "PALADIN", "DEATHKNIGHT" }, Sentinel = { "PALADIN", "SHAMAN" }, Inquisitor = { "PALADIN", "MAGE" },
+	Warden = { "PALADIN", "WARLOCK" }, Guardian = { "PALADIN", "DRUID" },
+	Scout = { "HUNTER", "ROGUE" }, Seer = { "HUNTER", "PRIEST" }, Slayer = { "HUNTER", "DEATHKNIGHT" },
+	Tempest = { "HUNTER", "SHAMAN" }, Arcanist = { "HUNTER", "MAGE" }, Trickster = { "HUNTER", "WARLOCK" },
+	Ranger = { "HUNTER", "DRUID" },
+	Herald = { "ROGUE", "PRIEST" }, Assassin = { "ROGUE", "DEATHKNIGHT" }, Ninja = { "ROGUE", "SHAMAN" },
+	Spellblade = { "ROGUE", "MAGE" }, Voidstalker = { "ROGUE", "WARLOCK" }, Spy = { "ROGUE", "DRUID" },
+	Wraith = { "PRIEST", "DEATHKNIGHT" }, Oracle = { "PRIEST", "SHAMAN" }, Mystic = { "PRIEST", "MAGE" },
+	Siren = { "PRIEST", "WARLOCK" }, Empath = { "PRIEST", "DRUID" },
+	Summoner = { "DEATHKNIGHT", "SHAMAN" }, Lich = { "DEATHKNIGHT", "MAGE" }, Necromancer = { "DEATHKNIGHT", "WARLOCK" },
+	Dreadweaver = { "DEATHKNIGHT", "DRUID" },
+	Elementalist = { "SHAMAN", "MAGE" }, Harbinger = { "SHAMAN", "WARLOCK" }, Sage = { "SHAMAN", "DRUID" },
+	Sorcerer = { "MAGE", "WARLOCK" }, Conjurer = { "MAGE", "DRUID" },
+	Witch = { "WARLOCK", "DRUID" },
+}
+local comboByPair = {}
+for combo, pair in pairs(COMBOS) do
+	comboByPair[pair[1] .. "/" .. pair[2]] = combo
+	comboByPair[pair[2] .. "/" .. pair[1]] = combo
+end
+
+-- The combo name for two class keys, or nil (same-class pairs have none here).
+function BF:ComboName(a, b)
+	return a and b and comboByPair[a .. "/" .. b]
+end
+
 function BF:Print(fmt, ...)
 	local msg = select("#", ...) > 0 and fmt:format(...) or fmt
 	DEFAULT_CHAT_FRAME:AddMessage("|cffff8020BuildForge|r: " .. msg)

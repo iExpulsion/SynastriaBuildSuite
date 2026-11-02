@@ -38,14 +38,14 @@ local function className(key)
 	return LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[key] or key
 end
 
--- Synastria's name and color for a two-class pair, as its Character window shows them. The pair is packed as
--- first class ID << 8 | second.
+-- Synastria's name and color for a two-class pair: the name from BF:ComboName, or else from the client (as its
+-- Character window does, with the pair packed as first class ID << 8 | second), and the client's color.
 local function comboName(classes)
 	local a, b = BF.CLASS_IDS[classes[1]], BF.CLASS_IDS[classes[2]]
 	local name, r, g, bl
-	if #classes == 2 and a and b and CMCGetClassNameFromPack then
+	if #classes == 2 and a and b then
 		local pack = a * 256 + b
-		name = CMCGetClassNameFromPack(pack)
+		name = BF:ComboName(classes[1], classes[2]) or (CMCGetClassNameFromPack and CMCGetClassNameFromPack(pack))
 		if CMCGetClassNameColor then r, g, bl = CMCGetClassNameColor(pack) end
 	end
 	return name ~= "" and name or nil, r, g, bl
