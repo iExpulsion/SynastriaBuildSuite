@@ -14,8 +14,8 @@ spec. Drag it around the minimap's edge to move it, and `/bforge minimap` hides 
 LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appears there as a launcher.
 
 - **Sidebar:** search your builds, grouped by class; click a group to collapse it. Groups for classes you
-  don't have start collapsed. A build linked to one of this character's specs shows it (Spec 2), green when
-  that spec is active; linked builds list first, in spec order, then the rest by name. New Build saves your character as a build; Import pastes one in.
+  don't have start collapsed. Builds linked to this character's specs sit above the class groups in Your
+  Specs, one row per spec in spec order, with the active spec's in green. New Build saves your character as a build; Import pastes one in.
 - **Build header:** click the name to rename it and set the spec name (press Enter to keep). Apply Build opens
   a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
   Talents can only be added, so if your spec has more points in a talent than the build, the review lists them;

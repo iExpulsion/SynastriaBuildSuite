@@ -21,6 +21,7 @@ local TABS = {
 }
 
 local frame
+local SPECS_KEY = "\1specs"
 -- The editor module behind each tab except Notes.
 local EDITORS = { perks = "PerkEditor", talents = "TalentEditor", glyphs = "GlyphEditor", gear = "GearEditor" }
 local state = { selected = nil, tab = "perks", collapsed = {}, search = "" }
@@ -54,18 +55,6 @@ local function selectedBuild()
 	return state.selected and BF.db.builds[state.selected]
 end
 
--- "Spec 2" for a build linked to a spec on this character, green when that spec is active.
-function Window.SpecStatus(build)
-	local groups = BF:LinkedSpecs(build.name)
-	local text
-	if #groups > 0 then
-		local active = false
-		for _, g in ipairs(groups) do if g == BF:ActiveGroup() then active = true end end
-		text = S.Hex(active and C.good or C.muted, "Spec " .. table.concat(groups, ", "))
-	end
-	return text
-end
-
 -- The spec to switch to for a build, when it's linked and none of its specs is active.
 function Window.SpecToSwitch(build)
 	local groups = BF:LinkedSpecs(build.name)
@@ -97,11 +86,21 @@ local function matches(build)
 	return q == "" or build.name:lower():find(q, 1, true) ~= nil or (build.spec or ""):lower():find(q, 1, true) ~= nil
 end
 
--- Builds grouped by class combination; groups that fit the character come first and start expanded.
+-- This character's specs that have a linked build, in spec order: { group, build }.
+local function linkedSpecs()
+	local rows, links = {}, BF:Links()
+	for g = 1, BF:SpecCount() do
+		local build = links[g] and BF.db.builds[links[g]]
+		if build and matches(build) then rows[#rows + 1] = { group = g, build = build } end
+	end
+	return rows
+end
+
+-- The other builds, grouped by class combination; groups that fit the character come first and start expanded.
 local function groupedBuilds()
 	local groups, byKey = {}, {}
 	for _, build in pairs(BF.db.builds) do
-		if matches(build) then
+		if matches(build) and #BF:LinkedSpecs(build.name) == 0 then
 			local key = table.concat(build.classes or {}, "/")
 			local group = byKey[key]
 			if not group then
@@ -112,17 +111,8 @@ local function groupedBuilds()
 			table.insert(group.builds, build)
 		end
 	end
-	-- builds linked to a spec on this character come first, in spec order, then the rest by name
-	local specOf = {}
-	for group, name in pairs(BF:Links()) do
-		if group <= BF:SpecCount() and (not specOf[name] or group < specOf[name]) then specOf[name] = group end
-	end
 	for _, group in ipairs(groups) do
-		table.sort(group.builds, function(a, b)
-			local sa, sb = specOf[a.name] or math.huge, specOf[b.name] or math.huge
-			if sa ~= sb then return sa < sb end
-			return a.name:lower() < b.name:lower()
-		end)
+		table.sort(group.builds, function(a, b) return a.name:lower() < b.name:lower() end)
 	end
 	table.sort(groups, function(a, b)
 		if a.fits ~= b.fits then return a.fits end
@@ -141,6 +131,41 @@ local function renderSidebar()
 	local list = frame.list
 	local first, firstFit, shown = nil, nil, 0
 	list:Begin()
+
+	local specs = linkedSpecs()
+	if #specs > 0 then
+		local collapsed = state.collapsed[SPECS_KEY] == true and state.search == ""
+		list:Add({
+			text = "Your Specs", header = true, collapsed = collapsed,
+			status = S.Hex(C.muted, #specs),
+			onClick = function()
+				state.collapsed[SPECS_KEY] = not collapsed
+				Window.Render()
+			end,
+			tooltip = function(tt)
+				tt:AddLine("Your Specs", 1, 1, 1)
+				tt:AddLine("Builds linked to this character's talent specs, in spec order. Apply a build, or pick a spec in its Linked to menu, to add it here.", 0.8, 0.8, 0.8, true)
+			end,
+		})
+		for _, row in ipairs(specs) do
+			local build, active = row.build, row.group == BF:ActiveGroup()
+			if active or not firstFit then firstFit = build end
+			first = first or build
+			if not collapsed then
+				shown = shown + 1
+				local spec = build.spec or ""
+				list:Add({
+					text = build.name,
+					sub = spec ~= "" and spec ~= build.name and spec or nil,
+					status = S.Hex(active and C.good or C.muted, "Spec " .. row.group),
+					indent = 12,
+					selected = build.name == state.selected,
+					onClick = function() Window.Select(build.name) end,
+				})
+			end
+		end
+	end
+
 	for _, group in ipairs(groupedBuilds()) do
 		local collapsed = isCollapsed(group)
 		local label = group.key == "" and "No Class" or Window.ClassText(group.classes, not group.fits)
@@ -166,7 +191,6 @@ local function renderSidebar()
 				list:Add({
 					text = build.name,
 					sub = spec ~= "" and spec ~= build.name and spec or nil,
-					status = Window.SpecStatus(build),
 					indent = 12,
 					selected = build.name == state.selected,
 					onClick = function() Window.Select(build.name) end,
