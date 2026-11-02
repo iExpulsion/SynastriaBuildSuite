@@ -96,23 +96,26 @@ function Gear.Add(build, slot, id)
 	return ok, reason
 end
 
--- Picks the slot for an item dropped anywhere: its only slot, or for rings, trinkets and one-hand weapons the
--- first of the pair the build hasn't filled yet. Returns the slot, or nil and a reason.
+-- Picks the slot for an item dropped anywhere: its only slot, or for rings, trinkets and one-hand weapons a slot
+-- of the pair that doesn't have it yet (two copies of a non-unique item can fill both), preferring an empty one.
+-- Returns the slot, or nil and a reason.
 function Gear.SlotFor(build, id)
 	local slots = Gear.SlotsFor(id)
-	local slot, reason
+	local gear = build.gear or {}
+	local slot, open, reason
 	if slots == nil then
 		reason = "That item hasn't loaded yet; try again in a moment."
 	elseif #slots == 0 then
 		reason = "That item can't be equipped."
 	else
 		for _, s in ipairs(slots) do
-			if has((build.gear or {})[s], id) then reason = ("That item is already in the %s slot."):format(BF.SLOT_NAMES[s]) end
+			if not has(gear[s], id) then
+				open = open or s
+				if not gear[s] and not slot then slot = s end
+			end
 		end
-		for _, s in ipairs(slots) do
-			if not slot and not (build.gear and build.gear[s]) then slot = s end
-		end
-		slot = not reason and (slot or slots[1]) or nil
+		slot = slot or open
+		if not slot then reason = "That item is already in " .. (#slots > 1 and "both slots." or "this slot.") end
 	end
 	return slot, reason
 end
