@@ -15,7 +15,7 @@ local SOCKETS_W, ICON, ROW, PAD, SEARCH_H = 300, 40, 62, 12, 30
 local COLUMNS = { { title = "Major Glyphs", sockets = { 1, 4, 6 } }, { title = "Minor Glyphs", sockets = { 2, 3, 5 } } }
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 local EMPTY = "Interface\\Icons\\INV_Misc_Rune_01"
-local LOOK = { socketed = C.good, bags = C.warn, missing = { 0.5, 0.3, 0.3, 1 }, empty = C.border }
+local LOOK = { socketed = C.good, bags = C.warn, missing = { 0.5, 0.3, 0.3, 1 }, empty = C.border, chosen = C.muted }
 
 local panel, current
 local state = { socket = 1, search = "" }
@@ -25,13 +25,15 @@ local function buildClasses(build)
 	return build.classes and #build.classes > 0 and build.classes or BF:PlayerClasses()
 end
 
-local function lookFor(row)
-	return not row.spell and "empty" or row.socketed and "socketed" or row.inBags and "bags" or "missing"
+-- Socketed and Missing depend on the active spec, so a build for another spec only shows what's in your bags.
+local function lookFor(row, comparing)
+	return not row.spell and "empty" or comparing and row.socketed and "socketed" or row.inBags and "bags"
+		or comparing and "missing" or "chosen"
 end
 
 local STATUS = {
 	socketed = S.Hex(C.good, "Socketed"), bags = S.Hex(C.warn, "In Bags"),
-	missing = S.Hex(C.bad, "Missing"), empty = S.Hex(C.muted, "Empty"),
+	missing = S.Hex(C.bad, "Missing"), empty = S.Hex(C.muted, "Empty"), chosen = "",
 }
 
 local function glyphName(row)
@@ -105,9 +107,10 @@ local function newSocket(parent, socket, width)
 end
 
 local function renderSockets(rows)
+	local comparing = BF.Window.IsComparing(current)
 	for socket, b in pairs(panel.sockets) do
 		local row = rows[socket]
-		local look = lookFor(row)
+		local look = lookFor(row, comparing)
 		b.row = row
 		b.icon:SetTexture(row.glyph and (GetItemIcon(row.glyph.item) or QUESTION) or row.spell and QUESTION or EMPTY)
 		b.icon:SetDesaturated(not row.spell)

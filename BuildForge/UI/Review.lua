@@ -11,13 +11,27 @@ local C = S.colors
 
 local sheet, current
 
+-- Applying links the build to the active spec; worth saying when that changes the link (and there's a choice of specs).
+local function willRelink(plan)
+	return BF:SpecCount() > 1 and BF:Links()[plan.group] ~= plan.build.name
+end
+
 local function lines(plan)
 	local out = {}
 	local function add(text, status, header, tooltip) out[#out + 1] = { text = text, status = status, header = header, indent = header and 0 or 12, tooltip = tooltip } end
 
 	local target = BF.Window.SpecToSwitch(plan.build)
+	local relink = willRelink(plan)
+	local linked = BF:Links()[plan.group]
+	if target or relink then add("Spec", nil, true) end
+	if relink then
+		add(("Applying links this build to %s"):format(BF:SpecName(plan.group)),
+			linked and BF.db.builds[linked] and S.Hex(C.warn, "Replaces " .. linked) or S.Hex(C.good, "New Link"), false, function(tt)
+				tt:AddLine("Spec link", 1, 1, 1)
+				tt:AddLine("The build joins Your Specs for this spec. A build linked to it before loses that link.", 0.8, 0.8, 0.8, true)
+			end)
+	end
 	if target then
-		add("Spec", nil, true)
 		add(S.Hex(C.warn, ("This build is linked to %s; you're in %s."):format(BF:SpecName(target), BF:SpecName(plan.group))),
 			nil, false, function(tt)
 				tt:AddLine("Wrong spec?", 1, 1, 1)
@@ -89,7 +103,7 @@ local function hasChanges(plan)
 		if #entry.conflicts == 0 and entry.points > 0 then talents = true end
 	end
 	local perks = #p.options + #p.spells > 0 or (p.needsInnkeeper and BF.Perks.Writable())
-	return perks or talents or plan.pet ~= nil or plan.spec ~= nil
+	return perks or talents or plan.pet ~= nil or plan.spec ~= nil or willRelink(plan)
 end
 
 function Review.Render()

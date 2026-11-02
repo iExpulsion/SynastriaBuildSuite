@@ -44,10 +44,12 @@ local function entryFor(id)
 	return Perks.Entry(owner(id), id)
 end
 
--- What applying the build would do to each perk, by perk ID.
+-- What applying the build would do to each perk, by perk ID. Empty, with `off` set, for a build linked to a spec
+-- that isn't active, since the character's perks belong to another spec.
 local function planLookup(build)
 	local plan = Perks.Plan(Perks.Wanted(build))
-	local look = { plan = plan, activate = {}, deactivate = {}, skipped = {}, options = {} }
+	local look = { plan = plan, activate = {}, deactivate = {}, skipped = {}, options = {}, off = not BF.Window.IsComparing(build) }
+	if look.off then plan = { activate = {}, deactivate = {}, skipped = {}, options = {}, spells = {} } end
 	for _, id in ipairs(plan.activate) do look.activate[id] = true end
 	for _, id in ipairs(plan.deactivate) do look.deactivate[id] = true end
 	for _, s in ipairs(plan.skipped) do look.skipped[s.id] = s.reason end
@@ -58,7 +60,8 @@ end
 
 local function rowStatus(id, entry, look)
 	local status
-	if look.skipped[id] then status = S.Hex(C.muted, "Skipped")
+	if look.off then status = nil
+	elseif look.skipped[id] then status = S.Hex(C.muted, "Skipped")
 	elseif entry and look.activate[id] then status = S.Hex(C.warn, "To Activate")
 	elseif entry then status = S.Hex(C.muted, "Active")
 	elseif look.deactivate[id] then status = S.Hex(C.bad, "To Deactivate")
@@ -280,7 +283,7 @@ local function renderDetail(build, mask, look)
 		d.toggle.tooltipText = locked and "This perk can't be turned on or off."
 			or shared and "Misc perks are kept in Shared Perks, which every build applies." or nil
 		local onChar = GetPerkActive(id)
-		d.state:SetText(rowStatus(id, entry, look) or (onChar and S.Hex(C.muted, "On for your character")
+		d.state:SetText(rowStatus(id, entry, look) or look.off and "" or (onChar and S.Hex(C.muted, "On for your character")
 			or S.Hex(C.muted, "Off for your character")))
 
 		local y = PAD + 36 + 10 + 24 + 14

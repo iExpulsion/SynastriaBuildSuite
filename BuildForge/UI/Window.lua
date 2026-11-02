@@ -22,6 +22,8 @@ local TABS = {
 
 local frame
 local SPECS_KEY = "\1specs"
+-- Tabs whose comparison depends on the active spec (gear and bags are the same in every spec).
+local PER_SPEC = { perks = true, talents = true, glyphs = true }
 -- The editor module behind each tab except Notes.
 local EDITORS = { perks = "PerkEditor", talents = "TalentEditor", glyphs = "GlyphEditor", gear = "GearEditor" }
 local state = { selected = nil, tab = "perks", collapsed = {}, search = "" }
@@ -61,6 +63,17 @@ function Window.SpecToSwitch(build)
 	local target = groups[1]
 	for _, g in ipairs(groups) do if g == BF:ActiveGroup() then target = nil end end
 	return target
+end
+
+-- Perks, talents and glyphs belong to the active spec, so a build linked to another spec isn't compared with the
+-- character: the tabs drop their badges and statuses until that spec is active. Archived builds always compare.
+function Window.IsComparing(build)
+	return Window.SpecToSwitch(build) == nil
+end
+
+function Window.InactiveNote(build)
+	local target = Window.SpecToSwitch(build)
+	return S.Hex(C.warn, ("Spec %d isn't active, so nothing is compared. Switch to Spec %d to compare and apply."):format(target, target))
 end
 
 function Window.SwitchSpec(group)
@@ -155,9 +168,9 @@ local function renderSidebar()
 				shown = shown + 1
 				local spec = build.spec or ""
 				list:Add({
-					text = build.name,
+					text = S.Hex(active and C.good or C.muted, row.group) .. "   " .. build.name,
 					sub = spec ~= "" and spec ~= build.name and spec or nil,
-					status = S.Hex(active and C.good or C.muted, "Spec " .. row.group),
+					status = active and S.Hex(C.good, "Active") or nil,
 					indent = 12,
 					selected = build.name == state.selected,
 					onClick = function() Window.Select(build.name) end,
@@ -166,7 +179,17 @@ local function renderSidebar()
 		end
 	end
 
-	for _, group in ipairs(groupedBuilds()) do
+	local groups = groupedBuilds()
+	if #specs > 0 and #groups > 0 then
+		list:Add({
+			text = "Saved Builds", header = true,
+			tooltip = function(tt)
+				tt:AddLine("Saved Builds", 1, 1, 1)
+				tt:AddLine("Builds not linked to a spec on this character: templates, shared builds and other classes'. Applying one links it to your active spec.", 0.8, 0.8, 0.8, true)
+			end,
+		})
+	end
+	for _, group in ipairs(groups) do
 		local collapsed = isCollapsed(group)
 		local label = group.key == "" and "No Class" or Window.ClassText(group.classes, not group.fits)
 		list:Add({
@@ -210,12 +233,13 @@ end
 -- Main pane ------------------------------------------------------------------------------------------------
 
 local function renderTabs(build)
+	local comparing = Window.IsComparing(build)
 	for i, tab in ipairs(TABS) do
 		local b = frame.tabs[i]
 		local selected = tab.key == state.tab
 		b.label:SetTextColor(unpack(selected and C.text or C.muted))
 		setShown(b.underline, selected)
-		local diff = BF.Tabs.diff[tab.key] and BF.Tabs.diff[tab.key](build)
+		local diff = (comparing or not PER_SPEC[tab.key]) and BF.Tabs.diff[tab.key] and BF.Tabs.diff[tab.key](build)
 		if diff and diff > 0 then
 			b.badge:SetText(diff)
 			b.badgeBg:SetWidth(b.badge:GetStringWidth() + 10)
@@ -266,11 +290,13 @@ local function renderSpecLink(build)
 	local label = #groups == 0 and "Not Linked" or BF:SpecName(groups[1])
 	if #groups > 1 then label = label .. (" +%d"):format(#groups - 1) end
 	frame.specLink:SetText(label)
+	frame.specLinkLabel:SetText(#groups == 0 and "Assign to" or "Linked to")
 	setShown(frame.specLink, count > 1)
 	setShown(frame.specLinkLabel, count > 1)
 	local target = Window.SpecToSwitch(build)
 	frame.switchSpec.target = target
 	setShown(frame.switchSpec, count > 1 and target ~= nil)
+	setShown(frame.specActive, count > 1 and #groups > 0 and target == nil)
 end
 
 local function renderBuild(build)
@@ -291,6 +317,7 @@ local function renderBuild(build)
 		frame.summary:SetText(state.message or "")
 	else
 		local summary = BF[EDITORS[state.tab]].Render(build)
+		if PER_SPEC[state.tab] and not Window.IsComparing(build) then summary = Window.InactiveNote(build) end
 		frame.summary:SetText(state.message or summary or "")
 	end
 end
@@ -490,6 +517,9 @@ local function createBuildHeader(main)
 	end, "Activate the linked spec. It takes a few seconds and can't be done in combat.")
 	f.switchSpec:SetHeight(20)
 	f.switchSpec:SetPoint("LEFT", f.specLink, "RIGHT", 6, 0)
+	f.specActive = S.Text(main, "small", C.good)
+	f.specActive:SetPoint("LEFT", f.specLink, "RIGHT", 10, 0)
+	f.specActive:SetText("Active Spec")
 
 	local apply = S.Button(main, "Apply Build", "primary", 110, function()
 		BF.Review.Open(selectedBuild())

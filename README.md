@@ -14,8 +14,8 @@ spec. Drag it around the minimap's edge to move it, and `/bforge minimap` hides 
 LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appears there as a launcher.
 
 - **Sidebar:** search your builds, grouped by class; click a group to collapse it. Groups for classes you
-  don't have start collapsed. Builds linked to this character's specs sit above the class groups in Your
-  Specs, one row per spec in spec order, with the active spec's in green. New Build saves your character as a build; Import pastes one in.
+  don't have start collapsed. Builds linked to this character's specs sit at the top in Your Specs, one row
+  per spec, numbered in spec order, with the active one in green. Everything else is under Saved Builds. New Build saves your character as a build; Import pastes one in.
 - **Build header:** click the name to rename it and set the spec name (press Enter to keep). Apply Build opens
   a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
   Talents can only be added, so if your spec has more points in a talent than the build, the review lists them;
@@ -23,8 +23,11 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   Export gives the share string; Delete asks first. The title bar shows whether the Perk window is open at an
   innkeeper, which perk activations need.
 - **Specs:** Synastria keeps perks, talents and glyphs per talent spec (up to 8). With more than one spec, the
-  header's Linked to menu ties the build to one of this character's specs, and applying a build links it to the
-  active spec. When the linked spec isn't active, Switch to Spec activates it, and Review Changes warns first.
+  header's Assign to menu ties a saved build to one of this character's specs (it then reads Linked to, with
+  Active Spec when that spec is active), and applying a build links it to the active spec; Review Changes says
+  so, and which build it replaces. A build for a spec that isn't active isn't compared with your character:
+  the Perks, Talents and Glyphs tabs drop their badges and statuses and the footer says to switch, with Switch
+  to Spec beside the menu. Gear is the same in every spec, so it's always compared.
 - **Tabs:** Perks, Talents, Glyphs, Gear and Notes. A badge on a tab counts what differs from your character.
 - **Talents:** a talent calculator for the build's classes, any class, not just yours. Left-click adds a point,
   right-click removes one; tier, prerequisite and point limits work like the talent frame, and the tooltip

@@ -38,10 +38,10 @@ local function buildClasses(build)
 	return classes
 end
 
--- Live rank on the character, when this class is the one shown in the talent window.
+-- Live rank on the character, when this class is the one shown in the talent window and the build's spec is active.
 local function liveRank(class, tab, i)
 	local rank
-	if class == BF.Talents.SelectedClass() and tab <= GetNumTalentTabs(false, false) then
+	if class == BF.Talents.SelectedClass() and tab <= GetNumTalentTabs(false, false) and BF.Window.IsComparing(current) then
 		rank = select(5, GetTalentInfo(tab, i, false, false, BF:ActiveGroup()))
 	end
 	return rank
