@@ -26,6 +26,18 @@ function Glyphs.Plan(wanted)
 	return missing
 end
 
+-- Opens the talent frame on the active spec's glyph tab. ToggleGlyphFrame goes through Synastria's
+-- PlayerTalentFrame_ToggleGlyphFrame, which only searches the stock specs 1-2 (TALENT_SORT_ORDER), so for spec 3
+-- and up it opened the talents instead; PlayerTalentFrame_OpenGlyphFrame searches all of them.
+function Glyphs.OpenFrame()
+	TalentFrame_LoadUI()
+	if PlayerTalentFrame_OpenGlyphFrame then
+		PlayerTalentFrame_OpenGlyphFrame(BF:ActiveGroup())
+	else
+		ToggleGlyphFrame()
+	end
+end
+
 -- Editing a build's glyphs ----------------------------------------------------------------------------------
 
 -- The stock 3.3.5 sockets: which kind of glyph each takes and the level it opens at.

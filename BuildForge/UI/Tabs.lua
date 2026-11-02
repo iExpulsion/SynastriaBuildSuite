@@ -74,7 +74,7 @@ end
 
 Tabs.actions.glyphs = {
 	{ label = "Open Glyph Frame", tooltip = "Open the game's glyph window to socket the glyphs you're carrying.", run = function()
-		ToggleGlyphFrame()
+		BF.Glyphs.OpenFrame()
 	end },
 	{ label = "Use My Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec.", run = function(build)
 		build.glyphs = BF.Glyphs.Capture()
