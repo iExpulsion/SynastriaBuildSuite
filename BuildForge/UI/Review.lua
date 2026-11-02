@@ -126,7 +126,7 @@ function Review.Create(parent, width, height)
 	sheet:SetAllPoints()
 	sheet:SetFrameLevel(parent:GetFrameLevel() + 20)
 	sheet:EnableMouse(true)
-	S.Panel(sheet, C.window)
+	S.Panel(sheet, { C.window[1], C.window[2], C.window[3], 1 })
 	sheet:Hide()
 
 	sheet.title = S.Text(sheet, "large")

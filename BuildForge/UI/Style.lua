@@ -89,13 +89,15 @@ local BUTTONS = {
 	ghost = { bg = { 0, 0, 0, 0 }, hover = S.colors.hover, border = { 0, 0, 0, 0 }, text = S.colors.muted },
 }
 
+-- Disabled buttons of every kind look the same: flat grey, so faded text never sits on a bright fill.
+local DISABLED = { bg = { 0.13, 0.13, 0.16, 1 }, border = S.colors.border, text = { 0.45, 0.45, 0.5, 1 } }
+
 local function paint(b)
-	local kind = BUTTONS[b.kind]
 	local enabled = b:IsEnabled() == 1 or b:IsEnabled() == true
+	local kind = enabled and BUTTONS[b.kind] or DISABLED
 	b:SetBackdropColor(unpack(b.hovered and enabled and kind.hover or kind.bg))
 	b:SetBackdropBorderColor(unpack(kind.border))
-	local c = enabled and kind.text or S.colors.muted
-	b.label:SetTextColor(c[1], c[2], c[3], enabled and 1 or 0.5)
+	b.label:SetTextColor(unpack(kind.text))
 	b.label:SetShadowColor(0, 0, 0, kind.flat and 0 or 1)
 end
 
