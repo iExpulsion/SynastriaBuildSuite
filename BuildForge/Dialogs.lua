@@ -133,10 +133,20 @@ local function create()
 		elseif userInput then
 			refreshExport()
 		end
+		if box.mode == "import" and self:GetText() == "" then box.placeholder:Show() else box.placeholder:Hide() end
+	end)
+	-- 3.3.5 gives addons no clipboard access, so the best is selecting the text and confirming the Ctrl+C
+	edit:SetScript("OnKeyDown", function(_, key)
+		if box.mode == "export" and key == "C" and IsControlKeyDown() then
+			box.note:SetText(S.Hex(C.good, "Copied. Paste it anywhere with Ctrl+V."))
+		end
 	end)
 	scroll:SetScrollChild(edit)
 	well:SetScript("OnMouseDown", function() edit:SetFocus() end)
 	f.edit = edit
+	f.placeholder = S.Text(well, "normal", C.muted)
+	f.placeholder:SetPoint("CENTER")
+	f.placeholder:SetText("Click here, then press Ctrl+V.")
 
 	f.note = S.Text(f, "small", C.muted)
 	f.note:SetPoint("BOTTOMLEFT", PAD, 20)
@@ -149,6 +159,12 @@ local function create()
 	end)
 	f.secondary:SetPoint("RIGHT", f.primary, "LEFT", -6, 0)
 	f.note:SetPoint("RIGHT", f.secondary, "LEFT", -12, 0)
+	f.selectAll = S.Button(f, "Select All", "primary", 100, function()
+		box.edit:SetFocus()
+		box.edit:HighlightText()
+		box.note:SetText(S.Hex(C.warn, "Selected. Press Ctrl+C to copy."))
+	end, "Select the whole string, ready for Ctrl+C.")
+	f.selectAll:SetPoint("BOTTOMRIGHT", -PAD, 14)
 	return f
 end
 
@@ -157,13 +173,15 @@ function Dialogs.ShowExport(build)
 	box = box or create()
 	box.mode, box.build, box.onImport = "export", build, nil
 	box.title:SetText("Export: " .. build.name)
-	box.sub:SetText("Click the box, then Ctrl+A and Ctrl+C to copy. Uncheck what you'd rather not share.")
+	box.sub:SetText("Select All, then Ctrl+C to copy. Uncheck what you'd rather not share.")
 	local remembered = BF.db.exportSections
 	local checked = {}
 	for _, section in ipairs(BF.Codec.SECTIONS) do checked[section.key] = not remembered or remembered[section.key] == true end
 	setToggles(BF.Codec.Has(build), checked)
 	box.primary:Hide()
 	box.secondary:Hide()
+	box.selectAll:Show()
+	box.placeholder:Hide()
 	refreshExport()
 	box:Show()
 end
@@ -175,6 +193,8 @@ function Dialogs.ShowImport(onImport, targetName)
 	box.mode, box.build, box.onImport = "import", nil, onImport
 	box.title:SetText("Import a Build")
 	box.sub:SetText("Paste a BuildForge or SynastriaPerkManager string, then pick the sections to bring in.")
+	box.selectAll:Hide()
+	box.placeholder:Show()
 	box.primary:Show()
 	box.secondary:SetLabel(targetName and ("Into " .. targetName) or "Into Build")
 	box.secondary.tooltipText = targetName and ("Replace those sections of %s with the string's."):format(targetName) or nil

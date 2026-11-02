@@ -23,7 +23,8 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   Export gives the share string; Delete asks first. The title bar shows whether the Perk window is open at an
   innkeeper, which perk activations need.
 - **Export and Import by section:** both boxes have Perks, Talents, Glyphs, Gear and Notes checkboxes. Export
-  rebuilds the string as you check and uncheck them, and remembers the choice. Import shows which sections the
+  rebuilds the string as you check and uncheck them, and remembers the choice; Select All selects the string so
+  Ctrl+C copies it (WoW gives addons no clipboard access, so the key press is yours). Import shows which sections the
   pasted string has; Import as New makes a build from the checked ones, and Into (the selected build) replaces
   just those sections of it, leaving the rest. Hunter pet aspects go with Perks; the name, classes and spec name
   always go.
