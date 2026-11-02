@@ -34,9 +34,7 @@ function Gear.Status(wanted)
 		local equipped = GetInventoryItemID("player", slot)
 		local row = { slot = slot, items = {}, equipped = equipped }
 		for rank, id in ipairs(items) do
-			local attuned = HasAttunedAnyVariantOfItem and HasAttunedAnyVariantOfItem(id) or false
-			local progress = GetItemAttuneProgress and GetItemAttuneProgress(id) or 0
-			row.items[rank] = { id = id, equipped = id == equipped, inBags = inBags[id] or false, attuned = attuned, progress = progress }
+			row.items[rank] = { id = id, equipped = id == equipped, inBags = inBags[id] or false }
 			if id == equipped then row.wearing = rank end
 		end
 		for rank, item in ipairs(row.items) do

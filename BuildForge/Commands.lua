@@ -168,8 +168,7 @@ local function gear(build)
 		local parts = {}
 		for _, item in ipairs(row.items) do
 			local mark = item.equipped and "|cff60ff60worn|r" or item.inBags and "|cffffff60bags|r" or "|cffaaaaaamissing|r"
-			local attune = item.attuned and "attuned" or ("%d%%"):format(item.progress or 0)
-			parts[#parts + 1] = ("%s %s %s"):format(itemText(item.id), mark, attune)
+			parts[#parts + 1] = ("%s %s"):format(itemText(item.id), mark)
 		end
 		BF:Print("  %s: %s", BF.SLOT_NAMES[row.slot] or row.slot, table.concat(parts, ", "))
 	end

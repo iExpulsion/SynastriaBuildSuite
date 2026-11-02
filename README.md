@@ -41,7 +41,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 - **Talents, Glyphs:** compared with your character right now (points still to spend, glyphs to socket). Each
   tab can take your current setup for that part.
 - **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of
-  preference, each shown as worn, in bags or missing, plus attunement. Drop an item on a slot to add an Alt,
+  preference, each shown as worn, in bags or missing. Drop an item on a slot to add an Alt,
   right-click to remove, Ctrl-click to make it Best. Equip from Bags puts on the highest-ranked item you're
   carrying in each slot.
 - **Notes:** free text saved with the build and included in exports.
@@ -57,7 +57,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 | `/bforge apply <name>` | Lists what would change in chat, then asks before applying |
 | `/bforge export <name>` | Shows the build as a one-line string to copy |
 | `/bforge import` | Opens a box to paste a BuildForge or SynastriaPerkManager string |
-| `/bforge gear <name>` | Shows each slot: worn, in bags or missing, and attunement |
+| `/bforge gear <name>` | Shows each slot: worn, in bags or missing |
 | `/bforge equip <name>` | Equips the build's gear you're carrying |
 | `/bforge note <name> <text>` | Sets the build's notes |
 | `/bforge minimap` | Hides or shows the minimap button |

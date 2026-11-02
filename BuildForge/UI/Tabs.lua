@@ -187,13 +187,12 @@ Tabs.render.gear = function(list, build)
 				for rank, item in ipairs(row.items) do
 					local name, link = GetItemInfo(item.id)
 					local where = item.equipped and color(GREEN, "Worn") or item.inBags and color(YELLOW, "In Bags") or color(GREY, "Missing")
-					local attune = item.attuned and color(GREEN, "Attuned") or color(GREY, ("%d%%"):format(item.progress or 0))
 					local label = rank == 1 and color(GREEN, "Best") or color(YELLOW, "Alt " .. (rank - 1))
 					list:Add({
 						text = (rank == 1 and slotName or "") .. "  " .. label .. "  " .. (link or name or ("Item " .. item.id)),
 						indent = rank == 1 and 0 or 40,
 						icon = GetItemIcon(item.id) or QUESTION,
-						status = where .. "  " .. attune,
+						status = where,
 						onDrop = onDrop,
 						onClick = itemClick(build, slot, rank),
 						tooltip = function(tt)
