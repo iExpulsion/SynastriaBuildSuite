@@ -49,7 +49,27 @@ function S.Rule(parent, where)
 	return t
 end
 
-local FONTS = { small = "GameFontHighlightSmall", normal = "GameFontHighlight", large = "GameFontHighlightLarge", huge = "GameFontNormalHuge" }
+-- Restyles a UIPanelScrollFrameTemplate bar as a thin flat track and thumb, without the arrow buttons.
+function S.ScrollBar(scroll, scrollName)
+	local bar = _G[scrollName .. "ScrollBar"]
+	_G[scrollName .. "ScrollBarScrollUpButton"]:Hide()
+	_G[scrollName .. "ScrollBarScrollDownButton"]:Hide()
+	bar:SetWidth(6)
+	bar:ClearAllPoints()
+	bar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", 4, 0)
+	bar:SetPoint("BOTTOMLEFT", scroll, "BOTTOMRIGHT", 4, 0)
+	local track = S.Solid(bar, "BACKGROUND", { 1, 1, 1, 0.04 })
+	track:SetAllPoints()
+	bar:SetThumbTexture(WHITE)
+	local thumb = bar:GetThumbTexture()
+	thumb:SetSize(6, 40)
+	thumb:SetVertexColor(unpack(S.colors.border))
+	bar:HookScript("OnEnter", function() thumb:SetVertexColor(unpack(S.colors.muted)) end)
+	bar:HookScript("OnLeave", function() thumb:SetVertexColor(unpack(S.colors.border)) end)
+	return bar
+end
+
+local FONTS ={ small = "GameFontHighlightSmall", normal = "GameFontHighlight", large = "GameFontHighlightLarge", huge = "GameFontNormalHuge" }
 
 function S.Text(parent, size, color, layer)
 	local fs = parent:CreateFontString(nil, layer or "ARTWORK", FONTS[size or "normal"])

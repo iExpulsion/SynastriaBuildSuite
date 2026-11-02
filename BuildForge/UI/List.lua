@@ -12,7 +12,6 @@ local STYLES = {
 	content = { rowH = 22, subRowH = 22, header = "GameFontNormalSmall", row = "GameFontHighlightSmall" },
 	sidebar = { rowH = 22, subRowH = 36, header = "GameFontNormalSmall", row = "GameFontHighlight" },
 }
-local MINUS, PLUS = "Interface\\Buttons\\UI-MinusButton-UP", "Interface\\Buttons\\UI-PlusButton-UP"
 
 local function runTooltip(row)
 	row.hoverTex:Show()
@@ -49,9 +48,10 @@ local function newRow(self)
 	row.bar:SetPoint("TOPLEFT")
 	row.bar:SetPoint("BOTTOMLEFT")
 
-	row.toggle = row:CreateTexture(nil, "ARTWORK")
-	row.toggle:SetSize(14, 14)
-	row.toggle:SetPoint("LEFT", 6, 0)
+	row.toggle = S.Text(row, "normal", S.colors.muted)
+	row.toggle:SetWidth(12)
+	row.toggle:SetJustifyH("CENTER")
+	row.toggle:SetPoint("LEFT", 8, 0)
 	row.icon = row:CreateTexture(nil, "ARTWORK")
 	row.icon:SetSize(16, 16)
 
@@ -86,9 +86,9 @@ function List.New(parent, name, width, height, style)
 	return self
 end
 
--- The bar only shows when there's something to scroll.
+-- A flat bar that only shows when there's something to scroll.
 function List.AutoHideBar(scroll, scrollName)
-	local bar = _G[scrollName .. "ScrollBar"]
+	local bar = S.ScrollBar(scroll, scrollName)
 	local function update()
 		if (scroll:GetVerticalScrollRange() or 0) > 0 then bar:Show() else bar:Hide() end
 	end
@@ -122,7 +122,7 @@ function List:Add(entry)
 
 	local x = 10 + (entry.indent or 0)
 	if entry.collapsed ~= nil then
-		row.toggle:SetTexture(entry.collapsed and PLUS or MINUS)
+		row.toggle:SetText(entry.collapsed and "+" or "-")
 		row.toggle:Show()
 		x = x + 16
 	else

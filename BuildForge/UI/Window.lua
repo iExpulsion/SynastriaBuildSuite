@@ -123,10 +123,10 @@ local function renderSidebar()
 			if group.fits then firstFit = firstFit or build end
 			if not collapsed then
 				shown = shown + 1
-				local sub = (build.spec and build.spec ~= "") and build.spec or Window.ClassText(build.classes, true)
+				local spec = build.spec or ""
 				list:Add({
 					text = build.name,
-					sub = sub,
+					sub = spec ~= "" and spec ~= build.name and spec or nil,
 					status = build.name == applied and S.Hex(C.good, "Applied") or nil,
 					indent = 12,
 					selected = build.name == state.selected,

@@ -78,7 +78,7 @@ Tabs.render.perks = function(list, build)
 					local status
 					if skipped[w.id] then status = color(GREY, skipped[w.id])
 					elseif activate[w.id] then status = color(YELLOW, "To Activate")
-					else status = color(GREEN, "Active") end
+					else status = color(GREY, "Active") end
 					if optionsDiffer[w.id] or spellDiffers[w.id] then status = status .. color(YELLOW, ", Options Differ") end
 					list:Add({
 						text = BF.Perks.Name(w.id), status = status, indent = 8,
@@ -180,7 +180,7 @@ Tabs.render.glyphs = function(list, build)
 		local status
 		count = count + 1
 		if have == spell then
-			status = color(GREEN, "Socketed")
+			status = color(GREY, "Socketed")
 		else
 			missing = missing + 1
 			status = have and color(YELLOW, "Socket has " .. (GetSpellInfo(have) or have)) or color(YELLOW, "Empty Socket")
