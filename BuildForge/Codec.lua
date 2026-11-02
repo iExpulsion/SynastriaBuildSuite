@@ -172,8 +172,14 @@ function Codec.Encode(build)
 		if #parts > 0 then f[#f + 1] = "t=" .. table.concat(parts, ",") end
 	end
 
-	local glyphs = build.glyphs and encodeSlots(build.glyphs, GLYPH_SOCKETS, b36) or ""
-	if glyphs ~= "" then f[#f + 1] = "gl=" .. glyphs end
+	if build.glyphs then
+		local parts = {}
+		for _, class in ipairs(sortedKeys(build.glyphs)) do
+			local sockets = encodeSlots(build.glyphs[class], GLYPH_SOCKETS, b36)
+			if sockets ~= "" then parts[#parts + 1] = b36(BF.CLASS_IDS[class]) .. ":" .. sockets end
+		end
+		if #parts > 0 then f[#f + 1] = "gl=" .. table.concat(parts, ",") end
+	end
 
 	if build.pet then f[#f + 1] = "h=" .. b36(build.pet) end
 
@@ -232,8 +238,16 @@ end
 
 readers.gl = function(b, v)
 	b.glyphs = {}
-	for socket, spell in ipairs(split(v, ".")) do
-		if spell ~= "" then b.glyphs[socket] = num(spell) end
+	for _, entry in ipairs(split(v, ",")) do
+		local id, sockets = entry:match("^(%w):(.*)$")
+		local class = id and BF.CLASS_KEYS[num(id)]
+		if class then
+			local g = {}
+			for socket, spell in ipairs(split(sockets, ".")) do
+				if spell ~= "" then g[socket] = num(spell) end
+			end
+			b.glyphs[class] = g
+		end
 	end
 end
 

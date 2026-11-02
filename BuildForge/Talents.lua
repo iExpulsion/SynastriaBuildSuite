@@ -8,13 +8,18 @@ local function isMultiClass()
 	return CMCGetClassCount ~= nil and CMCGetClassCount() > 1 and not CMCIsDualSingleClass()
 end
 
--- Shows `class` in the talent API. Returns false if the client didn't switch (see docs/DESIGN.md).
+-- Shows `class` in the talent API. Returns false if the client didn't switch (see docs/DESIGN.md). The switch
+-- refreshes that class's talent info, firing PLAYER_TALENT_UPDATE; `switching` lets the window ignore those.
 function Talents.Select(class)
 	local ok = true
 	if isMultiClass() then
 		for i, key in ipairs(BF:PlayerClasses()) do
 			if key == class then
-				if GetSelectedTalentClassIndex() ~= i then CMCSetSelectedTalents(i) end
+				if GetSelectedTalentClassIndex() ~= i then
+					Talents.switching = true
+					CMCSetSelectedTalents(i)
+					Talents.switching = false
+				end
 				ok = GetSelectedTalentClassIndex() == i
 			end
 		end

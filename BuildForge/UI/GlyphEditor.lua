@@ -1,9 +1,10 @@
 local _, NS = ...
 local BF = NS.BF
 
--- The Glyphs tab: the six sockets, Major and Minor, each bordered by whether the glyph is socketed, in your bags
--- or missing, and a picker listing the build's classes' glyphs for the selected socket. Glyphs are used up when
--- socketed, so BuildForge never sockets them; Open Glyph Frame does that part.
+-- The Glyphs tab: a class bar for multi-class builds (each class has its own glyphs), the class's six sockets,
+-- Major and Minor, each bordered by whether the glyph is socketed, in your bags or missing, and a picker listing
+-- that class's glyphs for the selected socket. Glyphs are used up when socketed, so BuildForge never sockets
+-- them; Open Glyph Frame does that part.
 local Editor = {}
 BF.GlyphEditor = Editor
 
@@ -12,7 +13,7 @@ local C = S.colors
 local Glyphs
 
 local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
-local SOCKETS_W, ICON, ROW, SEARCH_H = 300, 40, 60, S.CONTROL_H + S.GAP
+local SOCKETS_W, ICON, ROW, SEARCH_H, CLASSBAR_H = 300, 40, 60, S.CONTROL_H + S.GAP, S.CONTROL_H + S.GAP
 local COLUMNS = { { title = "Major Glyphs", sockets = { 1, 4, 6 } }, { title = "Minor Glyphs", sockets = { 2, 3, 5 } } }
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 local EMPTY = "Interface\\Icons\\INV_Misc_Rune_01"
@@ -23,7 +24,16 @@ local state = { socket = 1, search = "" }
 Editor.state = state
 
 local function buildClasses(build)
-	return build.classes and #build.classes > 0 and build.classes or BF:PlayerClasses()
+	local classes, seen = {}, {}
+	local function add(key)
+		if NS.GlyphData and NS.GlyphData[key] and not seen[key] then
+			classes[#classes + 1] = key
+			seen[key] = true
+		end
+	end
+	for _, key in ipairs(build.classes and #build.classes > 0 and build.classes or BF:PlayerClasses()) do add(key) end
+	for key in pairs(build.glyphs or {}) do add(key) end
+	return classes
 end
 
 -- Socketed and Missing depend on the active spec, so a build for another spec only shows what's in your bags.
@@ -42,7 +52,7 @@ local function glyphName(row)
 end
 
 local function choose(spell)
-	local ok, reason = Glyphs.Set(current, state.socket, spell)
+	local ok, reason = Glyphs.Set(current, state.class, state.socket, spell)
 	if ok then
 		PlaySound("igMainMenuOptionCheckBoxOn")
 		BF:Changed()
@@ -96,7 +106,7 @@ local function newSocket(parent, socket, width)
 	b.status:SetPoint("TOPLEFT", b.name, "BOTTOMLEFT", 0, -4)
 	b:SetScript("OnClick", function(self, mouse)
 		if mouse == "RightButton" then
-			Glyphs.Clear(current, self.socket)
+			Glyphs.Clear(current, state.class, self.socket)
 			BF:Changed()
 		else
 			state.socket = self.socket
@@ -108,8 +118,8 @@ local function newSocket(parent, socket, width)
 	return b
 end
 
-local function renderSockets(rows)
-	local comparing = BF.Window.IsComparing(current)
+local function renderSockets(rows, comparable)
+	local comparing = comparable and BF.Window.IsComparing(current)
 	for socket, b in pairs(panel.sockets) do
 		local row = rows[socket]
 		local look = lookFor(row, comparing)
@@ -126,10 +136,9 @@ end
 
 -- Picker ----------------------------------------------------------------------------------------------------
 
-local function renderPicker(build, rows)
+local function renderPicker(rows)
 	local socket = state.socket
 	local kind = Glyphs.SOCKETS[socket].kind
-	local classes = buildClasses(build)
 	local chosen = rows[socket].spell
 	local inSocket = {}
 	for s, row in ipairs(rows) do
@@ -138,14 +147,8 @@ local function renderPicker(build, rows)
 	panel.pickTitle:SetText(("%s Glyphs for Socket %d"):format(kind == "major" and "Major" or "Minor", socket))
 	local list = panel.picker
 	list:Begin()
-	local lastClass
-	local multi = #classes > 1
-	for _, g in ipairs(Glyphs.Options(classes, kind)) do
+	for _, g in ipairs(Glyphs.Options({ state.class }, kind)) do
 		if state.search == "" or g.name:lower():find(state.search, 1, true) then
-			if multi and g.class ~= lastClass then
-				list:Add({ text = BF.Window.ClassText({ g.class }), header = true })
-				lastClass = g.class
-			end
 			local status
 			if g.spell == chosen then status = S.Hex(C.accent, "Chosen")
 			elseif inSocket[g.spell] then status = S.Hex(C.muted, "In Socket " .. inSocket[g.spell])
@@ -153,14 +156,14 @@ local function renderPicker(build, rows)
 			end
 			local spell, item = g.spell, g.item
 			list:Add({
-				text = g.name, icon = GetItemIcon(item) or QUESTION, indent = multi and 6 or 2,
+				text = g.name, icon = GetItemIcon(item) or QUESTION, indent = 2,
 				status = status, selected = spell == chosen,
 				onClick = function(_, mouse)
 					if IsModifiedClick("CHATLINK") then
 						local link = select(2, GetItemInfo(item))
 						if link then ChatEdit_InsertLink(link) end
 					elseif mouse == "RightButton" and spell == chosen then
-						Glyphs.Clear(current, socket)
+						Glyphs.Clear(current, state.class, socket)
 						BF:Changed()
 					else
 						choose(spell)
@@ -176,19 +179,25 @@ local function renderPicker(build, rows)
 	end
 	if list.count == 0 then
 		list:Add({ text = S.Hex(C.muted, state.search ~= "" and "No glyphs match your search."
-			or "No glyph data for this build's classes.") })
+			or "No glyph data for this class.") })
 	end
 	list:End()
 	if chosen then panel.clear:Enable() else panel.clear:Disable() end
 end
 
-local function summary(build)
-	local missing = #Glyphs.Plan(build.glyphs)
-	local count = 0
-	for _ in pairs(build.glyphs or {}) do count = count + 1 end
+local function summary(rows, comparable)
+	local count, missing = 0, 0
+	for _, row in ipairs(rows) do
+		if row.spell then count = count + 1 end
+		if row.spell and not row.socketed then missing = missing + 1 end
+	end
 	local text
 	if count == 0 then
 		text = S.Hex(C.muted, "No Glyphs Yet: Pick a Socket, Then a Glyph")
+	elseif not BF:HasClass(state.class) then
+		text = S.Hex(C.muted, ("%s Isn't One of Your Classes"):format(BF.Window.ClassText({ state.class }, true)))
+	elseif not comparable then
+		text = S.Hex(C.muted, ("Show %s in the Talent Window to Compare"):format(BF.Window.ClassText({ state.class }, true)))
 	elseif missing == 0 then
 		text = S.Hex(C.good, "Your Glyphs Match This Build")
 	else
@@ -197,13 +206,44 @@ local function summary(build)
 	return text
 end
 
+local function renderClassBar(classes)
+	for i, b in ipairs(panel.classButtons) do
+		local key = classes[i]
+		if key and #classes > 1 then
+			b.key = key
+			b:SetLabel(BF.Window.ClassText({ key }, true))
+			b:SetKind(key == state.class and "selected" or "secondary")
+			b:Show()
+		else
+			b:Hide()
+		end
+	end
+end
+
+-- Moves the sockets below the class bar, or to the top when there's only one class.
+local function placeSockets(top)
+	if panel.top ~= top then
+		panel.top = top
+		for _, item in ipairs(panel.placed) do
+			item.frame:ClearAllPoints()
+			item.frame:SetPoint("TOPLEFT", item.x, -(top + item.y))
+		end
+	end
+end
+
 function Editor.Render(build)
 	current = build
 	Glyphs = BF.Glyphs
-	local rows = Glyphs.Status(build)
-	renderSockets(rows)
-	renderPicker(build, rows)
-	return summary(build)
+	local classes = buildClasses(build)
+	local found = false
+	for _, k in ipairs(classes) do if k == state.class then found = true end end
+	if not found then state.class = classes[1] or BF:PlayerClasses()[1] end
+	renderClassBar(classes)
+	placeSockets(#classes > 1 and CLASSBAR_H or 0)
+	local rows, comparable = Glyphs.Status(build, state.class)
+	renderSockets(rows, comparable)
+	renderPicker(rows)
+	return summary(rows, comparable)
 end
 
 -- Construction ----------------------------------------------------------------------------------------------
@@ -212,21 +252,32 @@ function Editor.Create(parent, width, height)
 	Glyphs = BF.Glyphs
 	panel = CreateFrame("Frame", nil, parent)
 	panel:SetSize(width, height)
-	panel.sockets = {}
+	panel.sockets, panel.placed = {}, {}
+
+	panel.classButtons = {}
+	for i = 1, 3 do
+		local b = S.Button(panel, "", "secondary", 90, function(self)
+			state.class = self.key
+			BF:Changed()
+		end)
+		if i == 1 then b:SetPoint("TOPLEFT", 0, 0) else b:SetPoint("LEFT", panel.classButtons[i - 1], "RIGHT", -1, 0) end
+		panel.classButtons[i] = b
+	end
 
 	-- each column: a title line, then its three sockets; PAD between the Major and Minor blocks
 	local TITLE_LINE = 14 + GAP
 	for c, column in ipairs(COLUMNS) do
 		local top = (c - 1) * (TITLE_LINE + #column.sockets * ROW + PAD)
 		local title = S.Text(panel, "normal")
-		title:SetPoint("TOPLEFT", 4, -top)
 		title:SetText(column.title)
+		panel.placed[#panel.placed + 1] = { frame = title, x = 4, y = top }
 		for i, socket in ipairs(column.sockets) do
 			local b = newSocket(panel, socket, SOCKETS_W)
-			b:SetPoint("TOPLEFT", 0, -(top + TITLE_LINE + (i - 1) * ROW))
+			panel.placed[#panel.placed + 1] = { frame = b, x = 0, y = top + TITLE_LINE + (i - 1) * ROW }
 			panel.sockets[socket] = b
 		end
 	end
+	placeSockets(0)
 
 	local pickW = width - SOCKETS_W - PAD
 	local pick = CreateFrame("Frame", nil, panel)
@@ -245,7 +296,7 @@ function Editor.Create(parent, width, height)
 	panel.picker = BF.List.New(pick, "BuildForgeGlyphPicker", pickW - 22, height - listTop - (PAD + CONTROL_H + GAP))
 	panel.picker.scroll:SetPoint("TOPLEFT", 1, -listTop)
 	panel.clear = S.Button(pick, "Clear Socket", "secondary", 100, function()
-		Glyphs.Clear(current, state.socket)
+		Glyphs.Clear(current, state.class, state.socket)
 		BF:Changed()
 	end, "Take the glyph out of the selected socket.")
 	panel.clear:SetPoint("BOTTOMLEFT", PAD, PAD)

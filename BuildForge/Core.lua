@@ -142,6 +142,13 @@ frame:SetScript("OnEvent", function(self, event, name)
 			for group, name in pairs(BuildForgeCharDB.applied) do links[group] = links[group] or name end
 			BuildForgeCharDB.applied = nil
 		end
+		-- glyphs used to be one set per build; they're per class now
+		for _, build in pairs(BuildForgeDB.builds) do
+			local first = build.glyphs and next(build.glyphs)
+			if type(first) == "number" then
+				build.glyphs = build.classes and build.classes[1] and { [build.classes[1]] = build.glyphs } or nil
+			end
+		end
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 end)

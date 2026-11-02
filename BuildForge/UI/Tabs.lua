@@ -72,14 +72,14 @@ Tabs.actions.talents = {
 -- Glyphs (the tab itself is the socket editor in UI/GlyphEditor.lua)
 
 Tabs.diff.glyphs = function(build)
-	return #BF.Glyphs.Plan(build.glyphs)
+	return BF.Glyphs.ShownMissing(build)
 end
 
 Tabs.actions.glyphs = {
 	{ label = "Open Glyph Frame", tooltip = "Open the game's glyph window to socket the glyphs you're carrying.", run = function()
 		BF.Glyphs.OpenFrame()
 	end },
-	{ label = "Use My Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec.", run = function(build)
+	{ label = "Use My Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec, for each of your classes.", run = function(build)
 		build.glyphs = BF.Glyphs.Capture()
 		BF:Changed()
 	end },

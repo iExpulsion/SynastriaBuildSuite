@@ -60,9 +60,11 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   before adding them.
 - **Glyphs:** the six sockets, Major and Minor, each with a green border when the glyph is socketed in your
   active spec, yellow when the glyph item is in your bags and red when you don't have it. Click a socket to
-  list the build's classes' glyphs of that kind (with a search box) and click one to choose it; right-click a
-  socket or use Clear Socket to empty it. A glyph can only be in one socket. Glyphs are used up when socketed,
-  so BuildForge leaves that to you: Open Glyph Frame opens the game's glyph window. Use My Glyphs copies yours.
+  list that class's glyphs of that kind (with a search box) and click one to choose it; right-click a
+  socket or use Clear Socket to empty it. A glyph can only be in one socket. Each class of a dual-class
+  character has its own glyphs, so those builds get a button per class, like the Talents tab; sockets are only
+  compared for the class shown in the talent window. Glyphs are used up when socketed, so BuildForge leaves
+  that to you: Open Glyph Frame opens the game's glyph window. Use My Glyphs copies yours, for every class.
 - **Gear:** a paper doll of the build's Best item per slot, with a green border when you're wearing it, yellow
   when it's in your bags and red when you don't have it; a badge counts the slot's Alts (stand-ins, in order of
   preference). Click a slot to list its Best and Alts beside the doll, where Make Best and Remove (or Ctrl-click

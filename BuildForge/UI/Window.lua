@@ -395,7 +395,7 @@ end
 
 -- Coalesces bursts of events (bag updates) into one render per frame.
 function Window.Refresh()
-	if frame then frame.dirty = true end
+	if frame and not BF.Talents.switching then frame.dirty = true end
 end
 
 -- Shows a one-off status message in the footer until the next tab or build change.
