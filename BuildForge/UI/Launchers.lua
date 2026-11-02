@@ -9,7 +9,7 @@ BF.Launchers = Launchers
 local CHECK_EVERY, GIVE_UP_AFTER = 1, 600
 local attached = {}
 
-local function attach(parentName)
+local function attach(parentName, onAttach)
 	local parent = _G[parentName]
 	if parent and not attached[parentName] then
 		local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
@@ -18,12 +18,19 @@ local function attach(parentName)
 		b:SetPoint("BOTTOMRIGHT", parent, "TOPRIGHT", -40, -2)
 		b:SetScript("OnClick", function() BF.Window.Toggle() end)
 		attached[parentName] = b
+		if onAttach then onAttach(parent) end
 	end
 	return attached[parentName] ~= nil
 end
 
+-- the server opens the Perk Manager after BuildForge when both come from the gossip line
+local function watchPerkManager(parent)
+	parent:HookScript("OnShow", function() BF.Window.Render() end)
+	parent:HookScript("OnHide", function() BF.Window.Render() end)
+end
+
 function Launchers.Check()
-	local perks = attach("PerkMgrFrame")
+	local perks = attach("PerkMgrFrame", watchPerkManager)
 	local talents = attach("PlayerTalentFrame")
 	return perks and talents
 end
