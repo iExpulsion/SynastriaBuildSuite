@@ -582,18 +582,19 @@ local function createBuildHeader(main)
 		Window.Render()
 	end)
 
-	f.specLinkLabel = S.Text(main, "small", C.muted)
-	f.specLinkLabel:SetPoint("LEFT", f.spec, "RIGHT", 2 * GAP, 0)
-	f.specLinkLabel:SetText("Linked to")
+	-- the spec link sits flush right under the actions, laid out right to left so hiding the tag moves nothing
 	f.specLink = S.Dropdown(main, 140, function(group)
 		local build = selectedBuild()
 		if build then BF:LinkSpec(build.name, group ~= 0 and group or nil) end
 		Window.Render()
 	end)
-	f.specLink:SetPoint("LEFT", f.specLinkLabel, "RIGHT", GAP, 0)
+	f.specLink:SetPoint("RIGHT", row2, "RIGHT", 0, 0)
 	f.specLink.tooltipText = "The talent spec on this character this build is for. Applying a build links it to the active spec."
+	f.specLinkLabel = S.Text(main, "small", C.muted)
+	f.specLinkLabel:SetPoint("RIGHT", f.specLink, "LEFT", -GAP, 0)
+	f.specLinkLabel:SetText("Linked to")
 	f.specActive = S.Text(main, "small", C.good)
-	f.specActive:SetPoint("LEFT", f.specLink, "RIGHT", GAP, 0)
+	f.specActive:SetPoint("RIGHT", f.specLinkLabel, "LEFT", -2 * GAP, 0)
 	f.specActive:SetText("Active Spec")
 
 	-- Apply Build, or Switch to Spec N for a build whose spec isn't active (applying it here would overwrite
