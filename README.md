@@ -40,9 +40,11 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   active Misc perks. Exports leave it out; importing a string with Misc perks asks before adding them.
 - **Talents, Glyphs:** compared with your character right now (points still to spend, glyphs to socket). Each
   tab can take your current setup for that part.
-- **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of
-  preference, each shown as worn, in bags or missing. Drop an item on a slot to add an Alt,
-  right-click to remove, Ctrl-click to make it Best. Equip from Bags puts on the highest-ranked item you're
+- **Gear:** a paper doll of the build's Best item per slot, with a green border when you're wearing it, yellow
+  when it's in your bags and red when you don't have it; a badge counts the slot's Alts (stand-ins, in order of
+  preference). Click a slot to list its Best and Alts beside the doll, where Make Best and Remove (or Ctrl-click
+  and right-click) reorder them. Drop an item anywhere on the tab and it goes to its slot; rings, trinkets and
+  one-hand weapons fill an empty slot of the pair first. Equip from Bags puts on the highest-ranked item you're
   carrying in each slot.
 - **Notes:** free text saved with the build and included in exports.
 

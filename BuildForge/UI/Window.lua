@@ -192,11 +192,12 @@ local function renderTabs(build)
 		end
 		b:SetWidth(b.label:GetStringWidth() + (diff and diff > 0 and (b.badge:GetStringWidth() + 26) or 0) + 28)
 	end
-	local isNotes, isTalents, isPerks = state.tab == "notes", state.tab == "talents", state.tab == "perks"
+	local isNotes, isTalents, isPerks, isGear = state.tab == "notes", state.tab == "talents", state.tab == "perks", state.tab == "gear"
 	setShown(frame.notes, isNotes)
 	setShown(frame.talentEditor, isTalents)
 	setShown(frame.perkEditor, isPerks)
-	if isNotes or isTalents or isPerks then frame.content:Hide() else frame.content:Show() end
+	setShown(frame.gearEditor, isGear)
+	if isNotes or isTalents or isPerks or isGear then frame.content:Hide() else frame.content:Show() end
 end
 
 local function renderActions(build)
@@ -262,6 +263,9 @@ local function renderBuild(build)
 		frame.summary:SetText(state.message or summary or "")
 	elseif state.tab == "perks" then
 		local summary = BF.PerkEditor.Render(build)
+		frame.summary:SetText(state.message or summary or "")
+	elseif state.tab == "gear" then
+		local summary = BF.GearEditor.Render(build)
 		frame.summary:SetText(state.message or summary or "")
 	else
 		frame.content:Begin()
@@ -564,6 +568,8 @@ local function createMain(f)
 	f.talentEditor:SetPoint("TOPLEFT", 16, -bodyTop)
 	f.perkEditor = BF.PerkEditor.Create(main, bodyW - 8, bodyH - 4)
 	f.perkEditor:SetPoint("TOPLEFT", 16, -bodyTop)
+	f.gearEditor = BF.GearEditor.Create(main, bodyW - 8, bodyH - 4)
+	f.gearEditor:SetPoint("TOPLEFT", 16, -bodyTop)
 
 	local footer = CreateFrame("Frame", nil, main)
 	footer:SetPoint("BOTTOMLEFT")

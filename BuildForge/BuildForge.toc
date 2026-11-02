@@ -23,6 +23,7 @@ UI\List.lua
 UI\Review.lua
 UI\TalentEditor.lua
 UI\PerkEditor.lua
+UI\GearEditor.lua
 UI\Window.lua
 UI\Tabs.lua
 UI\Launchers.lua
