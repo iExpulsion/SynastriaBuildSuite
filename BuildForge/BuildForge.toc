@@ -26,3 +26,4 @@ UI\PerkEditor.lua
 UI\Window.lua
 UI\Tabs.lua
 UI\Launchers.lua
+UI\Minimap.lua

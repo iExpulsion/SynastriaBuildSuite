@@ -190,7 +190,7 @@ end
 local function help()
 	BF:Print("v%s commands (/bforge alone opens the window):", BF.version)
 	BF:Print("  /bforge list | save <name> | apply <name> | export <name> | import")
-	BF:Print("  /bforge gear <name> | equip <name> | delete <name> | note <name> <text>")
+	BF:Print("  /bforge gear <name> | equip <name> | delete <name> | note <name> <text> | minimap")
 end
 
 local handlers = {}
@@ -232,6 +232,8 @@ handlers.checktalents = function()
 		for i = 1, math.min(#problems, 10) do BF:Print("  %s", problems[i]) end
 	end
 end
+
+handlers.minimap = function() BF.MinimapButton.Toggle() end
 
 handlers.note = function(arg)
 	local name, text = arg:match("^(%S+)%s*(.*)$")

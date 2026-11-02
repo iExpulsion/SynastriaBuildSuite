@@ -6,8 +6,12 @@ name and notes.
 
 ## The Window
 
-`/bforge`, or the BuildForge button above the Perk window or the talent frame, opens the build window. Drag
-its title bar to move it (it remembers where); Esc closes it.
+`/bforge`, the minimap button, or the BuildForge button above the Perk window or the talent frame opens the
+build window. Drag its title bar to move it (it remembers where); Esc closes it.
+
+The minimap button's left-click opens or closes the window; right-click opens the build linked to your active
+spec. Drag it around the minimap's edge to move it, and `/bforge minimap` hides or shows it. With a
+LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appears there as a launcher.
 
 - **Sidebar:** search your builds, grouped by class; click a group to collapse it. Groups for classes you
   don't have start collapsed. A build linked to one of this character's specs shows it (Spec 2), green when
@@ -56,6 +60,7 @@ its title bar to move it (it remembers where); Esc closes it.
 | `/bforge gear <name>` | Shows each slot: worn, in bags or missing, and attunement |
 | `/bforge equip <name>` | Equips the build's gear you're carrying |
 | `/bforge note <name> <text>` | Sets the build's notes |
+| `/bforge minimap` | Hides or shows the minimap button |
 | `/bforge checktalents` | Checks the talent data against your live talents (for the class in your talent window) |
 | `/bforge delete <name>` | Deletes a build |
 
