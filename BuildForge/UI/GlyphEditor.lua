@@ -186,11 +186,11 @@ local function summary(build)
 	for _ in pairs(build.glyphs or {}) do count = count + 1 end
 	local text
 	if count == 0 then
-		text = S.Hex(C.muted, "This build has no glyphs. Pick a socket, then a glyph.")
+		text = S.Hex(C.muted, "No Glyphs Yet: Pick a Socket, Then a Glyph")
 	elseif missing == 0 then
-		text = S.Hex(C.good, "Your glyphs match this build.")
+		text = S.Hex(C.good, "Your Glyphs Match This Build")
 	else
-		text = ("%d glyph(s) to socket. Glyphs are used up, so BuildForge leaves socketing to you."):format(missing)
+		text = S.Count(missing, "Glyph") .. " to Socket Yourself"
 	end
 	return text
 end

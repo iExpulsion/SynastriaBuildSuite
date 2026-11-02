@@ -85,7 +85,7 @@ local function slotTooltip(button)
 	if row then
 		GameTooltip:SetHyperlink("item:" .. row.items[1].id)
 		GameTooltip:AddLine(" ")
-		if #row.items > 1 then GameTooltip:AddLine(("%d Alt(s) for this slot."):format(#row.items - 1), 0.6, 0.8, 1) end
+		if #row.items > 1 then GameTooltip:AddLine(S.Count(#row.items - 1, "Alt") .. " for this slot.", 0.6, 0.8, 1) end
 		GameTooltip:AddLine("Click to see this slot's items.", 0.6, 0.6, 0.66)
 	else
 		GameTooltip:AddLine(BF.SLOT_NAMES[button.slot], 1, 1, 1)
@@ -226,10 +226,10 @@ local function summary(rows)
 	end
 	local text
 	if #rows == 0 then
-		text = S.Hex(C.muted, "Drop items anywhere on this tab, or use your equipped gear.")
+		text = S.Hex(C.muted, "No Gear Yet: Drop Items Here or Use My Gear")
 	else
-		text = ("Wearing the Best item in %d of %d slots."):format(worn, #rows)
-		if inBags > 0 then text = text .. (" %d higher-ranked item(s) in your bags."):format(inBags) end
+		text = ("Wearing the Best Item in %d of %d Slots"):format(worn, #rows)
+		if inBags > 0 then text = text .. ", " .. S.Count(inBags, "Better Item") .. " in Your Bags" end
 	end
 	return text
 end

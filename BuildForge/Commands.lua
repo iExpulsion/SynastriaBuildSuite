@@ -51,10 +51,11 @@ function BF:Report(plan)
 
 	for _, entry in ipairs(plan.talents.classes) do
 		if #entry.conflicts > 0 then
-			self:Print("  |cffff6060%s talents: %d talent(s) have more points than the build; reset talents first.|r", entry.class, #entry.conflicts)
+			self:Print("  |cffff6060%s talents: %s more points than the build; reset talents first.|r", entry.class,
+				BF.Style.Count(#entry.conflicts, "talent has", "talents have"))
 		elseif entry.points > 0 then
 			local short = entry.points > entry.unspent and (" |cffff6060(only %d unspent)|r"):format(entry.unspent) or ""
-			self:Print("  %s talents: %d point(s) to spend%s", entry.class, entry.points, short)
+			self:Print("  %s talents: %s to spend%s", entry.class, BF.Style.Count(entry.points, "point"), short)
 		end
 	end
 	for _, s in ipairs(plan.talents.skipped) do self:Print("  |cffaaaaaaSkipped %s talents: %s|r", s.class, s.reason) end
@@ -121,8 +122,8 @@ function BF:Import(text, onDone, sections, into, name)
 		if build.perks then build.perks = own end
 		local function offerShared()
 			if #misc > 0 then
-				BF.Dialogs.Confirm("BUILDFORGE_SHARED", #misc, function()
-					self:Print("Added %d perk(s) to Shared Perks.", BF.Perks.AddShared(misc))
+				BF.Dialogs.Confirm("BUILDFORGE_SHARED", BF.Style.Count(#misc, "Misc perk"), function()
+					self:Print("Added %s to Shared Perks.", BF.Style.Count(BF.Perks.AddShared(misc), "perk"))
 					self:Changed()
 				end)
 			end
@@ -182,7 +183,7 @@ function BF:EquipGear(build)
 	if InCombatLockdown() then
 		self:Print("Can't change gear in combat.")
 	else
-		self:Print("Equipped %d item(s) from bags.", BF.Gear.EquipFromBags(build.gear))
+		self:Print("Equipped %s from bags.", BF.Style.Count(BF.Gear.EquipFromBags(build.gear), "item"))
 	end
 end
 

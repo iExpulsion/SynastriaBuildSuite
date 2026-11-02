@@ -394,12 +394,18 @@ local function summary(look)
 	local plan = look.plan
 	local changes = #plan.activate + #plan.deactivate
 	local text
-	if changes + #plan.options + #plan.spells == 0 then
-		text = S.Hex(C.good, current.sharedOnly and "Your Misc perks match Shared Perks." or "Your perks match this build.")
+	local options = #plan.options + #plan.spells
+	if changes + options == 0 then
+		text = S.Hex(C.good, current.sharedOnly and "Your Misc Perks Match Shared Perks" or "Your Perks Match This Build")
 	else
-		text = ("%d to activate, %d to deactivate, %d option change(s)."):format(#plan.activate, #plan.deactivate, #plan.options + #plan.spells)
+		-- only the counts that aren't zero, so the line fits the footer
+		local parts = {}
+		if #plan.activate > 0 then parts[#parts + 1] = #plan.activate .. " to Activate" end
+		if #plan.deactivate > 0 then parts[#parts + 1] = #plan.deactivate .. " to Deactivate" end
+		if options > 0 then parts[#parts + 1] = S.Count(options, "Option Change") end
+		text = table.concat(parts, ", ")
 		if changes > 0 and not Perks.Writable() then
-			text = text .. S.Hex(C.bad, " Activations need the Perk Manager at an innkeeper.")
+			text = text .. "   " .. S.Hex(C.bad, "Needs an Innkeeper")
 		end
 	end
 	return text

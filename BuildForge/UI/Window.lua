@@ -95,12 +95,12 @@ end
 
 function Window.InactiveNote(build)
 	local target = Window.SpecToSwitch(build)
-	return S.Hex(C.warn, ("Spec %d isn't active, so nothing is compared. Switch to Spec %d to compare and apply."):format(target, target))
+	return S.Hex(C.warn, ("Spec %d Isn't Active, so Nothing Is Compared"):format(target))
 end
 
 function Window.SwitchSpec(group)
 	if InCombatLockdown() then
-		Window.Message(S.Hex(C.bad, "Can't switch specs in combat."))
+		Window.Message(S.Hex(C.bad, "Can't Switch Specs in Combat"))
 	else
 		SetActiveTalentGroup(group)
 		Window.Message(S.Hex(C.muted, "Switching to " .. BF:SpecName(group) .. "..."))
@@ -314,7 +314,7 @@ end
 local function renderInnkeeper()
 	local at = BF.Perks.Writable()
 	frame.innDot:SetVertexColor(unpack(at and C.good or C.muted))
-	frame.innText:SetText(at and "Perk Manager open at an innkeeper" or "Perk activations need an innkeeper")
+	frame.innText:SetText(at and "Perk Manager Open at an Innkeeper" or "Perk Activations Need an Innkeeper")
 	frame.innText:SetTextColor(unpack(at and C.good or C.muted))
 end
 

@@ -232,7 +232,7 @@ function Editor.Render(build)
 	if #classes == 0 then
 		for _, col in ipairs(panel.columns) do col:Hide() end
 		renderClassBar({})
-		summary = S.Hex(C.muted, "No talent data for this build's classes.")
+		summary = S.Hex(C.muted, "No Talent Data for This Build's Classes")
 	else
 		local found = false
 		for _, k in ipairs(classes) do if k == state.class then found = true end end
@@ -253,7 +253,7 @@ function Editor.Render(build)
 		end
 		local total = Calc.TotalPoints(trees)
 		summary = ("%s  %s   %s"):format(BF.Window.ClassText({ state.class }), table.concat(parts, " / "),
-			S.Hex(total == cap and C.good or C.muted, ("%d of %d points"):format(total, cap)))
+			S.Hex(total == cap and C.good or C.muted, ("%d of %d Points"):format(total, cap)))
 	end
 	return summary
 end

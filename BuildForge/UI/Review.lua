@@ -62,7 +62,7 @@ local function lines(plan)
 	for _, entry in ipairs(t.classes) do
 		local name = BF.Window.ClassText({ entry.class })
 		if #entry.conflicts > 0 then
-			talentLines[#talentLines + 1] = { name, S.Hex(C.bad, ("%d talent(s) above the build: reset talents first"):format(#entry.conflicts)),
+			talentLines[#talentLines + 1] = { name, S.Hex(C.bad, S.Count(#entry.conflicts, "talent") .. " above the build: reset first"),
 				function(tt)
 					tt:AddLine("Talents can only be added", 1, 1, 1)
 					tt:AddLine("Your spec has more points in these talents than the build. Unlearn your talents at a class trainer and BuildForge reopens this review, ready to apply. Or use Use My Talents on the Talents tab if your spec is the one to keep.", 0.8, 0.8, 0.8, true)
@@ -73,7 +73,7 @@ local function lines(plan)
 			end
 		elseif entry.points > 0 then
 			local short = entry.points > entry.unspent and S.Hex(C.bad, (" (only %d unspent)"):format(entry.unspent)) or ""
-			talentLines[#talentLines + 1] = { name, S.Hex(C.good, ("Spend %d Point(s)"):format(entry.points)) .. short }
+			talentLines[#talentLines + 1] = { name, S.Hex(C.good, "Spend " .. S.Count(entry.points, "Point")) .. short }
 		end
 	end
 	for _, s in ipairs(t.skipped) do talentLines[#talentLines + 1] = { BF.Window.ClassText({ s.class }), S.Hex(C.muted, "Skipped: " .. s.reason) } end
@@ -115,13 +115,13 @@ function Review.Render()
 	sheet.list:Begin()
 	local rows = lines(plan)
 	for _, l in ipairs(rows) do sheet.list:Add(l) end
-	if #rows == 0 then sheet.list:Add({ text = S.Hex(C.good, "Your character already matches this build.") }) end
+	if #rows == 0 then sheet.list:Add({ text = S.Hex(C.good, "Your Character Already Matches This Build") }) end
 	sheet.list:End()
 	local changes = hasChanges(plan)
 	if changes then sheet.confirm:Enable() else sheet.confirm:Disable() end
 	sheet.switch.target = BF.Window.SpecToSwitch(current)
 	if sheet.switch.target then sheet.switch:Show() else sheet.switch:Hide() end
-	sheet.note:SetText(changes and "Gear isn't changed here: use Equip from Bags on the Gear tab." or "Nothing to apply.")
+	sheet.note:SetText(changes and "Gear Isn't Changed Here: Use Equip from Bags on the Gear Tab" or "Nothing to Apply")
 end
 
 function Review.Open(build)
@@ -143,8 +143,8 @@ local function confirm()
 	Review.Close()
 	BF:Print("Applied %s.", build.name)
 	BF:Changed()
-	BF.Window.Message(problems > 0 and S.Hex(C.warn, ("Applied, but %d talent(s) were refused; see chat."):format(problems))
-		or S.Hex(C.good, "Applied " .. build.name .. "."))
+	BF.Window.Message(problems > 0 and S.Hex(C.warn, ("Applied, but %s Refused (See Chat)"):format(S.Count(problems, "Talent Was", "Talents Were")))
+		or S.Hex(C.good, "Applied " .. build.name))
 end
 
 -- Talents can only be added, so a build whose talents conflict waits for a trainer reset. CONFIRM_TALENT_WIPE

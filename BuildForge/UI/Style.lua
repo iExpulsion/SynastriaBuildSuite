@@ -24,6 +24,11 @@ S.colors = {
 	bad = { 1, 0.42, 0.42, 1 },
 }
 
+-- "1 perk", "3 perks".
+function S.Count(n, singular, plural)
+	return ("%d %s"):format(n, n == 1 and singular or (plural or singular .. "s"))
+end
+
 function S.Hex(c, text)
 	return ("|cff%02x%02x%02x%s|r"):format(c[1] * 255, c[2] * 255, c[3] * 255, text)
 end

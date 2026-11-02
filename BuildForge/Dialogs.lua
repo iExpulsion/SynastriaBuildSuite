@@ -31,7 +31,7 @@ local function refreshExport()
 	local text = BF.Codec.Encode(BF.Codec.Pick(box.build, chosen()))
 	box.edit:SetText(text)
 	box.edit:SetCursorPosition(0)
-	box.note:SetText(("%d characters."):format(#text))
+	box.note:SetText(BF.Style.Count(#text, "Character"))
 end
 
 local function refreshImport()
@@ -156,7 +156,7 @@ local function create()
 	-- 3.3.5 gives addons no clipboard access, so the best is selecting the text and confirming the Ctrl+C
 	edit:SetScript("OnKeyDown", function(_, key)
 		if box.mode == "export" and key == "C" and IsControlKeyDown() then
-			box.note:SetText(S.Hex(C.good, "Copied. Paste it anywhere with Ctrl+V."))
+			box.note:SetText(S.Hex(C.good, "Copied: Paste It Anywhere with Ctrl+V"))
 		end
 	end)
 	scroll:SetScrollChild(edit)
@@ -181,7 +181,7 @@ local function create()
 	f.selectAll = S.Button(f, "Select All", "primary", 100, function()
 		box.edit:SetFocus()
 		box.edit:HighlightText()
-		box.note:SetText(S.Hex(C.warn, "Selected. Press Ctrl+C to copy."))
+		box.note:SetText(S.Hex(C.warn, "Selected: Press Ctrl+C to Copy"))
 	end, "Select the whole string, ready for Ctrl+C.")
 	f.selectAll:SetPoint("BOTTOMRIGHT", -PAD, 14)
 	return f
@@ -269,7 +269,7 @@ StaticPopupDialogs["BUILDFORGE_DELETE"] = {
 }
 
 StaticPopupDialogs["BUILDFORGE_SHARED"] = {
-	text = "This build includes %s Misc perk(s). Add them to your Shared Perks, which every build applies?",
+	text = "This build includes %s. Add them to your Shared Perks, which every build applies?",
 	button1 = ACCEPT,
 	button2 = CANCEL,
 	OnAccept = function(self) self.data() end,
