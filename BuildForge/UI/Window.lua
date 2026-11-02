@@ -487,7 +487,7 @@ local function createSidebar(f)
 		"Save your character's current perks, talents, glyphs and gear as a new build.")
 	new:SetPoint("BOTTOMLEFT", 12, 12)
 	local import = S.Button(side, "Import", "secondary", half, importBuild,
-		"Paste a BuildForge or SynastriaPerkManager string.")
+		"Paste a BuildForge string.")
 	import:SetPoint("LEFT", new, "RIGHT", 6, 0)
 end
 

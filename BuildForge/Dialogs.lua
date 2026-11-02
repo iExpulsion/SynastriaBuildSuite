@@ -43,7 +43,7 @@ local function refreshImport()
 	local S, C = BF.Style, BF.Style.colors
 	if decoded then
 		local who = decoded.classes and #decoded.classes > 0 and BF.Window.ClassText(decoded.classes, true) or "no classes listed"
-		box.note:SetText(S.Hex(C.good, (decoded.name or "Perk string") .. ": ") .. who)
+		box.note:SetText(S.Hex(C.good, (decoded.name or "Unnamed build") .. ": ") .. who)
 		-- the string's name, made unique so importing never replaces a build by accident, until the user types one
 		if not box.nameEdited then
 			box.name:SetText(BF:UniqueName(decoded.name or "Imported Build"))
@@ -213,7 +213,7 @@ function Dialogs.ShowImport(onImport, targetName)
 	box = box or create()
 	box.mode, box.build, box.onImport = "import", nil, onImport
 	box.title:SetText("Import a Build")
-	box.sub:SetText("Paste a BuildForge or SynastriaPerkManager string, then pick the sections to bring in.")
+	box.sub:SetText("Paste a BuildForge string, then pick the sections to bring in.")
 	box.selectAll:Hide()
 	box.placeholder:Show()
 	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Show() end

@@ -77,7 +77,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 | `/bforge save <name>` | Saves your active spec as a build |
 | `/bforge apply <name>` | Lists what would change in chat, then asks before applying |
 | `/bforge export <name>` | Shows the build as a one-line string to copy, with section checkboxes |
-| `/bforge import` | Opens a box to paste a BuildForge or SynastriaPerkManager string and pick its sections |
+| `/bforge import` | Opens a box to paste a BuildForge string and pick its sections |
 | `/bforge gear <name>` | Shows each slot: worn, in bags or missing |
 | `/bforge equip <name>` | Equips the build's gear you're carrying |
 | `/bforge note <name> <text>` | Sets the build's notes |

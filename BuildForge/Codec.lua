@@ -208,15 +208,6 @@ readers.g = function(b, v)
 	end
 end
 
--- SynastriaPerkManager strings: "12,25:5,301:1208512398"
-local function decodeSPM(text)
-	local perks = {}
-	for id, opt in text:gmatch("(%d+):?(%d*)") do
-		perks[#perks + 1] = { id = tonumber(id), opt = tonumber(opt) or 0, spell = 0 }
-	end
-	return { perks = perks }
-end
-
 -- Returns the build table, or nil and an error message.
 function Codec.Decode(text)
 	text = (text or ""):gsub("%s", "")
@@ -232,10 +223,8 @@ function Codec.Decode(text)
 				if key and readers[key] then readers[key](result, value) end
 			end
 		end
-	elseif text:match("^%d+:?%d*[%d:,]*$") then
-		result = decodeSPM(text)
 	else
-		err = "not a BuildForge or SynastriaPerkManager string"
+		err = "not a BuildForge string"
 	end
 	return result, err
 end
