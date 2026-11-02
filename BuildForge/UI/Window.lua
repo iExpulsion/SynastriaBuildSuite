@@ -335,10 +335,9 @@ local function renderBuild(build)
 	end
 	local shared = build.sharedOnly == true
 	if shared then state.tab = "perks" end
-	local extras = build.pet and S.Hex(C.muted, "  (includes pet aspects)") or ""
 	frame.classes:SetText(shared and S.Hex(C.muted, "Misc perks every build applies, in every spec. Not included in exports.")
-		or Window.ClassText(build.classes) .. extras)
-	-- long class pairs would push Spec Name and Linked to off the header, so they're cut off with "..."
+		or Window.ClassText(build.classes))
+	-- a safety cap so the classes can never push Spec Name and Linked to off the header
 	frame.classes:SetWidth(shared and frame.classes:GetStringWidth() + 4 or math.min(frame.classes:GetStringWidth() + 4, CLASSES_W))
 	frame.name:EnableMouse(not shared)
 	for _, w in ipairs({ frame.spec, frame.specLabel, frame.export, frame.delete }) do setShown(w, not shared) end
