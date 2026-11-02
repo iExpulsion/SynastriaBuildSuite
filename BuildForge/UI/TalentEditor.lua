@@ -218,7 +218,7 @@ local function renderClassBar(classes)
 		if key and #classes > 1 then
 			b.key = key
 			b:SetLabel(BF.Window.ClassText({ key }, true))
-			b:SetKind(key == state.class and "primary" or "secondary")
+			b:SetKind(key == state.class and "selected" or "secondary")
 			b:Show()
 		else
 			b:Hide()
@@ -286,7 +286,7 @@ function Editor.Create(parent, width, height)
 			state.class = self.key
 			BF:Changed()
 		end)
-		if i == 1 then b:SetPoint("TOPLEFT", 0, 0) else b:SetPoint("LEFT", panel.classButtons[i - 1], "RIGHT", GAP, 0) end
+		if i == 1 then b:SetPoint("TOPLEFT", 0, 0) else b:SetPoint("LEFT", panel.classButtons[i - 1], "RIGHT", -1, 0) end
 		panel.classButtons[i] = b
 	end
 

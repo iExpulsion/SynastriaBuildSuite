@@ -16,6 +16,7 @@ local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
 -- gap as between the gear doll or glyph sockets and their panes
 local LIST_W, TOOLBAR_H = 330, CONTROL_H + GAP
 local LIST_RIGHT = LIST_W - 4
+local SEGMENTED_W = 2 * 80 - 1
 -- detail pane: the icon row, then the toggle row, then the sections
 local ICON_ROW, TOGGLE_Y = 36, PAD + 36 + PAD
 local SECTIONS_Y = TOGGLE_Y + CONTROL_H + PAD
@@ -336,7 +337,7 @@ local function renderDetail(build, mask, look)
 		else
 			d.toggle:SetLabel(entry and "Remove from Build" or "Add to Build")
 		end
-		d.toggle:SetKind(entry and "secondary" or "primary")
+		d.toggle:SetKind("secondary")
 		if locked then d.toggle:Disable() else d.toggle:Enable() end
 		d.toggle.tooltipText = locked and "This perk can't be turned on or off."
 			or shared and "Misc perks are kept in Shared Perks, which every build applies." or nil
@@ -459,8 +460,8 @@ end
 -- Shared Perks always lists every Misc perk, so it has no In Build / All Perks switch and the search fills the row.
 local function renderToolbar()
 	local shared = current.sharedOnly == true
-	panel.showBuild:SetKind(state.filter == "build" and "primary" or "secondary")
-	panel.showAll:SetKind(state.filter == "all" and "primary" or "secondary")
+	panel.showBuild:SetKind(state.filter == "build" and "selected" or "secondary")
+	panel.showAll:SetKind(state.filter == "all" and "selected" or "secondary")
 	if shared then panel.showBuild:Hide() panel.showAll:Hide() else panel.showBuild:Show() panel.showAll:Show() end
 	panel.search:ClearAllPoints()
 	if shared then
@@ -468,7 +469,7 @@ local function renderToolbar()
 		panel.search:SetWidth(LIST_RIGHT)
 	else
 		panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", GAP, 0)
-		panel.search:SetWidth(LIST_RIGHT - 2 * 80 - 2 * GAP)
+		panel.search:SetWidth(LIST_RIGHT - SEGMENTED_W - GAP)
 	end
 end
 
@@ -545,7 +546,7 @@ local function createDetail(width, height)
 	d.sub = S.Text(child, "small", C.muted)
 	d.sub:SetPoint("TOPLEFT", d.name, "BOTTOMLEFT", 0, -4)
 	d.sub:SetPoint("RIGHT", -PAD, 0)
-	d.toggle = S.Button(child, "Add to Build", "primary", 130, function() toggle(state.selected) end)
+	d.toggle = S.Button(child, "Add to Build", "secondary", 130, function() toggle(state.selected) end)
 	d.toggle:SetPoint("TOPLEFT", PAD, -TOGGLE_Y)
 	d.state = S.Text(child, "small")
 	d.state:SetPoint("LEFT", d.toggle, "RIGHT", GAP, 0)
@@ -569,7 +570,8 @@ function Editor.Create(parent, width, height)
 	panel = CreateFrame("Frame", nil, parent)
 	panel:SetSize(width, height)
 
-	panel.showBuild = S.Button(panel, "In Build", "primary", 80, function()
+	-- a segmented button: the two halves share their middle border
+	panel.showBuild = S.Button(panel, "In Build", "selected", 80, function()
 		state.filter = "build"
 		BF.Window.Render()
 	end, "Show the perks in this build, and any it would turn off.")
@@ -578,8 +580,8 @@ function Editor.Create(parent, width, height)
 		state.filter = "all"
 		BF.Window.Render()
 	end, "Show every perk the build's classes can use.")
-	panel.showAll:SetPoint("LEFT", panel.showBuild, "RIGHT", GAP, 0)
-	panel.search = S.Input(panel, "BuildForgePerkSearch", LIST_RIGHT - 2 * 80 - 2 * GAP, "Search Perks", 40)
+	panel.showAll:SetPoint("LEFT", panel.showBuild, "RIGHT", -1, 0)
+	panel.search = S.Input(panel, "BuildForgePerkSearch", LIST_RIGHT - SEGMENTED_W - GAP, "Search Perks", 40)
 	panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", GAP, 0)
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()

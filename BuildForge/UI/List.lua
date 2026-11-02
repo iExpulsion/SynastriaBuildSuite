@@ -9,8 +9,8 @@ BF.List = List
 local S = BF.Style
 
 local STYLES = {
-	content = { rowH = 22, subRowH = 36, header = "GameFontNormalSmall", row = "GameFontHighlightSmall" },
-	sidebar = { rowH = 22, subRowH = 36, header = "GameFontNormalSmall", row = "GameFontHighlight" },
+	content = { rowH = 22, subRowH = 36, header = S.FONTS.small, row = S.FONTS.small },
+	sidebar = { rowH = 22, subRowH = 36, header = S.FONTS.small, row = S.FONTS.normal },
 }
 
 local function runTooltip(row)
@@ -55,7 +55,7 @@ local function newRow(self)
 	row.icon = row:CreateTexture(nil, "ARTWORK")
 	row.icon:SetSize(16, 16)
 
-	row.status = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+	row.status = row:CreateFontString(nil, "ARTWORK", S.FONTS.small)
 	row.status:SetPoint("RIGHT", -S.PAD, 0)
 	row.status:SetJustifyH("RIGHT")
 	row.text = row:CreateFontString(nil, "ARTWORK", style.row)

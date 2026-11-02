@@ -123,7 +123,19 @@ function S.ScrollBar(scroll, scrollName)
 	return bar
 end
 
-local FONTS ={ small = "GameFontHighlightSmall", normal = "GameFontHighlight", large = "GameFontHighlightLarge", huge = "GameFontNormalHuge" }
+-- Copies of the stock fonts without their drop shadow, which smears dark text on light fills and blurs small text
+-- on flat panels. S.FONTS[size] is the font object's name, for CreateFontString and SetFontObject.
+S.FONTS = {}
+for size, base in pairs({ small = "GameFontHighlightSmall", normal = "GameFontHighlight", large = "GameFontHighlightLarge",
+	huge = "GameFontNormalHuge", edit = "ChatFontNormal" }) do
+	local name = "BuildForgeFont" .. size:sub(1, 1):upper() .. size:sub(2)
+	local font = CreateFont(name)
+	font:CopyFontObject(_G[base])
+	font:SetShadowOffset(0, 0)
+	font:SetShadowColor(0, 0, 0, 0)
+	S.FONTS[size] = name
+end
+local FONTS = S.FONTS
 
 function S.Text(parent, size, color, layer)
 	local fs = parent:CreateFontString(nil, layer or "ARTWORK", FONTS[size or "normal"])
@@ -132,10 +144,13 @@ function S.Text(parent, size, color, layer)
 	return fs
 end
 
--- Filled (primary), tonal (secondary), and text (ghost) buttons; hover is an 8% layer of the label color.
+-- Filled (primary, one per view), tonal (secondary), text (ghost), and the selected side of a segmented button
+-- (selected: a primary tint with primary text); hover is an 8% layer of the label color.
+local SELECTED_BG = blend(M3.surfaceHigh, M3.primary, 0.16)
 local BUTTONS = {
-	primary = { bg = M3.primary, hover = S.colors.accentHover, border = M3.primary, text = M3.onPrimary, flat = true },
+	primary = { bg = M3.primary, hover = S.colors.accentHover, border = M3.primary, text = M3.onPrimary },
 	secondary = { bg = M3.surfaceHigh, hover = blend(M3.surfaceHigh, M3.onSurface, 0.08), border = M3.outlineVariant, text = M3.onSurface },
+	selected = { bg = SELECTED_BG, hover = blend(SELECTED_BG, M3.primary, 0.08), border = blend(M3.outlineVariant, M3.primary, 0.4), text = M3.primary },
 	danger = { bg = M3.surfaceHigh, hover = blend(M3.surfaceHigh, M3.error, 0.08), border = M3.outlineVariant, text = M3.error },
 	ghost = { bg = { 0, 0, 0, 0 }, hover = S.colors.hover, border = { 0, 0, 0, 0 }, text = M3.onSurfaceVariant },
 }
@@ -150,7 +165,6 @@ local function paint(b)
 	b:SetBackdropColor(unpack(b.hovered and enabled and kind.hover or kind.bg))
 	b:SetBackdropBorderColor(unpack(kind.border))
 	b.label:SetTextColor(unpack(kind.text))
-	b.label:SetShadowColor(0, 0, 0, kind.flat and 0 or 1)
 end
 
 function S.Button(parent, label, kind, width, onClick, tooltip)
@@ -158,7 +172,7 @@ function S.Button(parent, label, kind, width, onClick, tooltip)
 	b:SetSize(width or 90, S.CONTROL_H)
 	b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
 	b.kind = kind or "secondary"
-	b.label = b:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+	b.label = b:CreateFontString(nil, "ARTWORK", FONTS.small)
 	b.label:SetPoint("CENTER")
 	b.label:SetText(label)
 	b.tooltipText = tooltip
@@ -303,18 +317,21 @@ function S.Input(parent, name, width, placeholder, maxLetters)
 	e:SetSize(width, S.CONTROL_H)
 	e:SetAutoFocus(false)
 	e:SetMaxLetters(maxLetters or 40)
-	e:SetFontObject(GameFontHighlightSmall)
+	e:SetFontObject(FONTS.small)
 	e:SetTextInsets(8, 8, 0, 0)
-	S.Panel(e, S.colors.well, S.colors.outline)
+	S.Panel(e, S.colors.well, S.colors.border)
 	e.placeholder = S.Text(e, "small", S.colors.muted)
 	e.placeholder:SetPoint("LEFT", 8, 0)
 	e.placeholder:SetText(placeholder or "")
+	-- the soft border at rest, the stronger outline on hover, the accent while focused
 	local function update(self)
 		if self.focused or self:GetText() ~= "" then self.placeholder:Hide() else self.placeholder:Show() end
-		self:SetBackdropBorderColor(unpack(self.focused and S.colors.accent or S.colors.outline))
+		self:SetBackdropBorderColor(unpack(self.focused and S.colors.accent or self.hovered and S.colors.outline or S.colors.border))
 	end
 	e:SetScript("OnEditFocusGained", function(self) self.focused = true update(self) end)
 	e:SetScript("OnEditFocusLost", function(self) self.focused = false update(self) end)
+	e:SetScript("OnEnter", function(self) self.hovered = true update(self) end)
+	e:SetScript("OnLeave", function(self) self.hovered = false update(self) end)
 	e:SetScript("OnEscapePressed", e.ClearFocus)
 	e:HookScript("OnTextChanged", update)
 	e.UpdatePlaceholder = update
