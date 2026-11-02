@@ -430,6 +430,16 @@ local function savePosition(f)
 	BF.db.window = { point = point, relPoint = relPoint, x = x, y = y }
 end
 
+local function placeDefault(f)
+	f:ClearAllPoints()
+	f:SetPoint("CENTER", 0, 40)
+end
+
+function Window.ResetPosition()
+	BF.db.window = nil
+	if frame then placeDefault(frame) end
+end
+
 local function createTitleBar(f)
 	local bar = CreateFrame("Frame", nil, f)
 	bar:SetPoint("TOPLEFT")
@@ -747,7 +757,7 @@ local function create()
 	f:SetMovable(true)
 	f:SetClampedToScreen(true)
 	local pos = BF.db.window
-	if pos then f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y) else f:SetPoint("CENTER", 0, 40) end
+	if pos then f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y) else placeDefault(f) end
 	S.Panel(f, C.window, C.border)
 	tinsert(UISpecialFrames, "BuildForgeFrame")
 	f:Hide()

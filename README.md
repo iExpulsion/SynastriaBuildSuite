@@ -85,6 +85,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 | `/bforge equip <name>` | Equips the build's gear you're carrying |
 | `/bforge note <name> <text>` | Sets the build's notes |
 | `/bforge minimap` | Hides or shows the minimap button |
+| `/bforge reset` | Moves the window back to the center of the screen |
 | `/bforge checktalents` | Checks the talent data against your live talents (for the class in your talent window) |
 | `/bforge delete <name>` | Deletes a build |
 

@@ -241,7 +241,7 @@ end
 local function help()
 	BF:Print("v%s commands (/bforge alone opens the window):", BF.version)
 	BF:Print("  /bforge list | save <name> | apply <name> | export <name> | import")
-	BF:Print("  /bforge gear <name> | equip <name> | delete <name> | note <name> <text> | minimap")
+	BF:Print("  /bforge gear <name> | equip <name> | delete <name> | note <name> <text> | minimap | reset")
 end
 
 local handlers = {}
@@ -287,6 +287,10 @@ handlers.checktalents = function()
 end
 
 handlers.minimap = function() BF.MinimapButton.Toggle() end
+handlers.reset = function()
+	BF.Window.ResetPosition()
+	BF:Print("Window moved back to the center of the screen.")
+end
 
 handlers.note = function(arg)
 	local name, text = arg:match("^(%S+)%s*(.*)$")
