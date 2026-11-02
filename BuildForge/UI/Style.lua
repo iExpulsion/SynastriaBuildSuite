@@ -49,11 +49,15 @@ function S.Rule(parent, where)
 	return t
 end
 
--- Restyles a UIPanelScrollFrameTemplate bar as a thin flat track and thumb, without the arrow buttons.
+local hidden = CreateFrame("Frame")
+hidden:Hide()
+
+-- Restyles a UIPanelScrollFrameTemplate bar as a thin flat track and thumb. ScrollFrame_OnScrollRangeChanged
+-- shows the arrow buttons again on every range change, so they go under a hidden parent instead.
 function S.ScrollBar(scroll, scrollName)
 	local bar = _G[scrollName .. "ScrollBar"]
-	_G[scrollName .. "ScrollBarScrollUpButton"]:Hide()
-	_G[scrollName .. "ScrollBarScrollDownButton"]:Hide()
+	_G[scrollName .. "ScrollBarScrollUpButton"]:SetParent(hidden)
+	_G[scrollName .. "ScrollBarScrollDownButton"]:SetParent(hidden)
 	bar:SetWidth(6)
 	bar:ClearAllPoints()
 	bar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", 4, 0)
@@ -79,7 +83,7 @@ function S.Text(parent, size, color, layer)
 end
 
 local BUTTONS = {
-	primary = { bg = S.colors.accent, hover = S.colors.accentHover, border = S.colors.accent, text = { 0.08, 0.05, 0.02, 1 } },
+	primary = { bg = S.colors.accent, hover = S.colors.accentHover, border = S.colors.accent, text = { 0.08, 0.05, 0.02, 1 }, flat = true },
 	secondary = { bg = { 0.17, 0.17, 0.21, 1 }, hover = { 0.23, 0.23, 0.28, 1 }, border = S.colors.border, text = S.colors.text },
 	danger = { bg = { 0.17, 0.17, 0.21, 1 }, hover = { 0.36, 0.13, 0.13, 1 }, border = S.colors.border, text = S.colors.bad },
 	ghost = { bg = { 0, 0, 0, 0 }, hover = S.colors.hover, border = { 0, 0, 0, 0 }, text = S.colors.muted },
@@ -92,6 +96,7 @@ local function paint(b)
 	b:SetBackdropBorderColor(unpack(kind.border))
 	local c = enabled and kind.text or S.colors.muted
 	b.label:SetTextColor(c[1], c[2], c[3], enabled and 1 or 0.5)
+	b.label:SetShadowColor(0, 0, 0, kind.flat and 0 or 1)
 end
 
 function S.Button(parent, label, kind, width, onClick, tooltip)
