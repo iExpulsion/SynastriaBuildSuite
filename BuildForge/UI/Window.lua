@@ -53,8 +53,11 @@ function Window.ClassText(classes, plain)
 	return table.concat(parts, " / ")
 end
 
+-- state.selected is a build name, or SHARED for the Shared Perks entry.
+local SHARED = "\1shared"
+
 local function selectedBuild()
-	return state.selected and BF.db.builds[state.selected]
+	return state.selected == SHARED and BF.Build.SHARED or state.selected and BF.db.builds[state.selected]
 end
 
 -- The spec to switch to for a build, when it's linked and none of its specs is active.
@@ -144,6 +147,19 @@ local function renderSidebar()
 	local list = frame.list
 	local first, firstFit, shown = nil, nil, 0
 	list:Begin()
+
+	if matches(BF.Build.SHARED) then
+		list:Add({
+			text = "Shared Perks", sub = "Misc perks, in every build",
+			status = S.Hex(C.muted, #BF.db.shared.perks),
+			selected = state.selected == SHARED,
+			onClick = function() Window.Select(SHARED) end,
+			tooltip = function(tt)
+				tt:AddLine("Shared Perks", 1, 1, 1)
+				tt:AddLine("Misc perks belong to each spec, so they're kept in one list that every build applies along with its own perks. Apply them here to fill in a spec on their own.", 0.8, 0.8, 0.8, true)
+			end,
+		})
+	end
 
 	local specs = linkedSpecs()
 	if #specs > 0 then
@@ -237,6 +253,7 @@ local function renderTabs(build)
 	for i, tab in ipairs(TABS) do
 		local b = frame.tabs[i]
 		local selected = tab.key == state.tab
+		setShown(b, not build.sharedOnly or tab.key == "perks")
 		b.label:SetTextColor(unpack(selected and C.text or C.muted))
 		setShown(b.underline, selected)
 		local diff = (comparing or not PER_SPEC[tab.key]) and BF.Tabs.diff[tab.key] and BF.Tabs.diff[tab.key](build)
@@ -278,7 +295,7 @@ local function renderInnkeeper()
 end
 
 local function renderSpecLink(build)
-	local count = BF:SpecCount()
+	local count = build.sharedOnly and 1 or BF:SpecCount()
 	local groups = BF:LinkedSpecs(build.name)
 	local options = { { value = 0, text = "Not Linked", tooltip = "Don't tie this build to a spec on this character." } }
 	for g = 1, count do
@@ -295,8 +312,9 @@ local function renderSpecLink(build)
 	setShown(frame.specLinkLabel, count > 1)
 	local target = Window.SpecToSwitch(build)
 	frame.apply.target = target
-	frame.apply:SetLabel(target and ("Switch to Spec %d"):format(target) or "Apply Build")
+	frame.apply:SetLabel(target and ("Switch to Spec %d"):format(target) or build.sharedOnly and "Apply Perks" or "Apply Build")
 	frame.apply.tooltipText = target and "Activate this build's spec. It takes a few seconds and can't be done in combat."
+		or build.sharedOnly and "Turn your active spec's Misc perks on or off to match Shared Perks. Other perks aren't touched."
 		or "Review what would change on your character, then apply it."
 	setShown(frame.specActive, count > 1 and #groups > 0 and target == nil)
 end
@@ -309,8 +327,13 @@ local function renderBuild(build)
 		frame.spec:SetText(build.spec or "")
 		frame.spec:UpdatePlaceholder()
 	end
+	local shared = build.sharedOnly == true
+	if shared then state.tab = "perks" end
 	local extras = build.pet and S.Hex(C.muted, "  (includes pet aspects)") or ""
-	frame.classes:SetText(Window.ClassText(build.classes) .. extras)
+	frame.classes:SetText(shared and S.Hex(C.muted, "Misc perks every build applies, in every spec. Not included in exports.")
+		or Window.ClassText(build.classes) .. extras)
+	frame.name:EnableMouse(not shared)
+	for _, w in ipairs({ frame.spec, frame.specLabel, frame.export, frame.delete }) do setShown(w, not shared) end
 	renderSpecLink(build)
 	renderTabs(build)
 	renderActions(build)
@@ -473,7 +496,7 @@ local function createBuildHeader(main)
 	f.name:SetScript("OnEnterPressed", function(self)
 		local build = selectedBuild()
 		local newName = self:GetText():gsub("^%s+", ""):gsub("%s+$", "")
-		if build and BF:Rename(build, newName) then
+		if build and not build.sharedOnly and BF:Rename(build, newName) then
 			state.selected = newName
 			self.committed = newName
 		end
@@ -484,12 +507,12 @@ local function createBuildHeader(main)
 	f.classes = S.Text(main, "small")
 	f.classes:SetPoint("TOPLEFT", f.name, "BOTTOMLEFT", 8, -6)
 
-	local specLabel = S.Text(main, "small", C.muted)
-	specLabel:SetPoint("LEFT", f.classes, "RIGHT", 18, 0)
-	specLabel:SetText("Spec name")
+	f.specLabel = S.Text(main, "small", C.muted)
+	f.specLabel:SetPoint("LEFT", f.classes, "RIGHT", 18, 0)
+	f.specLabel:SetText("Spec name")
 	f.spec = S.Input(main, "BuildForgeSpecBox", 110, "None", 14)
 	f.spec:SetHeight(20)
-	f.spec:SetPoint("LEFT", specLabel, "RIGHT", 8, 0)
+	f.spec:SetPoint("LEFT", f.specLabel, "RIGHT", 8, 0)
 	f.spec:SetScript("OnEscapePressed", function(self)
 		self:SetText(self.committed or "")
 		self:ClearFocus()
@@ -524,11 +547,11 @@ local function createBuildHeader(main)
 		if self.target then Window.SwitchSpec(self.target) else BF.Review.Open(selectedBuild()) end
 	end)
 	f.apply:SetPoint("TOPRIGHT", -16, -16)
-	local export = S.Button(main, "Export", "secondary", 70, function() BF:Export(selectedBuild()) end,
+	f.export = S.Button(main, "Export", "secondary", 70, function() BF:Export(selectedBuild()) end,
 		"Copy this build as a one-line string to share.")
-	export:SetPoint("RIGHT", f.apply, "LEFT", -6, 0)
-	local delete = S.Button(main, "Delete", "danger", 70, function() BF:Delete(selectedBuild()) end)
-	delete:SetPoint("RIGHT", export, "LEFT", -6, 0)
+	f.export:SetPoint("RIGHT", f.apply, "LEFT", -6, 0)
+	f.delete = S.Button(main, "Delete", "danger", 70, function() BF:Delete(selectedBuild()) end)
+	f.delete:SetPoint("RIGHT", f.export, "LEFT", -6, 0)
 end
 
 local function createTabBar(main)

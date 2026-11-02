@@ -13,7 +13,7 @@ local sheet, current
 
 -- Applying links the build to the active spec; worth saying when that changes the link (and there's a choice of specs).
 local function willRelink(plan)
-	return BF:SpecCount() > 1 and BF:Links()[plan.group] ~= plan.build.name
+	return BF:SpecCount() > 1 and not plan.build.sharedOnly and BF:Links()[plan.group] ~= plan.build.name
 end
 
 local function lines(plan)

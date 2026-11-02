@@ -47,7 +47,7 @@ end
 -- What applying the build would do to each perk, by perk ID. Empty, with `off` set, for a build linked to a spec
 -- that isn't active, since the character's perks belong to another spec.
 local function planLookup(build)
-	local plan = Perks.Plan(Perks.Wanted(build))
+	local plan = Perks.BuildPlan(build)
 	local look = { plan = plan, activate = {}, deactivate = {}, skipped = {}, options = {}, off = not BF.Window.IsComparing(build) }
 	if look.off then plan = { activate = {}, deactivate = {}, skipped = {}, options = {}, spells = {} } end
 	for _, id in ipairs(plan.activate) do look.activate[id] = true end
@@ -113,7 +113,9 @@ local function visiblePerks(build, mask, look)
 		local relevant = entry or look.deactivate[id] or id == state.selected
 			or (state.filter == "all" and Perks.UsableFor(perk, mask))
 		local matches = state.search == "" or (perk.name or ""):lower():find(state.search, 1, true)
-		if relevant and matches then
+		-- Misc perks are listed only under Shared Perks, and Shared Perks lists nothing else
+		local inMode = Perks.IsShared(id) == (build.sharedOnly == true)
+		if relevant and matches and inMode then
 			local cat = CATEGORY_NAMES[perk.cat] and perk.cat or BF.CLASS_KEYS[perk.cat] and perk.cat or 0
 			byCat[cat] = byCat[cat] or {}
 			table.insert(byCat[cat], perk)
@@ -182,6 +184,7 @@ local function renderList(build, mask, look)
 	end
 	if list.count == 0 then
 		list:Add({ text = S.Hex(C.muted, state.search ~= "" and "No perks match your search."
+			or build.sharedOnly and "No shared perks yet. Show All Perks to add some."
 			or "This build has no perks yet. Show All Perks to add some.") })
 	end
 	list:End()
@@ -375,6 +378,7 @@ end
 -- Toolbar ---------------------------------------------------------------------------------------------------
 
 local function renderToolbar()
+	panel.showBuild.label:SetText(current.sharedOnly and "In List" or "In Build")
 	panel.showBuild:SetKind(state.filter == "build" and "primary" or "secondary")
 	panel.showAll:SetKind(state.filter == "all" and "primary" or "secondary")
 end
@@ -395,6 +399,7 @@ local function summary(look)
 end
 
 function Editor.Render(build)
+	if build ~= current then state.selected = nil end
 	current = build
 	Perks = BF.Perks
 	local text

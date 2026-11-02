@@ -98,8 +98,9 @@ local function countActive(active, cat)
 	return n
 end
 
--- What applying `wanted` (a build's perk list) would change, without changing anything.
-function Perks.Plan(wanted)
+-- What applying `wanted` (a build's perk list) would change, without changing anything. `inScope(id)`, when given,
+-- limits which active perks may be turned off (Shared Perks only touch Misc perks).
+function Perks.Plan(wanted, inScope)
 	local plan = { deactivate = {}, activate = {}, options = {}, spells = {}, skipped = {} }
 	local want, active = {}, {}
 
@@ -120,7 +121,7 @@ function Perks.Plan(wanted)
 
 	for id in pairs(active) do
 		local perk = PerkMgrPerks[id]
-		if not want[id] and Perks.Usable(perk) then
+		if not want[id] and Perks.Usable(perk) and (not inScope or inScope(id)) then
 			if bit.band(perk.flags or 0, FLAG_LOCKED) ~= 0 then
 				plan.skipped[#plan.skipped + 1] = { id = id, reason = "can't be turned off" }
 			else
@@ -248,6 +249,12 @@ function Perks.MoveShared(build)
 			build.perks = own
 		end
 	end
+end
+
+-- The perk plan for a build: its own perks plus the shared ones. The Shared Perks entry (`sharedOnly`) plans the
+-- shared list alone and leaves every other perk as it is.
+function Perks.BuildPlan(build)
+	return Perks.Plan(Perks.Wanted(build), build.sharedOnly and Perks.IsShared or nil)
 end
 
 -- What applying a build wants: its own perks plus the shared ones.

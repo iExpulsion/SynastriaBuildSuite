@@ -60,7 +60,7 @@ function Build.Plan(build)
 	return {
 		build = build,
 		group = group,
-		perks = BF.Perks.Plan(BF.Perks.Wanted(build)),
+		perks = BF.Perks.BuildPlan(build),
 		talents = BF.Talents.Plan(build.talents),
 		glyphs = BF.Glyphs.Plan(build.glyphs),
 		gear = BF.Gear.Status(build.gear),
@@ -68,6 +68,10 @@ function Build.Plan(build)
 		spec = spec and spec ~= "" and spec ~= specName(group) and spec or nil,
 	}
 end
+
+-- The sidebar's Shared Perks entry: a build with no parts of its own, so applying it only applies the shared
+-- Misc perks to the active spec.
+Build.SHARED = { name = "Shared Perks", sharedOnly = true, perks = {} }
 
 -- Applies everything the plan can change. Returns a summary for the chat report.
 function Build.Apply(plan)
@@ -81,6 +85,6 @@ function Build.Apply(plan)
 		SetCustomGameDataString(21, plan.group, plan.spec)
 		if UpdateTalentSpecNames then UpdateTalentSpecNames() end
 	end
-	BF:Links()[plan.group] = plan.build.name
+	if not plan.build.sharedOnly then BF:Links()[plan.group] = plan.build.name end
 	return result
 end
