@@ -7,7 +7,7 @@ local BF = NS.BF
 local MinimapButton = {}
 BF.MinimapButton = MinimapButton
 
-local ICON = "Interface\\Icons\\Trade_BlackSmithing"
+local ICON = "Interface\\Icons\\INV_Misc_Book_11"
 local DEFAULT_ANGLE = 200
 local button
 
