@@ -112,8 +112,17 @@ local function groupedBuilds()
 			table.insert(group.builds, build)
 		end
 	end
+	-- builds linked to a spec on this character come first, in spec order, then the rest by name
+	local specOf = {}
+	for group, name in pairs(BF:Links()) do
+		if group <= BF:SpecCount() and (not specOf[name] or group < specOf[name]) then specOf[name] = group end
+	end
 	for _, group in ipairs(groups) do
-		table.sort(group.builds, function(a, b) return a.name:lower() < b.name:lower() end)
+		table.sort(group.builds, function(a, b)
+			local sa, sb = specOf[a.name] or math.huge, specOf[b.name] or math.huge
+			if sa ~= sb then return sa < sb end
+			return a.name:lower() < b.name:lower()
+		end)
 	end
 	table.sort(groups, function(a, b)
 		if a.fits ~= b.fits then return a.fits end
