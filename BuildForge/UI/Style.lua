@@ -22,6 +22,8 @@ S.colors = {
 	good = { 0.42, 0.86, 0.42, 1 },
 	warn = { 1, 0.78, 0.26, 1 },
 	bad = { 1, 0.42, 0.42, 1 },
+	-- the Perk Manager's set name green
+	set = { 0.13, 1, 0.13, 1 },
 }
 
 -- One spacing scale for every panel: PAD inside a panel's edges (the same on all sides), GAP between neighboring

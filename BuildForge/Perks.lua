@@ -382,6 +382,82 @@ function Perks.Description(id, rank)
 	return text
 end
 
+-- Perk sets ------------------------------------------------------------------------------------------------
+-- PerkMgrSets[id] = { id, name, perks = { perk IDs }, bonus = { { count, desc, amounts, amounts2, perkid } } }.
+-- Each set's perks sit in one category. Perks flagged 0x800 belong to a set but don't count toward its bonuses.
+
+local FLAG_SET_UNCOUNTED = 0x800
+local setOf, setOfSource
+
+function Perks.SetOf(id)
+	if PerkMgrSets and setOfSource ~= PerkMgrSets then
+		setOf, setOfSource = {}, PerkMgrSets
+		for _, set in pairs(PerkMgrSets) do
+			for _, perkId in ipairs(set.perks or {}) do setOf[perkId] = set end
+		end
+	end
+	return setOf and setOf[id]
+end
+
+local function counts(id)
+	local perk = PerkMgrPerks[id]
+	return perk ~= nil and bit.band(perk.flags or 0, FLAG_SET_UNCOUNTED) == 0
+end
+Perks.SetCounts = counts
+
+-- How many of the set's counted perks `has(id)` says are in, out of how many there are.
+function Perks.SetCount(set, has)
+	local count, total = 0, 0
+	for _, id in ipairs(set.perks or {}) do
+		if counts(id) then
+			total = total + 1
+			if has(id) then count = count + 1 end
+		end
+	end
+	return count, total
+end
+
+local SET_COLORS = {
+	[true] = { text = "|cff60ff60", symbol = "|cff60ff60", symbol2 = "|cff60ff60" },
+	[false] = { text = "|cff808080", symbol = "|cff808080", symbol2 = "|cff808080" },
+}
+
+-- Some bonuses scale with the ranks of the set's perks: the share of extra ranks learned, over the counted perks
+-- `has` says are in.
+local function rankScale(set, has)
+	local learned, possible, any = 0, 0, false
+	for _, id in ipairs(set.perks or {}) do
+		local rank = counts(id) and has(id) and GetPerkAcquired(id)
+		if rank then
+			any = true
+			learned = learned + (rank - 1)
+			possible = possible + (#(PerkMgrPerks[id].levels or {}) - 1)
+		end
+	end
+	return learned > 0 and math.max(0, math.min(1, learned / possible)) or any and 1 or 0
+end
+
+-- The set's bonuses as { count, active, text }, active once `has` covers `count` perks. The text is built the way
+-- the Perk Manager does it (GenerateSetDescription is local there), green when active and gray when not.
+function Perks.SetBonuses(set, has)
+	local count = Perks.SetCount(set, has)
+	local scale = rankScale(set, has)
+	local out = {}
+	for _, b in ipairs(set.bonus or {}) do
+		if b.desc and b.desc ~= "" then
+			local active = count >= (b.count or 0)
+			local raw = (IsPerkDouble(b.perkid, true) and b.amounts2 or b.amounts) or {}
+			local amounts = {}
+			for i = 1, 5 do amounts[i] = GetModifiedPerkValue(raw[i] or 0, b.perkid, i) end
+			amounts[6] = scale
+			local colors = SET_COLORS[active]
+			out[#out + 1] = { count = b.count or 0, active = active,
+				text = colors.text .. ("(%d) "):format(b.count or 0) .. CustomGenerateDescription(b.desc, amounts, colors) .. "|r" }
+		end
+	end
+	return out
+end
+
 -- The Perk Manager's "Additional information" notes, by perk.info bit (ProcessInfo is local there).
 local INFO = {
 	[0x1] = "This amount is based on your character level.",

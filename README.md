@@ -47,7 +47,10 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   to add it to the build. Click a perk to see its effect, notes, options and, for perks that grant one, the
   ability to choose; options and abilities are set on the build's copy of the perk. Category headers count the
   build's perks against how many your character can have on. Each row shows what applying the build would do
-  (Active, To Activate, To Deactivate, Options Differ). Nothing changes on your character until Apply Build.
+  (Active, To Activate, To Deactivate, Options Differ). Perks in a set (Blood Death Knight, Overhealed, ...)
+  sit together under the set's name, which counts how many of its perks the build has; a set perk's details
+  list the set bonuses, green once the build has enough of them. Nothing changes on your character until Apply
+  Build.
 - **Shared Perks:** Misc perks aren't part of builds. They're in one Shared Perks list, at the top of the
   sidebar, that every build applies along with its own perks, so each spec gets them. Select it to edit the list:
   it shows every Misc perk you can use, checked if it's in the list. Its Apply Perks sets your active spec's Misc

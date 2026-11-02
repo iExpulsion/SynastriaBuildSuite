@@ -154,6 +154,44 @@ local function categoryStatus(build, cat, mask)
 	return text
 end
 
+local function inBuild(id) return entryFor(id) ~= nil end
+
+-- "5 / 8" for the set's counted perks in the build, green once a bonus is active.
+local function setStatus(set)
+	local count, total = Perks.SetCount(set, inBuild)
+	local active = false
+	for _, b in ipairs(Perks.SetBonuses(set, inBuild)) do active = active or b.active end
+	return S.Hex(active and C.good or C.muted, ("%d / %d"):format(count, total))
+end
+
+local function setTooltip(set)
+	return function(tt)
+		tt:AddLine(set.name, 1, 1, 1)
+		for _, b in ipairs(Perks.SetBonuses(set, inBuild)) do tt:AddLine(b.text, 1, 1, 1, true) end
+		tt:AddLine("Bonuses count the set's perks in this build.", 0.6, 0.6, 0.66, true)
+	end
+end
+
+-- A category's perks with each set's members together under the set, sets first in the order their first
+-- perk sorts, then the perks in no set.
+local function groupBySet(perks)
+	local groups, loose, index = {}, {}, {}
+	for _, perk in ipairs(perks) do
+		local set = Perks.SetOf(perk.id)
+		if set then
+			if not index[set] then
+				groups[#groups + 1] = { set = set, perks = {} }
+				index[set] = groups[#groups]
+			end
+			table.insert(index[set].perks, perk)
+		else
+			loose[#loose + 1] = perk
+		end
+	end
+	if #loose > 0 then groups[#groups + 1] = { perks = loose } end
+	return groups
+end
+
 local function renderList(build, mask, look)
 	local list = panel.list
 	local byCat, first = visiblePerks(build, mask, look)
@@ -169,20 +207,26 @@ local function renderList(build, mask, look)
 						and "Misc perks are kept in one Shared Perks list that every build applies, so each spec gets them. They aren't included in exports."
 						or "Perks in this build, and how many your character can have on at once.", 0.8, 0.8, 0.8, true)
 				end })
-			for _, perk in ipairs(perks) do
-				local id = perk.id
-				local entry = entryFor(id)
-				local locked = Perks.Locked(perk)
-				list:Add({
-					text = rowText(perk), icon = spellIcon(perk.icon), indent = 4,
-					check = entry ~= nil, checkEnabled = not locked,
-					checkTooltip = locked and "This perk can't be turned on or off." or nil,
-					onCheck = function() toggle(id) end,
-					status = rowStatus(id, entry, look),
-					selected = id == state.selected,
-					onClick = function() selectPerk(id) end,
-					tooltip = rowTooltip(id),
-				})
+			for _, group in ipairs(groupBySet(perks)) do
+				local set = group.set
+				if set then
+					list:Add({ text = S.Hex(C.set, set.name), indent = 4, status = setStatus(set), tooltip = setTooltip(set) })
+				end
+				for _, perk in ipairs(group.perks) do
+					local id = perk.id
+					local entry = entryFor(id)
+					local locked = Perks.Locked(perk)
+					list:Add({
+						text = rowText(perk), icon = spellIcon(perk.icon), indent = set and 16 or 4,
+						check = entry ~= nil, checkEnabled = not locked,
+						checkTooltip = locked and "This perk can't be turned on or off." or nil,
+						onCheck = function() toggle(id) end,
+						status = rowStatus(id, entry, look),
+						selected = id == state.selected,
+						onClick = function() selectPerk(id) end,
+						tooltip = rowTooltip(id),
+					})
+				end
 			end
 		end
 	end
@@ -313,6 +357,19 @@ local function renderDetail(build, mask, look)
 		local desc = Perks.Description(id, rank or 1)
 		header(d.effectHead, rank and ("Effect at Rank %d"):format(rank) or "Effect at Rank 1")
 		body(d.effect, desc or S.Hex(C.muted, "No description."))
+
+		local set = Perks.SetOf(id)
+		if set then
+			local count, total = Perks.SetCount(set, inBuild)
+			header(d.setHead, ("Set: %s   %s"):format(set.name, S.Hex(C.muted, ("%d / %d in Build"):format(count, total))))
+			local lines = {}
+			for _, b in ipairs(Perks.SetBonuses(set, inBuild)) do lines[#lines + 1] = b.text end
+			if Perks.SetCounts(id) == false then lines[#lines + 1] = S.Hex(C.muted, "This perk doesn't count toward the set.") end
+			body(d.set, table.concat(lines, "\n\n"))
+		else
+			d.setHead:Hide()
+			d.set:Hide()
+		end
 
 		local abilities = Perks.HasAbility(perk) and Perks.Abilities(id, mask) or {}
 		local perRow = math.max(1, math.floor((width + ICON_GAP) / (ICON + ICON_GAP)))
@@ -478,6 +535,8 @@ local function createDetail(width, height)
 
 	d.effectHead = S.Text(child, "normal")
 	d.effect = S.Text(child, "small")
+	d.setHead = S.Text(child, "normal")
+	d.set = S.Text(child, "small")
 	d.abilityHead = S.Text(child, "normal")
 	d.abilityNote = S.Text(child, "small")
 	d.optionHead = S.Text(child, "normal")
