@@ -31,15 +31,35 @@ local function split(s, sep)
 	return out
 end
 
+local function b36(n)
+	n = math.floor(tonumber(n) or 0)
+	local s = ""
+	repeat
+		local r = n % 36
+		s = DIGITS:sub(r + 1, r + 1) .. s
+		n = (n - r) / 36
+	until n == 0
+	return s
+end
+
+local function num(s)
+	return s ~= "" and tonumber(s, 36) or nil
+end
+
+-- Talent ranks never pass 5, so two ranks share one base-36 character (6 * first + second).
+local TALENT_BASE = 6
+
 local function encodeTree(ranks)
 	local last = 0
 	for i = 1, #ranks do
 		if ranks[i] ~= 0 then last = i end
 	end
 	local chars = {}
-	for i = 1, last do
-		local r = ranks[i]
-		chars[i] = DIGITS:sub(r + 1, r + 1)
+	for i = 1, last, 2 do
+		local a = math.min(ranks[i] or 0, TALENT_BASE - 1)
+		local b = math.min(ranks[i + 1] or 0, TALENT_BASE - 1)
+		local v = a * TALENT_BASE + b
+		chars[#chars + 1] = DIGITS:sub(v + 1, v + 1)
 	end
 	return table.concat(chars)
 end
@@ -47,10 +67,22 @@ end
 local function decodeTree(s)
 	local ranks = {}
 	for i = 1, #s do
-		local pos = DIGITS:find(s:sub(i, i):lower(), 1, true)
-		ranks[i] = pos and pos - 1 or 0
+		local v = num(s:sub(i, i):lower()) or 0
+		ranks[#ranks + 1] = math.floor(v / TALENT_BASE)
+		ranks[#ranks + 1] = v % TALENT_BASE
 	end
 	return ranks
+end
+
+-- Numbered slots (glyph sockets, gear slots) written in order with "." between, so the slot is the position;
+-- trailing empty slots are dropped.
+local function encodeSlots(t, count, write)
+	local parts, last = {}, 0
+	for i = 1, count do
+		parts[i] = t[i] and write(t[i]) or ""
+		if parts[i] ~= "" then last = i end
+	end
+	return table.concat(parts, ".", 1, last)
 end
 
 local function sortedKeys(t)
@@ -96,26 +128,38 @@ function Codec.Pick(build, sections)
 	return out
 end
 
+local GLYPH_SOCKETS, GEAR_SLOTS = 6, 18
+
+-- Numbers are base 36 throughout. See docs/DESIGN.md for the layout of each field.
 function Codec.Encode(build)
 	local f = {}
 	f[#f + 1] = "n=" .. esc(build.name)
 	if build.classes and #build.classes > 0 then
-		f[#f + 1] = "c=" .. table.concat(build.classes, ",")
+		local ids = {}
+		for i, key in ipairs(build.classes) do ids[i] = b36(BF.CLASS_IDS[key]) end
+		f[#f + 1] = "c=" .. table.concat(ids)
 	end
-	if build.spec and build.spec ~= "" then f[#f + 1] = "s=" .. esc(build.spec) end
+	-- an empty s= means "same as the build name"
+	if build.spec and build.spec ~= "" then
+		f[#f + 1] = "s=" .. (build.spec == build.name and "" or esc(build.spec))
+	end
 
 	if build.perks and #build.perks > 0 then
-		local parts = {}
-		for _, p in ipairs(build.perks) do
-			local s = tostring(p.id)
+		local perks = {}
+		for i, p in ipairs(build.perks) do perks[i] = p end
+		table.sort(perks, function(a, b) return a.id < b.id end)
+		local parts, prev = {}, 0
+		for _, p in ipairs(perks) do
+			local s = b36(p.id - prev)
 			if (p.spell or 0) ~= 0 then
-				s = s .. ":" .. (p.opt or 0) .. ":" .. p.spell
+				s = s .. ":" .. b36(p.opt or 0) .. ":" .. b36(p.spell)
 			elseif (p.opt or 0) ~= 0 then
-				s = s .. ":" .. p.opt
+				s = s .. ":" .. b36(p.opt)
 			end
 			parts[#parts + 1] = s
+			prev = p.id
 		end
-		f[#f + 1] = "p=" .. table.concat(parts, ",")
+		f[#f + 1] = "p=" .. table.concat(parts, ".")
 	end
 
 	if build.talents then
@@ -123,28 +167,22 @@ function Codec.Encode(build)
 		for _, class in ipairs(sortedKeys(build.talents)) do
 			local trees = {}
 			for i, ranks in ipairs(build.talents[class]) do trees[i] = encodeTree(ranks) end
-			parts[#parts + 1] = class .. ":" .. table.concat(trees, "-")
+			parts[#parts + 1] = b36(BF.CLASS_IDS[class]) .. ":" .. table.concat(trees, "-")
 		end
 		if #parts > 0 then f[#f + 1] = "t=" .. table.concat(parts, ",") end
 	end
 
-	if build.glyphs then
-		local parts = {}
-		for _, socket in ipairs(sortedKeys(build.glyphs)) do
-			parts[#parts + 1] = socket .. ":" .. build.glyphs[socket]
-		end
-		if #parts > 0 then f[#f + 1] = "gl=" .. table.concat(parts, ",") end
-	end
+	local glyphs = build.glyphs and encodeSlots(build.glyphs, GLYPH_SOCKETS, b36) or ""
+	if glyphs ~= "" then f[#f + 1] = "gl=" .. glyphs end
 
-	if build.pet then f[#f + 1] = "h=" .. build.pet end
+	if build.pet then f[#f + 1] = "h=" .. b36(build.pet) end
 
-	if build.gear then
-		local parts = {}
-		for _, slot in ipairs(sortedKeys(build.gear)) do
-			parts[#parts + 1] = slot .. ":" .. table.concat(build.gear[slot], "/")
-		end
-		if #parts > 0 then f[#f + 1] = "g=" .. table.concat(parts, ",") end
-	end
+	local gear = build.gear and encodeSlots(build.gear, GEAR_SLOTS, function(items)
+		local ids = {}
+		for i, id in ipairs(items) do ids[i] = b36(id) end
+		return table.concat(ids, "/")
+	end) or ""
+	if gear ~= "" then f[#f + 1] = "g=" .. gear end
 
 	if build.notes and build.notes ~= "" then f[#f + 1] = "x=" .. esc(build.notes) end
 
@@ -154,24 +192,27 @@ end
 local readers = {}
 
 readers.n = function(b, v) b.name = unesc(v) end
-readers.s = function(b, v) b.spec = unesc(v) end
+readers.s = function(b, v) b.spec = v == "" and true or unesc(v) end
 readers.x = function(b, v) b.notes = unesc(v) end
-readers.h = function(b, v) b.pet = tonumber(v) end
+readers.h = function(b, v) b.pet = num(v) end
 
 readers.c = function(b, v)
 	b.classes = {}
-	for _, key in ipairs(split(v, ",")) do
-		if BF.CLASS_IDS[key] then b.classes[#b.classes + 1] = key end
+	for i = 1, #v do
+		local key = BF.CLASS_KEYS[num(v:sub(i, i))]
+		if key then b.classes[#b.classes + 1] = key end
 	end
 end
 
 readers.p = function(b, v)
 	b.perks = {}
-	for _, entry in ipairs(split(v, ",")) do
+	local id = 0
+	for _, entry in ipairs(split(v, ".")) do
 		local f = split(entry, ":")
-		local id = tonumber(f[1])
-		if id then
-			b.perks[#b.perks + 1] = { id = id, opt = tonumber(f[2]) or 0, spell = tonumber(f[3]) or 0 }
+		local delta = num(f[1] or "")
+		if delta then
+			id = id + delta
+			b.perks[#b.perks + 1] = { id = id, opt = num(f[2] or "") or 0, spell = num(f[3] or "") or 0 }
 		end
 	end
 end
@@ -179,8 +220,9 @@ end
 readers.t = function(b, v)
 	b.talents = {}
 	for _, entry in ipairs(split(v, ",")) do
-		local class, trees = entry:match("^(%u+):(.*)$")
-		if class and BF.CLASS_IDS[class] then
+		local id, trees = entry:match("^(%w):(.*)$")
+		local class = id and BF.CLASS_KEYS[num(id)]
+		if class then
 			local t = {}
 			for i, tree in ipairs(split(trees, "-")) do t[i] = decodeTree(tree) end
 			b.talents[class] = t
@@ -190,21 +232,17 @@ end
 
 readers.gl = function(b, v)
 	b.glyphs = {}
-	for _, entry in ipairs(split(v, ",")) do
-		local socket, spell = entry:match("^(%d+):(%d+)$")
-		if socket then b.glyphs[tonumber(socket)] = tonumber(spell) end
+	for socket, spell in ipairs(split(v, ".")) do
+		if spell ~= "" then b.glyphs[socket] = num(spell) end
 	end
 end
 
 readers.g = function(b, v)
 	b.gear = {}
-	for _, entry in ipairs(split(v, ",")) do
-		local slot, items = entry:match("^(%d+):(.*)$")
-		if slot then
-			local list = {}
-			for _, id in ipairs(split(items, "/")) do list[#list + 1] = tonumber(id) end
-			if #list > 0 then b.gear[tonumber(slot)] = list end
-		end
+	for slot, items in ipairs(split(v, ".")) do
+		local list = {}
+		for _, id in ipairs(split(items, "/")) do list[#list + 1] = num(id) end
+		if #list > 0 then b.gear[slot] = list end
 	end
 end
 
@@ -222,6 +260,7 @@ function Codec.Decode(text)
 				local key, value = field:match("^(%w+)=(.*)$")
 				if key and readers[key] then readers[key](result, value) end
 			end
+			if result.spec == true then result.spec = result.name end
 		end
 	else
 		err = "not a BuildForge string"
