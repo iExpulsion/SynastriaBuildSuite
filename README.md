@@ -20,7 +20,8 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
   Talents can only be added, so if your spec has more points in a talent than the build, the review lists them;
   unlearn your talents at a class trainer and BuildForge reopens the review, ready to apply.
-  Export gives the share string; Delete asks first. The title bar shows whether the Perk Manager is open at an
+  Export gives the share string; Duplicate makes an unlinked copy ("Name Copy") to try changes on; Delete asks
+  first. The title bar shows whether the Perk Manager is open at an
   innkeeper, which perk activations need.
 - **Export and Import by section:** both boxes have Perks, Talents, Glyphs, Gear and Notes checkboxes. Export
   rebuilds the string as you check and uncheck them, and remembers the choice; Select All selects the string so

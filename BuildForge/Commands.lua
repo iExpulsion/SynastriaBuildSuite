@@ -186,6 +186,25 @@ function BF:EquipGear(build)
 	end
 end
 
+local function copy(value)
+	local out = value
+	if type(value) == "table" then
+		out = {}
+		for k, v in pairs(value) do out[k] = copy(v) end
+	end
+	return out
+end
+
+-- A full copy under a new name ("Name Copy", numbered if taken). It isn't linked to any spec.
+function BF:Duplicate(build)
+	local dup = copy(build)
+	dup.name = self:UniqueName(build.name .. " Copy")
+	self.db.builds[dup.name] = dup
+	self:Print("Duplicated %s as %s.", build.name, dup.name)
+	self:Changed()
+	return dup
+end
+
 function BF:Delete(build)
 	BF.Dialogs.Confirm("BUILDFORGE_DELETE", build.name, function()
 		self.db.builds[build.name] = nil

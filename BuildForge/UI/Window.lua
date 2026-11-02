@@ -361,7 +361,7 @@ local function renderBuild(build)
 	local width = frame.classes:GetStringWidth() + 4
 	frame.classes:SetWidth(shared and width or math.min(width, CLASSES_W))
 	frame.name:EnableMouse(not shared)
-	for _, w in ipairs({ frame.spec, frame.specLabel, frame.export, frame.delete }) do setShown(w, not shared) end
+	for _, w in ipairs({ frame.spec, frame.specLabel, frame.export, frame.duplicate, frame.delete }) do setShown(w, not shared) end
 	renderSpecLink(build)
 	renderTabs(build)
 	renderActions(build)
@@ -495,7 +495,7 @@ local function createBuildHeader(main)
 	local f = frame
 	-- reads as a title until hovered or edited
 	f.name = CreateFrame("EditBox", "BuildForgeNameBox", main)
-	f.name:SetSize(320, 30)
+	f.name:SetSize(280, 30)
 	f.name:SetAutoFocus(false)
 	f.name:SetMaxLetters(40)
 	f.name:SetFontObject(GameFontHighlightLarge)
@@ -583,8 +583,14 @@ local function createBuildHeader(main)
 	f.export = S.Button(main, "Export", "secondary", 70, function() BF:Export(selectedBuild()) end,
 		"Copy this build as a one-line string to share.")
 	f.export:SetPoint("RIGHT", f.apply, "LEFT", -6, 0)
+	f.duplicate = S.Button(main, "Duplicate", "secondary", 80, function()
+		local dup = BF:Duplicate(selectedBuild())
+		state.collapsed[table.concat(dup.classes or {}, "/")] = false
+		Window.Select(dup.name)
+	end, "Make a copy of this build to try changes on. The copy isn't linked to a spec.")
+	f.duplicate:SetPoint("RIGHT", f.export, "LEFT", -6, 0)
 	f.delete = S.Button(main, "Delete", "danger", 70, function() BF:Delete(selectedBuild()) end)
-	f.delete:SetPoint("RIGHT", f.export, "LEFT", -6, 0)
+	f.delete:SetPoint("RIGHT", f.duplicate, "LEFT", -6, 0)
 end
 
 local function createTabBar(main)
