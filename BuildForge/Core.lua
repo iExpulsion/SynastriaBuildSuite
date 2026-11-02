@@ -46,7 +46,7 @@ end
 
 function BF:Print(fmt, ...)
 	local msg = select("#", ...) > 0 and fmt:format(...) or fmt
-	DEFAULT_CHAT_FRAME:AddMessage("|cffff8020BuildForge|r: " .. msg)
+	DEFAULT_CHAT_FRAME:AddMessage("|cffffc400BuildForge|r: " .. msg)
 end
 
 -- The character's classes in pick order, as class keys.

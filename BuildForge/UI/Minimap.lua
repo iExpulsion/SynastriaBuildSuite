@@ -65,7 +65,7 @@ local function onClick(_, mouse)
 end
 
 local function fillTooltip(tt)
-	tt:AddLine("BuildForge", 1, 0.5, 0.13)
+	tt:AddLine("BuildForge", 1, 0.77, 0)
 	local name = linkedBuild()
 	tt:AddLine(BF:SpecName(BF:ActiveGroup()) .. ": " .. (name or "no linked build"), 1, 1, 1)
 	tt:AddLine("Left-click to open or close the build window.", 0.8, 0.8, 0.8)

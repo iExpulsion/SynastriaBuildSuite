@@ -13,14 +13,16 @@ S.colors = {
 	panel = { 0.11, 0.11, 0.135, 1 },
 	border = { 0.22, 0.22, 0.27, 1 },
 	hover = { 1, 1, 1, 0.06 },
-	selected = { 1, 0.5, 0.13, 0.14 },
-	accent = { 1, 0.5, 0.13, 1 },
-	accentHover = { 1, 0.6, 0.28, 1 },
+	selected = { 1, 0.77, 0, 0.12 },
+	-- brand #ffc400
+	accent = { 1, 0.77, 0, 1 },
+	accentHover = { 1, 0.84, 0.3, 1 },
 	text = { 0.93, 0.93, 0.93, 1 },
 	heading = { 1, 0.82, 0, 1 },
 	muted = { 0.6, 0.6, 0.66, 1 },
 	good = { 0.42, 0.86, 0.42, 1 },
-	warn = { 1, 0.78, 0.26, 1 },
+	-- orange, so warnings don't read as the accent
+	warn = { 1, 0.6, 0.2, 1 },
 	bad = { 1, 0.42, 0.42, 1 },
 	-- the Perk Manager's set name green
 	set = { 0.13, 1, 0.13, 1 },
