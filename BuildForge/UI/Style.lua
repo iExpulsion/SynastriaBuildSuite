@@ -193,8 +193,11 @@ function S.Button(parent, label, kind, width, onClick, tooltip)
 	end)
 	b:HookScript("OnEnable", paint)
 	b:HookScript("OnDisable", paint)
+	-- a segmented button's halves overlap by their shared 1px border; the selected half sits one level up so
+	-- its tinted border is drawn whole
 	function b:SetKind(newKind)
 		self.kind = newKind
+		self:SetFrameLevel(parent:GetFrameLevel() + (newKind == "selected" and 2 or 1))
 		paint(self)
 	end
 	function b:SetLabel(text)
