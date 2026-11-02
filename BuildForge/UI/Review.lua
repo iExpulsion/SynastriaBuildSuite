@@ -175,7 +175,10 @@ function Review.Create(parent, width, height)
 	sheet:SetAllPoints()
 	sheet:SetFrameLevel(parent:GetFrameLevel() + 20)
 	sheet:EnableMouse(true)
-	S.Panel(sheet, { C.window[1], C.window[2], C.window[3], 1 })
+	-- opaque, stopping 1px short of the window's right and bottom edges so the window border stays
+	local fill = S.Solid(sheet, "BACKGROUND", { C.window[1], C.window[2], C.window[3], 1 })
+	fill:SetPoint("TOPLEFT")
+	fill:SetPoint("BOTTOMRIGHT", -1, 1)
 	sheet:Hide()
 
 	-- a header (title and sub line) and a footer the same height as the window's, both PAD inside
