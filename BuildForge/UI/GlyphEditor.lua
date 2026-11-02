@@ -16,7 +16,7 @@ local SOCKETS_W, ICON, ROW, SEARCH_H = 300, 40, 60, S.CONTROL_H + S.GAP
 local COLUMNS = { { title = "Major Glyphs", sockets = { 1, 4, 6 } }, { title = "Minor Glyphs", sockets = { 2, 3, 5 } } }
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 local EMPTY = "Interface\\Icons\\INV_Misc_Rune_01"
-local LOOK = { socketed = C.good, bags = C.warn, missing = { 0.5, 0.3, 0.3, 1 }, empty = C.border, chosen = C.muted }
+local LOOK = { socketed = C.good, bags = C.warn, missing = C.badDim, empty = C.border, chosen = C.muted }
 
 local panel, current
 local state = { socket = 1, search = "" }
@@ -232,7 +232,7 @@ function Editor.Create(parent, width, height)
 	local pick = CreateFrame("Frame", nil, panel)
 	pick:SetSize(pickW, height)
 	pick:SetPoint("TOPLEFT", SOCKETS_W + PAD, 0)
-	S.Panel(pick, { 0.04, 0.04, 0.05, 1 }, C.border)
+	S.Panel(pick, C.well, C.border)
 	panel.pickTitle = S.Text(pick, "normal")
 	panel.pickTitle:SetPoint("TOPLEFT", PAD, -PAD)
 	panel.search = S.Input(pick, "BuildForgeGlyphSearch", pickW - 2 * PAD, "Search Glyphs", 40)

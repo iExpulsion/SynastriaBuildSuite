@@ -1,30 +1,66 @@
 local _, NS = ...
 local BF = NS.BF
 
--- Flat dark style kit: one accent color, 1px borders, and a few button kinds.
+-- Flat dark style kit on Material 3 color roles: one accent color, 1px borders, and a few button kinds.
 local S = {}
 BF.Style = S
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 
+local function rgb(hex, alpha)
+	return { tonumber(hex:sub(1, 2), 16) / 255, tonumber(hex:sub(3, 4), 16) / 255, tonumber(hex:sub(5, 6), 16) / 255, alpha or 1 }
+end
+
+-- `over` laid on `base` at `alpha`: Material's state layers (hover 8%, pressed 12%, disabled fill 12%).
+local function blend(base, over, alpha)
+	local out = {}
+	for i = 1, 3 do out[i] = base[i] + (over[i] - base[i]) * alpha end
+	out[4] = base[4]
+	return out
+end
+
+-- Material 3 dark scheme for the brand seed #ffc400 (material-color-utilities): surfaces from the Neutral scheme,
+-- primary from the Fidelity scheme (which keeps the seed as primaryContainer), error from the baseline, and
+-- success and warning as un-harmonized custom colors, since harmonizing pulls warning onto the brand yellow.
+local M3 = {
+	surfaceLowest = rgb("0f0e0c"),
+	surface = rgb("151311"),
+	surfaceLow = rgb("1d1b19"),
+	surfaceContainer = rgb("211f1d"),
+	surfaceHigh = rgb("2c2a27"),
+	onSurface = rgb("e7e1dd"),
+	onSurfaceVariant = rgb("cbc6c1"),
+	outline = rgb("94908c"),
+	outlineVariant = rgb("494643"),
+	primary = rgb("ffc400"),
+	onPrimary = rgb("3f2e00"),
+	error = rgb("ffb4ab"),
+	errorContainer = rgb("93000a"),
+	success = rgb("78dc77"),
+	warning = rgb("ffb870"),
+}
+
 S.colors = {
-	window = { 0.06, 0.06, 0.08, 0.97 },
-	sidebar = { 0.085, 0.085, 0.105, 1 },
-	panel = { 0.11, 0.11, 0.135, 1 },
-	border = { 0.22, 0.22, 0.27, 1 },
-	hover = { 1, 1, 1, 0.06 },
-	selected = { 1, 0.77, 0, 0.12 },
-	-- brand #ffc400
-	accent = { 1, 0.77, 0, 1 },
-	accentHover = { 1, 0.84, 0.3, 1 },
-	text = { 0.93, 0.93, 0.93, 1 },
-	heading = { 1, 0.82, 0, 1 },
-	muted = { 0.6, 0.6, 0.66, 1 },
-	good = { 0.42, 0.86, 0.42, 1 },
-	-- orange, so warnings don't read as the accent
-	warn = { 1, 0.6, 0.2, 1 },
-	bad = { 1, 0.42, 0.42, 1 },
-	-- the Perk Manager's set name green
+	window = { M3.surface[1], M3.surface[2], M3.surface[3], 0.97 },
+	sidebar = M3.surfaceLow,
+	panel = M3.surfaceContainer,
+	well = M3.surfaceLowest,
+	border = M3.outlineVariant,
+	outline = M3.outline,
+	hover = { M3.onSurface[1], M3.onSurface[2], M3.onSurface[3], 0.08 },
+	selected = { M3.primary[1], M3.primary[2], M3.primary[3], 0.12 },
+	accent = M3.primary,
+	accentHover = blend(M3.primary, M3.onPrimary, 0.08),
+	onAccent = M3.onPrimary,
+	text = M3.onSurface,
+	heading = M3.primary,
+	muted = M3.onSurfaceVariant,
+	disabled = { M3.onSurface[1], M3.onSurface[2], M3.onSurface[3], 0.38 },
+	good = M3.success,
+	warn = M3.warning,
+	bad = M3.error,
+	badDim = M3.errorContainer,
+	-- the Perk Manager's set name green, kept so sets read as they do in the client
 	set = { 0.13, 1, 0.13, 1 },
 }
 
@@ -76,13 +112,13 @@ function S.ScrollBar(scroll, scrollName)
 	bar:ClearAllPoints()
 	bar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", 4, 0)
 	bar:SetPoint("BOTTOMLEFT", scroll, "BOTTOMRIGHT", 4, 0)
-	local track = S.Solid(bar, "BACKGROUND", { 1, 1, 1, 0.04 })
+	local track = S.Solid(bar, "BACKGROUND", { M3.onSurface[1], M3.onSurface[2], M3.onSurface[3], 0.04 })
 	track:SetAllPoints()
 	bar:SetThumbTexture(WHITE)
 	local thumb = bar:GetThumbTexture()
 	thumb:SetSize(6, 40)
 	thumb:SetVertexColor(unpack(S.colors.border))
-	bar:HookScript("OnEnter", function() thumb:SetVertexColor(unpack(S.colors.muted)) end)
+	bar:HookScript("OnEnter", function() thumb:SetVertexColor(unpack(S.colors.outline)) end)
 	bar:HookScript("OnLeave", function() thumb:SetVertexColor(unpack(S.colors.border)) end)
 	return bar
 end
@@ -96,15 +132,17 @@ function S.Text(parent, size, color, layer)
 	return fs
 end
 
+-- Filled (primary), tonal (secondary), and text (ghost) buttons; hover is an 8% layer of the label color.
 local BUTTONS = {
-	primary = { bg = S.colors.accent, hover = S.colors.accentHover, border = S.colors.accent, text = { 0.08, 0.05, 0.02, 1 }, flat = true },
-	secondary = { bg = { 0.17, 0.17, 0.21, 1 }, hover = { 0.23, 0.23, 0.28, 1 }, border = S.colors.border, text = S.colors.text },
-	danger = { bg = { 0.17, 0.17, 0.21, 1 }, hover = { 0.36, 0.13, 0.13, 1 }, border = S.colors.border, text = S.colors.bad },
-	ghost = { bg = { 0, 0, 0, 0 }, hover = S.colors.hover, border = { 0, 0, 0, 0 }, text = S.colors.muted },
+	primary = { bg = M3.primary, hover = S.colors.accentHover, border = M3.primary, text = M3.onPrimary, flat = true },
+	secondary = { bg = M3.surfaceHigh, hover = blend(M3.surfaceHigh, M3.onSurface, 0.08), border = M3.outlineVariant, text = M3.onSurface },
+	danger = { bg = M3.surfaceHigh, hover = blend(M3.surfaceHigh, M3.error, 0.08), border = M3.outlineVariant, text = M3.error },
+	ghost = { bg = { 0, 0, 0, 0 }, hover = S.colors.hover, border = { 0, 0, 0, 0 }, text = M3.onSurfaceVariant },
 }
 
--- Disabled buttons of every kind look the same: flat gray, so faded text never sits on a bright fill.
-local DISABLED = { bg = { 0.13, 0.13, 0.16, 1 }, border = S.colors.border, text = { 0.45, 0.45, 0.5, 1 } }
+-- Disabled buttons of every kind look the same, as Material has it: a 12% onSurface fill with 38% onSurface text,
+-- so faded text never sits on a bright fill.
+local DISABLED = { bg = blend(M3.surface, M3.onSurface, 0.12), border = M3.outlineVariant, text = S.colors.disabled }
 
 local function paint(b)
 	local enabled = b:IsEnabled() == 1 or b:IsEnabled() == true
@@ -157,14 +195,14 @@ end
 local function paintCheck(b)
 	if b.on then b.fill:Show() else b.fill:Hide() end
 	b.fill:SetAlpha(b.usable and 1 or 0.4)
-	b:SetBackdropBorderColor(unpack(b.hovered and b.usable and S.colors.accent or S.colors.border))
+	b:SetBackdropBorderColor(unpack(b.hovered and b.usable and S.colors.accent or S.colors.outline))
 end
 
 -- Square flat checkbox: SetChecked(on) and SetEnabled(on) repaint it; clicks go to onClick(box).
 function S.Check(parent, size, onClick)
 	local b = CreateFrame("Button", nil, parent)
 	b:SetSize(size or 14, size or 14)
-	S.Panel(b, { 0.04, 0.04, 0.05, 1 }, S.colors.border)
+	S.Panel(b, S.colors.well, S.colors.outline)
 	b.fill = S.Solid(b, "ARTWORK", S.colors.accent)
 	b.fill:SetPoint("TOPLEFT", 3, -3)
 	b.fill:SetPoint("BOTTOMRIGHT", -3, 3)
@@ -267,13 +305,13 @@ function S.Input(parent, name, width, placeholder, maxLetters)
 	e:SetMaxLetters(maxLetters or 40)
 	e:SetFontObject(GameFontHighlightSmall)
 	e:SetTextInsets(8, 8, 0, 0)
-	S.Panel(e, { 0.04, 0.04, 0.05, 1 }, S.colors.border)
+	S.Panel(e, S.colors.well, S.colors.outline)
 	e.placeholder = S.Text(e, "small", S.colors.muted)
 	e.placeholder:SetPoint("LEFT", 8, 0)
 	e.placeholder:SetText(placeholder or "")
 	local function update(self)
 		if self.focused or self:GetText() ~= "" then self.placeholder:Hide() else self.placeholder:Show() end
-		self:SetBackdropBorderColor(unpack(self.focused and S.colors.accent or S.colors.border))
+		self:SetBackdropBorderColor(unpack(self.focused and S.colors.accent or S.colors.outline))
 	end
 	e:SetScript("OnEditFocusGained", function(self) self.focused = true update(self) end)
 	e:SetScript("OnEditFocusLost", function(self) self.focused = false update(self) end)

@@ -520,7 +520,7 @@ end
 local function createDetail(width, height)
 	local d = CreateFrame("Frame", nil, panel)
 	d:SetSize(width, height)
-	S.Panel(d, { 0.04, 0.04, 0.05, 1 }, C.border)
+	S.Panel(d, C.well, C.border)
 	d.scroll = CreateFrame("ScrollFrame", "BuildForgePerkDetail", d, "UIPanelScrollFrameTemplate")
 	d.scroll:SetPoint("TOPLEFT", 1, -1)
 	d.scroll:SetPoint("BOTTOMRIGHT", -12, 1)

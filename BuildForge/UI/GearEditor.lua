@@ -21,7 +21,7 @@ local SLOT_KEYS = {
 	"MainHandSlot", "SecondaryHandSlot", "RangedSlot",
 }
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
-local LOOK = { worn = C.good, bags = C.warn, missing = { 0.5, 0.3, 0.3, 1 }, empty = C.border }
+local LOOK = { worn = C.good, bags = C.warn, missing = C.badDim, empty = C.border }
 
 local panel, current
 local state = { slot = 1, rank = 1 }
@@ -251,7 +251,7 @@ end
 local function createDetail(width, height)
 	local d = CreateFrame("Frame", nil, panel)
 	d:SetSize(width, height)
-	S.Panel(d, { 0.04, 0.04, 0.05, 1 }, C.border)
+	S.Panel(d, C.well, C.border)
 	d:EnableMouse(true)
 	d:SetScript("OnReceiveDrag", function() acceptDrop(state.slot) end)
 	d:SetScript("OnMouseUp", function() acceptDrop(state.slot) end)

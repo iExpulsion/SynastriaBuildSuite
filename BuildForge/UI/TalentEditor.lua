@@ -15,9 +15,9 @@ local GAP = S.GAP
 -- the class buttons only take a row when the build has more than one class
 local HEADER_H, CLASSBAR_H = 26, S.CONTROL_H + S.GAP
 local BORDER = {
-	locked = { 0.25, 0.25, 0.28, 1 },
-	open = { 0.35, 0.8, 0.35, 1 },
-	partial = { 0.35, 0.8, 0.35, 1 },
+	locked = C.border,
+	open = C.good,
+	partial = C.good,
 	maxed = C.accent,
 }
 
@@ -297,7 +297,7 @@ function Editor.Create(parent, width, height)
 		local col = CreateFrame("Frame", nil, panel)
 		col:SetWidth(colW)
 		col.x = (tab - 1) * (colW + GAP)
-		S.Panel(col, { 0.04, 0.04, 0.05, 1 }, C.border)
+		S.Panel(col, C.well, C.border)
 		col.bg = col:CreateTexture(nil, "BACKGROUND")
 		col.bg:SetPoint("TOPLEFT", 1, -HEADER_H)
 		col.bg:SetPoint("BOTTOMRIGHT", -1, 1)
