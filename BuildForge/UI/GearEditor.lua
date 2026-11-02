@@ -10,7 +10,7 @@ local S = BF.Style
 local C = S.colors
 local Gear
 
-local DOLL_W, ICON, ROW, PAD = 300, 36, 42, 12
+local DOLL_W, ICON, ROW, PAD = 320, 36, 42, 12
 local LEFT = { 1, 2, 3, 15, 5, 9 }
 local RIGHT = { 10, 6, 7, 8, 11, 12, 13, 14 }
 local BOTTOM = { 16, 17, 18 }
@@ -133,8 +133,11 @@ local function newLabel(parent, alignRight)
 	local l = {}
 	l.name = S.Text(parent, "small")
 	l.status = S.Text(parent, "small", C.muted)
-	l.name:SetWidth(DOLL_W / 2 - ICON - 12)
-	l.status:SetWidth(DOLL_W / 2 - ICON - 12)
+	for _, fs in ipairs({ l.name, l.status }) do
+		fs:SetWidth(DOLL_W / 2 - ICON - 12)
+		fs:SetHeight(12)
+		fs:SetWordWrap(false)
+	end
 	if alignRight then
 		l.name:SetJustifyH("RIGHT")
 		l.status:SetJustifyH("RIGHT")
@@ -178,7 +181,7 @@ local function renderDetail(rowsBySlot)
 	if state.rank > #items then state.rank = math.max(1, #items) end
 	d.title:SetText(BF.SLOT_NAMES[slot])
 	d.sub:SetText(#items == 0 and "No item chosen for this slot."
-		or ("%d item(s). Best is the one to aim for; Alts are stand-ins, in order."):format(#items))
+		or #items == 1 and "1 item." or ("%d items: Best first, then Alts in order."):format(#items))
 	local list = d.list
 	list:Begin()
 	for rank, item in ipairs(items) do
@@ -255,12 +258,12 @@ local function createDetail(width, height)
 	d.title:SetPoint("TOPLEFT", PAD, -PAD)
 	d.sub = S.Text(d, "small", C.muted)
 	d.sub:SetPoint("TOPLEFT", d.title, "BOTTOMLEFT", 0, -4)
-	d.sub:SetPoint("RIGHT", -PAD, 0)
-	d.list = BF.List.New(d, "BuildForgeGearDetail", width - 22, height - 52 - 74)
+	d.sub:SetWidth(width - 2 * PAD)
+	d.list = BF.List.New(d, "BuildForgeGearDetail", width - 22, height - 52 - 92)
 	d.list.scroll:SetPoint("TOPLEFT", 1, -52)
 	d.hint = S.Text(d, "small", C.muted)
-	d.hint:SetPoint("BOTTOMLEFT", PAD, 42)
-	d.hint:SetPoint("RIGHT", -PAD, 0)
+	d.hint:SetPoint("BOTTOMLEFT", PAD, 44)
+	d.hint:SetWidth(width - 2 * PAD)
 	d.hint:SetText("Drop an item anywhere on this tab to add it to its slot. Rings, trinkets and one-hand weapons fill an empty slot of the pair first.")
 	d.best = S.Button(d, "Make Best", "secondary", 90, function()
 		Gear.MakeBest(current, state.slot, state.rank)
