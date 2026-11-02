@@ -41,8 +41,9 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   build's perks against how many your character can have on. Each row shows what applying the build would do
   (Active, To Activate, To Deactivate, Options Differ). Nothing changes on your character until Apply Build.
 - **Shared Perks:** Misc perks aren't part of builds. They're in one Shared Perks list, at the top of the
-  sidebar, that every build applies along with its own perks, so each spec gets them. Select it to edit the list
-  (it has only a Perks tab); its Apply Perks sets your active spec's Misc perks and leaves the rest alone, and
+  sidebar, that every build applies along with its own perks, so each spec gets them. Select it to edit the list:
+  it shows every Misc perk you can use, checked if it's in the list. Its Apply Perks sets your active spec's Misc
+  perks and leaves the rest alone, and
   its Use My Perks takes your active Misc perks. Exports leave it out; importing a string with Misc perks asks
   before adding them.
 - **Glyphs:** the six sockets, Major and Minor, each with a green border when the glyph is socketed in your

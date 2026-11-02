@@ -111,7 +111,7 @@ local function visiblePerks(build, mask, look)
 	for id, perk in pairs(PerkMgrPerks) do
 		local entry = entryFor(id)
 		local relevant = entry or look.deactivate[id] or id == state.selected
-			or (state.filter == "all" and Perks.UsableFor(perk, mask))
+			or ((state.filter == "all" or build.sharedOnly) and Perks.UsableFor(perk, mask))
 		local matches = state.search == "" or (perk.name or ""):lower():find(state.search, 1, true)
 		-- Misc perks are listed only under Shared Perks, and Shared Perks lists nothing else
 		local inMode = Perks.IsShared(id) == (build.sharedOnly == true)
@@ -133,9 +133,6 @@ local function visiblePerks(build, mask, look)
 	return byCat, first
 end
 
-local function categoryLabel(cat)
-	return cat == Perks.SHARED_CAT and "Misc (Shared by All Builds)" or categoryName(cat)
-end
 
 local function categoryStatus(build, cat, mask)
 	local count = cat == Perks.SHARED_CAT and #BF.db.shared.perks or Perks.CategoryCount(build, cat, mask)
@@ -158,9 +155,9 @@ local function renderList(build, mask, look)
 	for _, cat in ipairs(CATEGORY_ORDER) do
 		local perks = byCat[cat]
 		if perks then
-			list:Add({ text = categoryLabel(cat), header = true, status = categoryStatus(build, cat, mask),
+			list:Add({ text = categoryName(cat), header = true, status = categoryStatus(build, cat, mask),
 				tooltip = function(tt)
-					tt:AddLine(categoryLabel(cat), 1, 1, 1)
+					tt:AddLine(categoryName(cat), 1, 1, 1)
 					tt:AddLine(cat == Perks.SHARED_CAT
 						and "Misc perks are kept in one Shared Perks list that every build applies, so each spec gets them. They aren't included in exports."
 						or "Perks in this build, and how many your character can have on at once.", 0.8, 0.8, 0.8, true)
@@ -184,7 +181,7 @@ local function renderList(build, mask, look)
 	end
 	if list.count == 0 then
 		list:Add({ text = S.Hex(C.muted, state.search ~= "" and "No perks match your search."
-			or build.sharedOnly and "No shared perks yet. Show All Perks to add some."
+			or build.sharedOnly and "No Misc perks to show."
 			or "This build has no perks yet. Show All Perks to add some.") })
 	end
 	list:End()
@@ -377,10 +374,20 @@ end
 
 -- Toolbar ---------------------------------------------------------------------------------------------------
 
+-- Shared Perks always lists every Misc perk, so it has no In Build / All Perks switch and the search fills the row.
 local function renderToolbar()
-	panel.showBuild.label:SetText(current.sharedOnly and "In List" or "In Build")
+	local shared = current.sharedOnly == true
 	panel.showBuild:SetKind(state.filter == "build" and "primary" or "secondary")
 	panel.showAll:SetKind(state.filter == "all" and "primary" or "secondary")
+	if shared then panel.showBuild:Hide() panel.showAll:Hide() else panel.showBuild:Show() panel.showAll:Show() end
+	panel.search:ClearAllPoints()
+	if shared then
+		panel.search:SetPoint("TOPLEFT", 0, 0)
+		panel.search:SetWidth(LIST_W - 14)
+	else
+		panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", 8, 0)
+		panel.search:SetWidth(LIST_W - 186)
+	end
 end
 
 local function summary(look)
@@ -388,7 +395,7 @@ local function summary(look)
 	local changes = #plan.activate + #plan.deactivate
 	local text
 	if changes + #plan.options + #plan.spells == 0 then
-		text = S.Hex(C.good, "Your perks match this build.")
+		text = S.Hex(C.good, current.sharedOnly and "Your Misc perks match Shared Perks." or "Your perks match this build.")
 	else
 		text = ("%d to activate, %d to deactivate, %d option change(s)."):format(#plan.activate, #plan.deactivate, #plan.options + #plan.spells)
 		if changes > 0 and not Perks.Writable() then
