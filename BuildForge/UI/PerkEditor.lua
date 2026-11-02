@@ -154,21 +154,28 @@ local function categoryStatus(build, cat, mask)
 	return text
 end
 
-local function inBuild(id) return entryFor(id) ~= nil end
+-- Whether a set perk counts for the build: it's in the build, or it can't be toggled (like the Buffs perks class
+-- unlocks grant) and the character has it.
+local function inSet(id)
+	local perk = PerkMgrPerks[id]
+	return entryFor(id) ~= nil or (perk ~= nil and Perks.Locked(perk) and GetPerkActive(id) and GetPerkAcquired(id) ~= nil) == true
+end
 
--- "5 / 8" for the set's counted perks in the build, green once a bonus is active.
+-- "5 / 8" for the set's counted perks, green once a bonus is active.
 local function setStatus(set)
-	local count, total = Perks.SetCount(set, inBuild)
+	local count, total = Perks.SetCount(set, inSet)
 	local active = false
-	for _, b in ipairs(Perks.SetBonuses(set, inBuild)) do active = active or b.active end
+	for _, b in ipairs(Perks.SetBonuses(set, inSet)) do active = active or b.active end
 	return S.Hex(active and C.good or C.muted, ("%d / %d"):format(count, total))
 end
+
+local SET_NOTE = "Bonuses count the set's perks in this build, and perks you can't toggle that your character has."
 
 local function setTooltip(set)
 	return function(tt)
 		tt:AddLine(set.name, 1, 1, 1)
-		for _, b in ipairs(Perks.SetBonuses(set, inBuild)) do tt:AddLine(b.text, 1, 1, 1, true) end
-		tt:AddLine("Bonuses count the set's perks in this build.", 0.6, 0.6, 0.66, true)
+		for _, b in ipairs(Perks.SetBonuses(set, inSet)) do tt:AddLine(b.text, 1, 1, 1, true) end
+		tt:AddLine(SET_NOTE, 0.6, 0.6, 0.66, true)
 	end
 end
 
@@ -360,11 +367,22 @@ local function renderDetail(build, mask, look)
 
 		local set = Perks.SetOf(id)
 		if set then
-			local count, total = Perks.SetCount(set, inBuild)
-			header(d.setHead, ("Set: %s   %s"):format(set.name, S.Hex(C.muted, ("%d / %d in Build"):format(count, total))))
-			local lines = {}
-			for _, b in ipairs(Perks.SetBonuses(set, inBuild)) do lines[#lines + 1] = b.text end
+			local count, total = Perks.SetCount(set, inSet)
+			header(d.setHead, ("Set: %s   %s"):format(set.name, S.Hex(C.muted, ("%d / %d"):format(count, total))))
+			-- the set's counted perks, green when they count, then its bonuses, as the Perk Manager shows them
+			local members = {}
+			for _, member in ipairs(set.perks or {}) do
+				if Perks.SetCounts(member) then members[#members + 1] = member end
+			end
+			table.sort(members, function(a, b) return PerkMgrPerks[a].name:upper() < PerkMgrPerks[b].name:upper() end)
+			local names = {}
+			for _, member in ipairs(members) do
+				names[#names + 1] = S.Hex(inSet(member) and C.good or C.muted, "    " .. PerkMgrPerks[member].name)
+			end
+			local lines = { table.concat(names, "\n") }
+			for _, b in ipairs(Perks.SetBonuses(set, inSet)) do lines[#lines + 1] = b.text end
 			if Perks.SetCounts(id) == false then lines[#lines + 1] = S.Hex(C.muted, "This perk doesn't count toward the set.") end
+			lines[#lines + 1] = S.Hex(C.muted, SET_NOTE)
 			body(d.set, table.concat(lines, "\n\n"))
 		else
 			d.setHead:Hide()
