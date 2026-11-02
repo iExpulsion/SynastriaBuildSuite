@@ -61,11 +61,15 @@ function Launchers.UpdateGossip()
 	local option = managePerksOption(GetGossipOptions())
 	local last = _G["GossipTitleButton" .. (GossipFrame.buttonIndex - 1)]
 	if option and last then
+		-- spacing copied from Blizzard's own buttons: the gap in GossipTitleButton2's anchor and the padding
+		-- GossipResize leaves around the text
+		local _, _, _, gapX, gapY = GossipTitleButton2:GetPoint()
+		local padding = last:GetHeight() - last:GetTextHeight()
 		gossip = gossip or createGossip()
 		gossip.option = option
 		gossip:ClearAllPoints()
-		gossip:SetPoint("TOPLEFT", last, "BOTTOMLEFT")
-		GossipResize(gossip)
+		gossip:SetPoint("TOPLEFT", last, "BOTTOMLEFT", gapX or 0, gapY or 0)
+		gossip:SetHeight(gossip:GetTextHeight() + padding)
 		gossip:Show()
 		GossipSpacerFrame:SetPoint("TOP", gossip, "BOTTOM")
 		GossipGreetingScrollFrame:UpdateScrollChildRect()
