@@ -35,9 +35,18 @@ local function buildMask(build)
 	return Perks.ClassMask(build.classes and #build.classes > 0 and build.classes or BF:PlayerClasses())
 end
 
+-- Misc perks are edited in the shared list, every other perk in the build.
+local function owner(id)
+	return Perks.IsShared(id) and BF.db.shared or current
+end
+
+local function entryFor(id)
+	return Perks.Entry(owner(id), id)
+end
+
 -- What applying the build would do to each perk, by perk ID.
 local function planLookup(build)
-	local plan = Perks.Plan(build.perks)
+	local plan = Perks.Plan(Perks.Wanted(build))
 	local look = { plan = plan, activate = {}, deactivate = {}, skipped = {}, options = {} }
 	for _, id in ipairs(plan.activate) do look.activate[id] = true end
 	for _, id in ipairs(plan.deactivate) do look.deactivate[id] = true end
@@ -70,7 +79,7 @@ local function toggle(id)
 	local perk = PerkMgrPerks[id]
 	if perk and not Perks.Locked(perk) then
 		state.selected = id
-		PlaySound(Perks.Toggle(current, id) and "igMainMenuOptionCheckBoxOn" or "igMainMenuOptionCheckBoxOff")
+		PlaySound(Perks.Toggle(owner(id), id) and "igMainMenuOptionCheckBoxOn" or "igMainMenuOptionCheckBoxOff")
 		BF:Changed()
 	end
 end
@@ -87,7 +96,8 @@ local function rowTooltip(id)
 		tt:AddLine(categoryName(perk.cat), 0.6, 0.6, 0.66)
 		local desc = Perks.Description(id, GetPerkAcquired(id) or 1)
 		if desc then tt:AddLine(desc, 1, 1, 1, true) end
-		tt:AddLine("Check to add it to the build. Click the name for details and options.", 0.6, 0.6, 0.66, true)
+		tt:AddLine(Perks.IsShared(id) and "Check to add it to Shared Perks, which every build applies. Click the name for details and options."
+			or "Check to add it to the build. Click the name for details and options.", 0.6, 0.6, 0.66, true)
 	end
 end
 
@@ -96,7 +106,7 @@ end
 local function visiblePerks(build, mask, look)
 	local byCat, first = {}, nil
 	for id, perk in pairs(PerkMgrPerks) do
-		local entry = Perks.Entry(build, id)
+		local entry = entryFor(id)
 		local relevant = entry or look.deactivate[id] or id == state.selected
 			or (state.filter == "all" and Perks.UsableFor(perk, mask))
 		local matches = state.search == "" or (perk.name or ""):lower():find(state.search, 1, true)
@@ -118,8 +128,12 @@ local function visiblePerks(build, mask, look)
 	return byCat, first
 end
 
+local function categoryLabel(cat)
+	return cat == Perks.SHARED_CAT and "Misc (Shared by All Builds)" or categoryName(cat)
+end
+
 local function categoryStatus(build, cat, mask)
-	local count = Perks.CategoryCount(build, cat, mask)
+	local count = cat == Perks.SHARED_CAT and #BF.db.shared.perks or Perks.CategoryCount(build, cat, mask)
 	local index = Perks.LimitIndex(cat)
 	local text
 	if index == 6 or index == 0 then
@@ -139,14 +153,16 @@ local function renderList(build, mask, look)
 	for _, cat in ipairs(CATEGORY_ORDER) do
 		local perks = byCat[cat]
 		if perks then
-			list:Add({ text = categoryName(cat), header = true, status = categoryStatus(build, cat, mask),
-				tooltip = Perks.LimitIndex(cat) ~= 6 and function(tt)
-					tt:AddLine(categoryName(cat), 1, 1, 1)
-					tt:AddLine("Perks in this build, and how many your character can have on at once.", 0.8, 0.8, 0.8, true)
-				end or nil })
+			list:Add({ text = categoryLabel(cat), header = true, status = categoryStatus(build, cat, mask),
+				tooltip = function(tt)
+					tt:AddLine(categoryLabel(cat), 1, 1, 1)
+					tt:AddLine(cat == Perks.SHARED_CAT
+						and "Misc perks are kept in one Shared Perks list that every build applies, so each spec gets them. They aren't included in exports."
+						or "Perks in this build, and how many your character can have on at once.", 0.8, 0.8, 0.8, true)
+				end })
 			for _, perk in ipairs(perks) do
 				local id = perk.id
-				local entry = Perks.Entry(build, id)
+				local entry = entryFor(id)
 				local locked = Perks.Locked(perk)
 				list:Add({
 					text = rowText(perk), icon = spellIcon(perk.icon), indent = 4,
@@ -187,13 +203,13 @@ local function newAbility(parent)
 	local hover = S.Solid(b, "HIGHLIGHT", { 1, 1, 1, 0.15 })
 	hover:SetAllPoints(b.icon)
 	b:SetScript("OnClick", function(self, mouse)
-		local entry = Perks.Entry(current, self.perk)
+		local entry = entryFor(self.perk)
 		if entry then
 			entry.spell = mouse == "RightButton" and 0 or self.spell
 			PlaySound("igMainMenuOptionCheckBoxOn")
 			BF:Changed()
 		else
-			UIErrorsFrame:AddMessage("Add the perk to the build first.", 1, 0.3, 0.3)
+			UIErrorsFrame:AddMessage("Add the perk first.", 1, 0.3, 0.3)
 		end
 	end)
 	b:SetScript("OnEnter", function(self)
@@ -219,12 +235,12 @@ local function newOption(parent, width)
 	row.label:SetPoint("LEFT", row.check, "RIGHT", 8, 0)
 	row.label:SetPoint("RIGHT", -4, 0)
 	row:SetScript("OnClick", function(self)
-		local entry = Perks.Entry(current, self.perk)
+		local entry = entryFor(self.perk)
 		if entry and Perks.SetOption(entry, self.options, self.index, not self.check.on) then
 			PlaySound("igMainMenuOptionCheckBoxOn")
 			BF:Changed()
 		elseif not entry then
-			UIErrorsFrame:AddMessage("Add the perk to the build first.", 1, 0.3, 0.3)
+			UIErrorsFrame:AddMessage("Add the perk first.", 1, 0.3, 0.3)
 		end
 	end)
 	row:SetScript("OnEnter", function(self)
@@ -245,7 +261,8 @@ local function renderDetail(build, mask, look)
 	if perk then d.child:Show() d.none:Hide() else d.child:Hide() d.none:Show() end
 	if perk then
 		local child, width = d.child, d.innerW
-		local entry = Perks.Entry(build, id)
+		local entry = entryFor(id)
+		local shared = Perks.IsShared(id)
 		local rank, maxRank = GetPerkAcquired(id), perk.levels and #perk.levels or 0
 		d.icon:SetTexture(spellIcon(perk.icon))
 		d.name:SetText(perk.name)
@@ -253,10 +270,15 @@ local function renderDetail(build, mask, look)
 			or S.Hex(C.warn, "Not learned on your character")))
 
 		local locked = Perks.Locked(perk)
-		d.toggle:SetLabel(entry and "Remove from Build" or "Add to Build")
+		if shared then
+			d.toggle:SetLabel(entry and "Remove from Shared" or "Add to Shared")
+		else
+			d.toggle:SetLabel(entry and "Remove from Build" or "Add to Build")
+		end
 		d.toggle:SetKind(entry and "secondary" or "primary")
 		if locked then d.toggle:Disable() else d.toggle:Enable() end
-		d.toggle.tooltipText = locked and "This perk can't be turned on or off." or nil
+		d.toggle.tooltipText = locked and "This perk can't be turned on or off."
+			or shared and "Misc perks are kept in Shared Perks, which every build applies." or nil
 		local onChar = GetPerkActive(id)
 		d.state:SetText(rowStatus(id, entry, look) or (onChar and S.Hex(C.muted, "On for your character")
 			or S.Hex(C.muted, "Off for your character")))

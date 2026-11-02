@@ -22,15 +22,18 @@ end
 Tabs.diff.perks = function(build)
 	local count
 	if PerkMgrPerks then
-		local plan = BF.Perks.Plan(build.perks)
+		local plan = BF.Perks.Plan(BF.Perks.Wanted(build))
 		count = #plan.activate + #plan.deactivate + #plan.options + #plan.spells
 	end
 	return count
 end
 
 Tabs.actions.perks = {
-	{ label = "Use My Perks", tooltip = "Replace this build's perks with the ones active on your character now.", run = function(build)
-		build.perks = BF.Perks.Capture()
+	{ label = "Use My Perks", tooltip = "Replace this build's perks with the ones active on your character now. Your active Misc perks become the Shared Perks every build uses.", run = function(build)
+		local own, misc = BF.Perks.Split(BF.Perks.Capture())
+		build.perks = own
+		BF.db.shared.perks = {}
+		BF.Perks.AddShared(misc)
 		BF:Changed()
 	end },
 }

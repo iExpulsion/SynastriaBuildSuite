@@ -21,7 +21,7 @@ function Build.Capture(name)
 		name = name,
 		classes = BF:PlayerClasses(),
 		spec = specName(BF:ActiveGroup()),
-		perks = BF.Perks.Capture(),
+		perks = (BF.Perks.Split(BF.Perks.Capture())),
 		talents = talents,
 		glyphs = BF.Glyphs.Capture(),
 		gear = BF.Gear.Capture(),
@@ -60,7 +60,7 @@ function Build.Plan(build)
 	return {
 		build = build,
 		group = group,
-		perks = BF.Perks.Plan(build.perks),
+		perks = BF.Perks.Plan(BF.Perks.Wanted(build)),
 		talents = BF.Talents.Plan(build.talents),
 		glyphs = BF.Glyphs.Plan(build.glyphs),
 		gear = BF.Gear.Status(build.gear),
@@ -81,6 +81,6 @@ function Build.Apply(plan)
 		SetCustomGameDataString(21, plan.group, plan.spec)
 		if UpdateTalentSpecNames then UpdateTalentSpecNames() end
 	end
-	BF.charDB.applied[plan.group] = plan.build.name
+	BF:Links()[plan.group] = plan.build.name
 	return result
 end

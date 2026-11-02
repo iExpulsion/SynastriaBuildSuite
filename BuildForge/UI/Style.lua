@@ -177,6 +177,73 @@ function S.Check(parent, size, onClick)
 	return b
 end
 
+-- Flat dropdown: a button showing the current choice that opens a menu below it. SetOptions takes
+-- { { value, text, tooltip } }; picking one calls onSelect(value) and closes the menu.
+function S.Dropdown(parent, width, onSelect)
+	local b = S.Button(parent, "", "secondary", width)
+	b:SetHeight(20)
+	b.label:ClearAllPoints()
+	b.label:SetPoint("LEFT", 8, 0)
+	b.label:SetPoint("RIGHT", -20, 0)
+	b.label:SetJustifyH("LEFT")
+	local arrow = b:CreateTexture(nil, "OVERLAY")
+	arrow:SetTexture("Interface\\Buttons\\Arrow-Down-Up")
+	arrow:SetSize(12, 12)
+	arrow:SetPoint("RIGHT", -5, -2)
+	arrow:SetDesaturated(true)
+	arrow:SetVertexColor(unpack(S.colors.muted))
+
+	local menu = CreateFrame("Frame", nil, b)
+	menu:SetFrameStrata("DIALOG")
+	menu:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -2)
+	menu:SetWidth(width)
+	S.Panel(menu, S.colors.panel, S.colors.border)
+	menu:EnableMouse(true)
+	menu:Hide()
+	b.menu, b.items = menu, {}
+
+	function b:SetText(text) self.label:SetText(text) end
+	function b:SetOptions(options)
+		for i, opt in ipairs(options) do
+			local item = self.items[i]
+			if not item then
+				item = CreateFrame("Button", nil, menu)
+				item:SetHeight(20)
+				item:SetPoint("TOPLEFT", 1, -1 - (i - 1) * 20)
+				item:SetPoint("TOPRIGHT", -1, -1 - (i - 1) * 20)
+				local hover = S.Solid(item, "HIGHLIGHT", S.colors.hover)
+				hover:SetAllPoints()
+				item.text = S.Text(item, "small")
+				item.text:SetPoint("LEFT", 8, 0)
+				item.text:SetPoint("RIGHT", -8, 0)
+				item:SetScript("OnClick", function(it)
+					menu:Hide()
+					onSelect(it.value)
+				end)
+				item:SetScript("OnEnter", function(it)
+					if it.tooltip then
+						GameTooltip:SetOwner(it, "ANCHOR_RIGHT")
+						GameTooltip:SetText(it.tooltip, nil, nil, nil, nil, true)
+						GameTooltip:Show()
+					end
+				end)
+				item:SetScript("OnLeave", function() GameTooltip:Hide() end)
+				self.items[i] = item
+			end
+			item.value, item.tooltip = opt.value, opt.tooltip
+			item.text:SetText(opt.text)
+			item:Show()
+		end
+		for i = #options + 1, #self.items do self.items[i]:Hide() end
+		menu:SetHeight(#options * 20 + 2)
+	end
+	b:SetScript("OnClick", function()
+		if menu:IsShown() then menu:Hide() else menu:Show() end
+	end)
+	b:HookScript("OnHide", function() menu:Hide() end)
+	return b
+end
+
 -- Single-line input with a placeholder shown while it's empty and unfocused. Never takes focus on its own.
 function S.Input(parent, name, width, placeholder, maxLetters)
 	local e = CreateFrame("EditBox", name, parent)

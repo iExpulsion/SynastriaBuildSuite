@@ -115,6 +115,16 @@ StaticPopupDialogs["BUILDFORGE_DELETE"] = {
 	hideOnEscape = true,
 }
 
+StaticPopupDialogs["BUILDFORGE_SHARED"] = {
+	text = "This build includes %s Misc perk(s). Add them to your Shared Perks, which every build applies?",
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	OnAccept = function(self) self.data() end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+}
+
 function Dialogs.Confirm(which, name, onAccept)
 	local popup = StaticPopup_Show(which, name)
 	if popup then popup.data = onAccept end

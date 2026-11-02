@@ -15,6 +15,16 @@ local function lines(plan)
 	local out = {}
 	local function add(text, status, header, tooltip) out[#out + 1] = { text = text, status = status, header = header, indent = header and 0 or 12, tooltip = tooltip } end
 
+	local target = BF.Window.SpecToSwitch(plan.build)
+	if target then
+		add("Spec", nil, true)
+		add(S.Hex(C.warn, ("This build is linked to %s; you're in %s."):format(BF:SpecName(target), BF:SpecName(plan.group))),
+			nil, false, function(tt)
+				tt:AddLine("Wrong spec?", 1, 1, 1)
+				tt:AddLine("Perks, talents and glyphs belong to the active spec. Switch Spec first, or apply here to link this spec too.", 0.8, 0.8, 0.8, true)
+			end)
+	end
+
 	local p = plan.perks
 	if #p.activate + #p.deactivate + #p.options + #p.spells + #p.skipped > 0 then
 		add("Perks", nil, true)
@@ -84,6 +94,8 @@ function Review.Render()
 	sheet.list:End()
 	local changes = hasChanges(plan)
 	if changes then sheet.confirm:Enable() else sheet.confirm:Disable() end
+	sheet.switch.target = BF.Window.SpecToSwitch(current)
+	if sheet.switch.target then sheet.switch:Show() else sheet.switch:Hide() end
 	sheet.note:SetText(changes and "Gear isn't changed here: use Equip from Bags on the Gear tab." or "Nothing to apply.")
 end
 
@@ -138,6 +150,11 @@ function Review.Create(parent, width, height)
 	sheet.confirm:SetPoint("BOTTOMRIGHT", -16, 11)
 	local cancel = S.Button(sheet, "Cancel", "secondary", 80, Review.Close)
 	cancel:SetPoint("RIGHT", sheet.confirm, "LEFT", -6, 0)
+	sheet.switch = S.Button(sheet, "Switch Spec", "secondary", 100, function(self)
+		Review.Close()
+		BF.Window.SwitchSpec(self.target)
+	end, "Activate the build's linked spec, then apply again.")
+	sheet.switch:SetPoint("RIGHT", cancel, "LEFT", -6, 0)
 	sheet.note = S.Text(sheet, "small", C.muted)
 	sheet.note:SetPoint("BOTTOMLEFT", 16, 17)
 	return sheet

@@ -42,6 +42,56 @@ function BF:ActiveGroup()
 	return GetActiveTalentGroup and GetActiveTalentGroup(false, false) or 1
 end
 
+-- Talent specs (Synastria allows up to 8) ------------------------------------------------------------------
+
+function BF:SpecCount()
+	return GetNumTalentGroups and GetNumTalentGroups(false, false) or 1
+end
+
+function BF:SpecName(group)
+	local name = GetCustomGameDataString and GetCustomGameDataString(21, group) or ""
+	return ("Spec %d"):format(group) .. ((name and name ~= "") and (": " .. name) or "")
+end
+
+local function charKey()
+	return (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "?")
+end
+
+-- This character's spec-to-build links. Kept in the account file so renames and deletes reach every character.
+function BF:Links()
+	local key = charKey()
+	self.db.links[key] = self.db.links[key] or {}
+	return self.db.links[key]
+end
+
+-- The specs on this character linked to a build, lowest first.
+function BF:LinkedSpecs(name)
+	local groups = {}
+	for group, linked in pairs(self:Links()) do
+		if linked == name and group <= self:SpecCount() then groups[#groups + 1] = group end
+	end
+	table.sort(groups)
+	return groups
+end
+
+-- Links a build to one spec (replacing its other links), or unlinks it when group is nil.
+function BF:LinkSpec(name, group)
+	local links = self:Links()
+	for g, linked in pairs(links) do
+		if linked == name then links[g] = nil end
+	end
+	if group then links[group] = name end
+	self:Changed()
+end
+
+function BF:RenameLinks(old, new)
+	for _, links in pairs(self.db.links) do
+		for g, linked in pairs(links) do
+			if linked == old then links[g] = new end
+		end
+	end
+end
+
 local frame = CreateFrame("Frame")
 BF.frame = frame
 frame:RegisterEvent("ADDON_LOADED")
@@ -49,9 +99,16 @@ frame:SetScript("OnEvent", function(self, event, name)
 	if event == "ADDON_LOADED" and name == ADDON then
 		BuildForgeDB = BuildForgeDB or {}
 		BuildForgeDB.builds = BuildForgeDB.builds or {}
+		BuildForgeDB.shared = BuildForgeDB.shared or { perks = {} }
+		BuildForgeDB.links = BuildForgeDB.links or {}
 		BuildForgeCharDB = BuildForgeCharDB or {}
-		BuildForgeCharDB.applied = BuildForgeCharDB.applied or {}
 		BF.db, BF.charDB = BuildForgeDB, BuildForgeCharDB
+		-- links used to live per character as `applied`
+		if BuildForgeCharDB.applied then
+			local links = BF:Links()
+			for group, name in pairs(BuildForgeCharDB.applied) do links[group] = links[group] or name end
+			BuildForgeCharDB.applied = nil
+		end
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 end)

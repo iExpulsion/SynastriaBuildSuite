@@ -52,6 +52,35 @@ local function selectedBuild()
 	return state.selected and BF.db.builds[state.selected]
 end
 
+-- "Spec 2" for a build linked to a spec on this character, green when that spec is active.
+function Window.SpecStatus(build)
+	local groups = BF:LinkedSpecs(build.name)
+	local text
+	if #groups > 0 then
+		local active = false
+		for _, g in ipairs(groups) do if g == BF:ActiveGroup() then active = true end end
+		text = S.Hex(active and C.good or C.muted, "Spec " .. table.concat(groups, ", "))
+	end
+	return text
+end
+
+-- The spec to switch to for a build, when it's linked and none of its specs is active.
+function Window.SpecToSwitch(build)
+	local groups = BF:LinkedSpecs(build.name)
+	local target = groups[1]
+	for _, g in ipairs(groups) do if g == BF:ActiveGroup() then target = nil end end
+	return target
+end
+
+function Window.SwitchSpec(group)
+	if InCombatLockdown() then
+		Window.Message(S.Hex(C.bad, "Can't switch specs in combat."))
+	else
+		SetActiveTalentGroup(group)
+		Window.Message(S.Hex(C.muted, "Switching to " .. BF:SpecName(group) .. "..."))
+	end
+end
+
 function Window.Select(name)
 	state.selected = name
 	state.message = nil
@@ -99,7 +128,6 @@ end
 
 local function renderSidebar()
 	local list = frame.list
-	local applied = BF.charDB.applied[BF:ActiveGroup()]
 	local first, firstFit, shown = nil, nil, 0
 	list:Begin()
 	for _, group in ipairs(groupedBuilds()) do
@@ -127,7 +155,7 @@ local function renderSidebar()
 				list:Add({
 					text = build.name,
 					sub = spec ~= "" and spec ~= build.name and spec or nil,
-					status = build.name == applied and S.Hex(C.good, "Applied") or nil,
+					status = Window.SpecStatus(build),
 					indent = 12,
 					selected = build.name == state.selected,
 					onClick = function() Window.Select(build.name) end,
@@ -193,6 +221,26 @@ local function renderInnkeeper()
 	frame.innText:SetTextColor(unpack(at and C.good or C.muted))
 end
 
+local function renderSpecLink(build)
+	local count = BF:SpecCount()
+	local groups = BF:LinkedSpecs(build.name)
+	local options = { { value = 0, text = "Not Linked", tooltip = "Don't tie this build to a spec on this character." } }
+	for g = 1, count do
+		local other = BF:Links()[g]
+		local tip = other and other ~= build.name and ("Linked to " .. other .. " now; picking it moves that link here.") or nil
+		options[#options + 1] = { value = g, text = BF:SpecName(g) .. (g == BF:ActiveGroup() and " (Active)" or ""), tooltip = tip }
+	end
+	frame.specLink:SetOptions(options)
+	local label = #groups == 0 and "Not Linked" or BF:SpecName(groups[1])
+	if #groups > 1 then label = label .. (" +%d"):format(#groups - 1) end
+	frame.specLink:SetText(label)
+	setShown(frame.specLink, count > 1)
+	setShown(frame.specLinkLabel, count > 1)
+	local target = Window.SpecToSwitch(build)
+	frame.switchSpec.target = target
+	setShown(frame.switchSpec, count > 1 and target ~= nil)
+end
+
 local function renderBuild(build)
 	frame.name.committed = build.name
 	frame.spec.committed = build.spec or ""
@@ -203,6 +251,7 @@ local function renderBuild(build)
 	end
 	local extras = build.pet and S.Hex(C.muted, "  (includes pet aspects)") or ""
 	frame.classes:SetText(Window.ClassText(build.classes) .. extras)
+	renderSpecLink(build)
 	renderTabs(build)
 	renderActions(build)
 	if state.tab == "notes" then
@@ -385,7 +434,7 @@ local function createBuildHeader(main)
 	local specLabel = S.Text(main, "small", C.muted)
 	specLabel:SetPoint("LEFT", f.classes, "RIGHT", 18, 0)
 	specLabel:SetText("Spec name")
-	f.spec = S.Input(main, "BuildForgeSpecBox", 130, "None", 14)
+	f.spec = S.Input(main, "BuildForgeSpecBox", 110, "None", 14)
 	f.spec:SetHeight(20)
 	f.spec:SetPoint("LEFT", specLabel, "RIGHT", 8, 0)
 	f.spec:SetScript("OnEscapePressed", function(self)
@@ -401,6 +450,22 @@ local function createBuildHeader(main)
 		self:ClearFocus()
 		Window.Render()
 	end)
+
+	f.specLinkLabel = S.Text(main, "small", C.muted)
+	f.specLinkLabel:SetPoint("LEFT", f.spec, "RIGHT", 16, 0)
+	f.specLinkLabel:SetText("Linked to")
+	f.specLink = S.Dropdown(main, 140, function(group)
+		local build = selectedBuild()
+		if build then BF:LinkSpec(build.name, group ~= 0 and group or nil) end
+		Window.Render()
+	end)
+	f.specLink:SetPoint("LEFT", f.specLinkLabel, "RIGHT", 8, 0)
+	f.specLink.tooltipText = "The talent spec on this character this build is for. Applying a build links it to the active spec."
+	f.switchSpec = S.Button(main, "Switch to Spec", "secondary", 100, function(self)
+		if self.target then Window.SwitchSpec(self.target) end
+	end, "Activate the linked spec. It takes a few seconds and can't be done in combat.")
+	f.switchSpec:SetHeight(20)
+	f.switchSpec:SetPoint("LEFT", f.specLink, "RIGHT", 6, 0)
 
 	local apply = S.Button(main, "Apply Build", "primary", 110, function()
 		BF.Review.Open(selectedBuild())

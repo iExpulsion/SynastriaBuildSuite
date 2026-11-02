@@ -10,12 +10,15 @@ name and notes.
 its title bar to move it (it remembers where); Esc closes it.
 
 - **Sidebar:** search your builds, grouped by class; click a group to collapse it. Groups for classes you
-  don't have start collapsed. The build last applied to this spec says Applied. New Build saves your
-  character as a build; Import pastes one in.
+  don't have start collapsed. A build linked to one of this character's specs shows it (Spec 2), green when
+  that spec is active. New Build saves your character as a build; Import pastes one in.
 - **Build header:** click the name to rename it and set the spec name (press Enter to keep). Apply Build opens
   a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
   Export gives the share string; Delete asks first. The title bar shows whether the Perk window is open at an
   innkeeper, which perk activations need.
+- **Specs:** Synastria keeps perks, talents and glyphs per talent spec (up to 8). With more than one spec, the
+  header's Linked to menu ties the build to one of this character's specs, and applying a build links it to the
+  active spec. When the linked spec isn't active, Switch to Spec activates it, and Review Changes warns first.
 - **Tabs:** Perks, Talents, Glyphs, Gear and Notes. A badge on a tab counts what differs from your character.
 - **Talents:** a talent calculator for the build's classes, any class, not just yours. Left-click adds a point,
   right-click removes one; tier, prerequisite and point limits work like the talent frame, and the tooltip
@@ -28,6 +31,9 @@ its title bar to move it (it remembers where); Esc closes it.
   ability to choose; options and abilities are set on the build's copy of the perk. Category headers count the
   build's perks against how many your character can have on. Each row shows what applying the build would do
   (Active, To Activate, To Deactivate, Options Differ). Nothing changes on your character until Apply Build.
+- **Shared Perks:** Misc perks aren't saved in builds. They're in one Shared Perks list, shown as "Misc (Shared
+  by All Builds)", that every build applies, so each spec gets them. Use My Perks also replaces it with your
+  active Misc perks. Exports leave it out; importing a string with Misc perks asks before adding them.
 - **Talents, Glyphs:** compared with your character right now (points still to spend, glyphs to socket). Each
   tab can take your current setup for that part.
 - **Gear:** each slot has a Best item to aim for and Alts (Alt 1, Alt 2, ...) as stand-ins in order of

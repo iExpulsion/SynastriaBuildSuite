@@ -205,6 +205,60 @@ function Perks.Name(id)
 	return perk and perk.name or ("Perk " .. id)
 end
 
+-- Shared perks ----------------------------------------------------------------------------------------------
+-- Misc perks (category 19) live in one account-wide list, BuildForgeDB.shared, that every build applies.
+
+Perks.SHARED_CAT = 19
+
+function Perks.IsShared(id)
+	local perk = PerkMgrPerks and PerkMgrPerks[id]
+	return perk ~= nil and perk.cat == Perks.SHARED_CAT
+end
+
+-- Splits a perk list into a build's own perks and Misc perks.
+function Perks.Split(list)
+	local own, shared = {}, {}
+	for _, w in ipairs(list or {}) do
+		if Perks.IsShared(w.id) then shared[#shared + 1] = w else own[#own + 1] = w end
+	end
+	return own, shared
+end
+
+-- Adds perks to the shared list, keeping entries it already has. Returns how many were new.
+function Perks.AddShared(list)
+	local shared = BF.db.shared.perks
+	local added = 0
+	for _, w in ipairs(list) do
+		if not Perks.Entry(BF.db.shared, w.id) then
+			shared[#shared + 1] = { id = w.id, opt = w.opt or 0, spell = w.spell or 0 }
+			added = added + 1
+		end
+	end
+	table.sort(shared, function(a, b) return a.id < b.id end)
+	return added
+end
+
+-- Moves Misc perks saved in a build (older builds, or ones imported before the perk list arrived) into the
+-- shared list. Needs the perk list from the server, so it runs whenever a build is about to be used.
+function Perks.MoveShared(build)
+	if PerkMgrPerks and build.perks then
+		local own, shared = Perks.Split(build.perks)
+		if #shared > 0 then
+			Perks.AddShared(shared)
+			build.perks = own
+		end
+	end
+end
+
+-- What applying a build wants: its own perks plus the shared ones.
+function Perks.Wanted(build)
+	Perks.MoveShared(build)
+	local list = {}
+	for _, w in ipairs(build.perks or {}) do list[#list + 1] = w end
+	for _, w in ipairs(BF.db.shared.perks) do list[#list + 1] = w end
+	return list
+end
+
 -- Editing a build -------------------------------------------------------------------------------------------
 
 function Perks.Entry(build, id)

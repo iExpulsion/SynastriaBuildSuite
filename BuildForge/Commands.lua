@@ -72,6 +72,10 @@ function BF:SaveCurrent(name)
 		build.notes = old.notes
 		build.gear = old.gear
 	end
+	if #self.db.shared.perks == 0 then
+		local _, misc = BF.Perks.Split(BF.Perks.Capture())
+		BF.Perks.AddShared(misc)
+	end
 	self.db.builds[name] = build
 	self:Print("Saved %s.", name)
 	for _, class in ipairs(missed) do
@@ -85,6 +89,7 @@ function BF:Rename(build, newName)
 	local ok = newName ~= "" and not self.db.builds[newName]
 	if ok then
 		self.db.builds[build.name] = nil
+		self:RenameLinks(build.name, newName)
 		build.name = newName
 		self.db.builds[newName] = build
 		self:Changed()
@@ -102,12 +107,20 @@ function BF:Import(text, onDone)
 	else
 		build.name = build.name or ("Imported " .. date("%Y-%m-%d %H:%M"))
 		if not build.classes or #build.classes == 0 then build.classes = BF.Build.InferClasses(build) end
+		local own, misc = BF.Perks.Split(build.perks)
+		build.perks = own
 		local function store()
 			self.db.builds[build.name] = build
 			BF.Dialogs.HideText()
 			self:Print("Imported %s.", build.name)
 			self:Changed()
 			if onDone then onDone(build) end
+			if #misc > 0 then
+				BF.Dialogs.Confirm("BUILDFORGE_SHARED", #misc, function()
+					self:Print("Added %d perk(s) to Shared Perks.", BF.Perks.AddShared(misc))
+					self:Changed()
+				end)
+			end
 		end
 		if self.db.builds[build.name] then
 			BF.Dialogs.Confirm("BUILDFORGE_OVERWRITE", build.name, store)
@@ -127,7 +140,9 @@ function BF:ConfirmApply(build)
 	end)
 end
 
+-- Shared perks are personal setup, so exports leave them out.
 function BF:Export(build)
+	BF.Perks.MoveShared(build)
 	BF.Dialogs.ShowExport(build.name, BF.Codec.Encode(build))
 end
 
@@ -142,6 +157,7 @@ end
 function BF:Delete(build)
 	BF.Dialogs.Confirm("BUILDFORGE_DELETE", build.name, function()
 		self.db.builds[build.name] = nil
+		self:RenameLinks(build.name, nil)
 		self:Print("Deleted %s.", build.name)
 		self:Changed()
 	end)
