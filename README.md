@@ -26,8 +26,8 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   header's Assign to menu ties a saved build to one of this character's specs (it then reads Linked to, with
   Active Spec when that spec is active), and applying a build links it to the active spec; Review Changes says
   so, and which build it replaces. A build for a spec that isn't active isn't compared with your character:
-  the Perks, Talents and Glyphs tabs drop their badges and statuses and the footer says to switch, with Switch
-  to Spec beside the menu. Gear is the same in every spec, so it's always compared.
+  the Perks, Talents and Glyphs tabs drop their badges and statuses and the footer says to switch, and Apply
+  Build becomes Switch to Spec N. Gear is the same in every spec, so it's always compared.
 - **Tabs:** Perks, Talents, Glyphs, Gear and Notes. A badge on a tab counts what differs from your character.
 - **Talents:** a talent calculator for the build's classes, any class, not just yours. Left-click adds a point,
   right-click removes one; tier, prerequisite and point limits work like the talent frame, and the tooltip

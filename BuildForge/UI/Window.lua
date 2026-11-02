@@ -294,8 +294,10 @@ local function renderSpecLink(build)
 	setShown(frame.specLink, count > 1)
 	setShown(frame.specLinkLabel, count > 1)
 	local target = Window.SpecToSwitch(build)
-	frame.switchSpec.target = target
-	setShown(frame.switchSpec, count > 1 and target ~= nil)
+	frame.apply.target = target
+	frame.apply:SetLabel(target and ("Switch to Spec %d"):format(target) or "Apply Build")
+	frame.apply.tooltipText = target and "Activate this build's spec. It takes a few seconds and can't be done in combat."
+		or "Review what would change on your character, then apply it."
 	setShown(frame.specActive, count > 1 and #groups > 0 and target == nil)
 end
 
@@ -512,22 +514,19 @@ local function createBuildHeader(main)
 	end)
 	f.specLink:SetPoint("LEFT", f.specLinkLabel, "RIGHT", 8, 0)
 	f.specLink.tooltipText = "The talent spec on this character this build is for. Applying a build links it to the active spec."
-	f.switchSpec = S.Button(main, "Switch to Spec", "secondary", 100, function(self)
-		if self.target then Window.SwitchSpec(self.target) end
-	end, "Activate the linked spec. It takes a few seconds and can't be done in combat.")
-	f.switchSpec:SetHeight(20)
-	f.switchSpec:SetPoint("LEFT", f.specLink, "RIGHT", 6, 0)
 	f.specActive = S.Text(main, "small", C.good)
 	f.specActive:SetPoint("LEFT", f.specLink, "RIGHT", 10, 0)
 	f.specActive:SetText("Active Spec")
 
-	local apply = S.Button(main, "Apply Build", "primary", 110, function()
-		BF.Review.Open(selectedBuild())
-	end, "Review what would change on your character, then apply it.")
-	apply:SetPoint("TOPRIGHT", -16, -16)
+	-- Apply Build, or Switch to Spec N for a build whose spec isn't active (applying it here would overwrite
+	-- the spec you're in)
+	f.apply = S.Button(main, "Apply Build", "primary", 110, function(self)
+		if self.target then Window.SwitchSpec(self.target) else BF.Review.Open(selectedBuild()) end
+	end)
+	f.apply:SetPoint("TOPRIGHT", -16, -16)
 	local export = S.Button(main, "Export", "secondary", 70, function() BF:Export(selectedBuild()) end,
 		"Copy this build as a one-line string to share.")
-	export:SetPoint("RIGHT", apply, "LEFT", -6, 0)
+	export:SetPoint("RIGHT", f.apply, "LEFT", -6, 0)
 	local delete = S.Button(main, "Delete", "danger", 70, function() BF:Delete(selectedBuild()) end)
 	delete:SetPoint("RIGHT", export, "LEFT", -6, 0)
 end
