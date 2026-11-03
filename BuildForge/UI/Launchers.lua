@@ -1,38 +1,23 @@
 local _, NS = ...
 local BF = NS.BF
 
--- "BuildForge" buttons above the Perk Manager and the talent frame. The server sends the Perk Manager's Lua
--- after login and the talent frame may load on demand, so this checks until both exist.
+-- The innkeeper gossip line, and the Perk Manager watch that keeps the window's innkeeper status current.
 local Launchers = {}
 BF.Launchers = Launchers
 
 local CHECK_EVERY, GIVE_UP_AFTER = 1, 600
-local attached = {}
+local watching = false
 
-local function attach(parentName, onAttach)
-	local parent = _G[parentName]
-	if parent and not attached[parentName] then
-		local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-		b:SetSize(96, 20)
-		b:SetText("BuildForge")
-		b:SetPoint("BOTTOMRIGHT", parent, "TOPRIGHT", -40, -2)
-		b:SetScript("OnClick", function() BF.Window.Toggle() end)
-		attached[parentName] = b
-		if onAttach then onAttach(parent) end
-	end
-	return attached[parentName] ~= nil
-end
-
--- the server opens the Perk Manager after BuildForge when both come from the gossip line
-local function watchPerkManager(parent)
-	parent:HookScript("OnShow", function() BF.Window.Render() end)
-	parent:HookScript("OnHide", function() BF.Window.Render() end)
-end
-
+-- The server sends the Perk Manager's Lua after login, so this checks until it exists. The window redraws when it
+-- opens or closes, since the server opens it after BuildForge when both come from the gossip line.
 function Launchers.Check()
-	local perks = attach("PerkMgrFrame", watchPerkManager)
-	local talents = attach("PlayerTalentFrame")
-	return perks and talents
+	local perkMgr = PerkMgrFrame
+	if perkMgr and not watching then
+		perkMgr:HookScript("OnShow", function() BF.Window.Render() end)
+		perkMgr:HookScript("OnHide", function() BF.Window.Render() end)
+		watching = true
+	end
+	return watching
 end
 
 -- An "Open BuildForge" line under an innkeeper's "Manage perks" gossip option: it opens the Perk Manager, so
