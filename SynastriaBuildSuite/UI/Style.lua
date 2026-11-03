@@ -285,10 +285,12 @@ function S.CloseMenus()
 	for _, menu in ipairs(menus) do menu:Hide() end
 end
 
--- Edit boxes S.Dismiss clears. S.Input tracks its own; the other edit boxes call this once their scripts are set.
-function S.TrackInput(e)
+-- Edit boxes S.Dismiss and outside clicks clear. S.Input tracks its own; the other edit boxes call this once their
+-- scripts are set. `area` is what counts as clicking on it, for a box inside a larger panel (default: the box).
+function S.TrackInput(e, area)
 	e:HookScript("OnEditFocusGained", function(self) self.focused = true end)
 	e:HookScript("OnEditFocusLost", function(self) self.focused = false end)
+	e.clickArea = area
 	inputs[#inputs + 1] = e
 end
 
@@ -301,6 +303,25 @@ function S.Dismiss()
 		if e.focused then e:ClearFocus() end
 	end
 end
+
+-- A mouse press anywhere else closes an open menu and takes focus from an edit box. The client has no event for
+-- presses outside a frame, so this watches for a button going down while either is open.
+function S.ClickedAway()
+	for _, menu in ipairs(menus) do
+		if menu:IsShown() and not MouseIsOver(menu) and not MouseIsOver(menu.owner) then menu:Hide() end
+	end
+	for _, e in ipairs(inputs) do
+		if e.focused and not MouseIsOver(e.clickArea or e) then e:ClearFocus() end
+	end
+end
+
+local wasDown = false
+local clicks = CreateFrame("Frame")
+clicks:SetScript("OnUpdate", function()
+	local down = IsMouseButtonDown("LeftButton") or IsMouseButtonDown("RightButton")
+	if down and not wasDown then S.ClickedAway() end
+	wasDown = down
+end)
 
 -- Flat dropdown: a button showing the current choice that opens a menu below it. SetOptions takes
 -- { { value, text, tooltip } }; picking one calls onSelect(value) and closes the menu. Opening one closes the others.
@@ -329,6 +350,7 @@ function S.Dropdown(parent, width, onSelect)
 	menu:EnableMouse(true)
 	menu:Hide()
 	menus[#menus + 1] = menu
+	menu.owner = b
 	b.menu, b.items = menu, {}
 
 	function b:SetText(text) self.label:SetText(text) end

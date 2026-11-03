@@ -716,7 +716,7 @@ local function createNotes(main, width, height)
 		if userInput and build then build.notes = self:GetText() end
 	end)
 	scroll:SetScrollChild(edit)
-	S.TrackInput(edit)
+	S.TrackInput(edit, box)
 	SBS.List.AutoHideBar(scroll, "SynastriaBuildSuiteNotesScroll")
 	box:EnableMouse(true)
 	box:SetScript("OnMouseDown", function() edit:SetFocus() end)

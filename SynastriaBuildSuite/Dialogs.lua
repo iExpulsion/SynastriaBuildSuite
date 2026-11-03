@@ -171,7 +171,7 @@ local function create()
 		end
 	end)
 	scroll:SetScrollChild(edit)
-	S.TrackInput(edit)
+	S.TrackInput(edit, well)
 	well:SetScript("OnMouseDown", function() edit:SetFocus() end)
 	f.edit = edit
 	f.placeholder = S.Text(well, "normal", C.muted)
