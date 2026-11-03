@@ -128,9 +128,10 @@ function Affixes.Plan(order)
 	return current and #wanted > 0 and not same(wanted, current) and { order = wanted, current = current } or nil
 end
 
--- The server's chat reply when the order is sent away from an innkeeper, and how long after sending to watch for it.
-local REFUSED, WATCH_FOR = "near an innkeeper", 5
-local watchUntil = 0
+-- Near an innkeeper the server answers by casting "Changing Affix Choices"; away from one it says so in chat.
+-- After sending, both are watched for a while (the cast takes a few seconds) to tell the window how it went.
+local REFUSED, CAST, WATCH_FOR, REDRAW_AFTER = "near an innkeeper", "affix", 30, 1
+local watchUntil, redrawAt = 0, nil
 
 -- Sends the order the way the game's Apply button does. The server only takes it near an innkeeper, which the
 -- client can't check, so it's always sent and the server decides. Returns whether it was sent.
@@ -145,14 +146,35 @@ function Affixes.Apply(plan)
 	return sent
 end
 
--- A refusal right after sending replaces the window's "Applied" message.
-local refusals = CreateFrame("Frame")
-refusals:RegisterEvent("CHAT_MSG_SYSTEM")
-refusals:SetScript("OnEvent", function(_, _, msg)
-	if GetTime() < watchUntil and (msg or ""):lower():find(REFUSED, 1, true) then
-		watchUntil = 0
-		local S = SBS.Style
-		SBS.Window.Message(S.Hex(S.colors.warn, "Affix Order Not Changed: Apply Again Near an Innkeeper"))
+local function finish(text, color)
+	watchUntil = 0
+	local S = SBS.Style
+	SBS.Window.Message(S.Hex(S.colors[color], text))
+end
+
+-- The server updates the order Current reads once the cast finishes, with no event of its own, so the window
+-- redraws then and again a moment later.
+local watch = CreateFrame("Frame")
+watch:RegisterEvent("CHAT_MSG_SYSTEM")
+watch:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+watch:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+watch:RegisterEvent("UNIT_SPELLCAST_FAILED")
+watch:SetScript("OnEvent", function(_, event, unitOrMsg, spell)
+	local watching = GetTime() < watchUntil
+	local ours = unitOrMsg == "player" and (spell or ""):lower():find(CAST, 1, true) ~= nil
+	if watching and event == "CHAT_MSG_SYSTEM" and (unitOrMsg or ""):lower():find(REFUSED, 1, true) then
+		finish("Affix Order Not Changed: Apply Again Near an Innkeeper", "warn")
+	elseif watching and ours and event == "UNIT_SPELLCAST_SUCCEEDED" then
+		redrawAt = GetTime() + REDRAW_AFTER
+		finish("Affix Order Changed", "good")
+	elseif watching and ours then
+		finish("Affix Order Not Changed: The Cast Was Interrupted", "warn")
+	end
+end)
+watch:SetScript("OnUpdate", function()
+	if redrawAt and GetTime() >= redrawAt then
+		redrawAt = nil
+		SBS:Changed()
 	end
 end)
 
