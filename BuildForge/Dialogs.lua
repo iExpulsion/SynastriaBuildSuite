@@ -405,19 +405,20 @@ local function createSheet()
 	f.create:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 	local cancel = S.Button(f, "Cancel", "secondary", 70, function() f:Hide() end)
 	cancel:SetPoint("RIGHT", f.create, "LEFT", -GAP, 0)
-	f.saveSpecs = S.Button(f, "Save All Specs", "secondary", 100, function()
+	f.note = S.Text(f, "small", C.muted)
+	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, PAD + CONTROL_H / 2)
+	f.note:SetPoint("RIGHT", cancel, "LEFT", -PAD, 0)
+	-- kept apart from the Copy row and its note, beside the title like the export box's Close
+	f.saveSpecs = S.Button(f, "Add Current Specs", "secondary", 120, function()
 		f:Hide()
 		sheet.onSaveSpecs()
 	end, Dialogs.SAVE_SPECS_TIP)
-	f.saveSpecs:SetPoint("BOTTOMLEFT", PAD, PAD)
-	f.note = S.Text(f, "small", C.muted)
-	f.note:SetPoint("LEFT", f.saveSpecs, "RIGHT", PAD, 0)
-	f.note:SetPoint("RIGHT", cancel, "LEFT", -PAD, 0)
+	f.saveSpecs:SetPoint("TOPRIGHT", -PAD, -(PAD - 4))
 	return f
 end
 
 -- Opens the sheet set to the character's classes with every section checked; onCreate(name, classes, sections)
--- runs on Create Build, onSaveSpecs() on Save All Specs.
+-- runs on Create Build, onSaveSpecs() on Add Current Specs.
 function Dialogs.ShowNew(onCreate, onSaveSpecs)
 	sheet = sheet or createSheet()
 	local mine = BF:PlayerClasses()

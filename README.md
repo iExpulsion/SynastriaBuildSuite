@@ -21,7 +21,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   and Perks, Talents, Glyphs and Gear checkboxes for what to copy from your character. Only what applies to the
   chosen classes is copied, so a class you don't have can only take your gear; uncheck everything to start blank.
   For classes you don't have, perk values, ranks and category limits still show your character's.
-- **Save All Specs** (in the New Build sheet, and Save My Specs on the empty window): saves every spec on this
+- **Add Current Specs** (top right of the New Build sheet, and on the empty window): saves every spec on this
   character as a build linked to it, named after the spec ("Spec N"
   when it has no name), with that spec's talents and glyphs and your gear. Specs already linked to a build
   refresh it instead, keeping its name, notes and gear. The game only shows the active spec's perks, so the
@@ -99,7 +99,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 | `/bforge help` | Lists the commands |
 | `/bforge list` | Lists saved builds; builds for other classes are marked |
 | `/bforge save <name>` | Saves your active spec as a build |
-| `/bforge specs` | Saves every spec as a build linked to it (Save All Specs) |
+| `/bforge specs` | Saves every spec as a build linked to it (Add Current Specs) |
 | `/bforge apply <name>` | Lists what would change in chat, then asks before applying |
 | `/bforge export <name>` | Shows the build as a one-line string to copy, with section checkboxes |
 | `/bforge import` | Opens a box to paste a BuildForge string and pick its sections |
