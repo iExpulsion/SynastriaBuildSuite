@@ -79,7 +79,7 @@ for you (glyphs are used up when socketed). If the socket already holds a differ
 **Replace** and asks for a second click, since the old glyph is destroyed. The buttons hide in combat. **Open Glyph
 Frame** opens the game's window for anything else, such as removing a glyph.
 
-![The Glyphs tab: socketed major glyphs, empty minor sockets and the glyph picker for a socket](docs/images/glyphs.png)
+![The Glyphs tab: two socketed major glyphs, a third in bags with its Replace button, and the glyph picker for that socket](docs/images/glyphs.png)
 
 ### Gear
 
@@ -87,7 +87,7 @@ A paper doll of the build's Best item per slot, plus Alts in order of preference
 tab to add it to its slot. Items the build's classes can't use are refused. **Equip from Bags** puts on the
 highest-ranked item you're carrying in each slot.
 
-![The Gear tab: the paper doll with every slot worn, and the Head slot's items beside it](docs/images/gear.png)
+![The Gear tab: the paper doll with every slot worn, and the Trinket 2 slot's Best and Alt items beside it](docs/images/gear.png)
 
 ### Affixes
 
@@ -99,6 +99,8 @@ lists every affix with its stats on hover; click one to add it to the end.
 
 The affix order belongs to the spec and only changes near an innkeeper; the Perk Manager doesn't need to be open.
 Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.
+
+![The Affixes tab: a 15-affix priority order on the left that matches the spec's, and every affix on the right](docs/images/affixes.png)
 
 ## Sharing Builds
 
