@@ -255,7 +255,9 @@ local COPY = {
 	{ key = "perks", label = "Perks" }, { key = "talents", label = "Talents" },
 	{ key = "glyphs", label = "Glyphs" }, { key = "gear", label = "Gear" },
 }
-local NEW_W, LABEL_W, PICK_W = 440, 56, 150
+local NEW_W, LABEL_W, PICK_W = 540, 56, 150
+Dialogs.SAVE_SPECS_TIP = "Save every spec on this character as a build linked to it, or refresh the ones already "
+	.. "linked. Other specs' perks fill in when you switch to them."
 local NOT_YOURS = "Not one of your classes, so there's nothing of it to copy. Perk values, ranks and category "
 	.. "limits will show your character's."
 
@@ -403,18 +405,23 @@ local function createSheet()
 	f.create:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 	local cancel = S.Button(f, "Cancel", "secondary", 70, function() f:Hide() end)
 	cancel:SetPoint("RIGHT", f.create, "LEFT", -GAP, 0)
+	f.saveSpecs = S.Button(f, "Save All Specs", "secondary", 100, function()
+		f:Hide()
+		sheet.onSaveSpecs()
+	end, Dialogs.SAVE_SPECS_TIP)
+	f.saveSpecs:SetPoint("BOTTOMLEFT", PAD, PAD)
 	f.note = S.Text(f, "small", C.muted)
-	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, PAD + CONTROL_H / 2)
+	f.note:SetPoint("LEFT", f.saveSpecs, "RIGHT", PAD, 0)
 	f.note:SetPoint("RIGHT", cancel, "LEFT", -PAD, 0)
 	return f
 end
 
 -- Opens the sheet set to the character's classes with every section checked; onCreate(name, classes, sections)
--- runs on Create Build.
-function Dialogs.ShowNew(onCreate)
+-- runs on Create Build, onSaveSpecs() on Save All Specs.
+function Dialogs.ShowNew(onCreate, onSaveSpecs)
 	sheet = sheet or createSheet()
 	local mine = BF:PlayerClasses()
-	sheet.first, sheet.second, sheet.onCreate = mine[1], mine[2], onCreate
+	sheet.first, sheet.second, sheet.onCreate, sheet.onSaveSpecs = mine[1], mine[2], onCreate, onSaveSpecs
 	sheet.wanted = {}
 	for _, c in ipairs(COPY) do sheet.wanted[c.key] = true end
 	sheet.name:SetText(BF:UniqueName("New Build"))
