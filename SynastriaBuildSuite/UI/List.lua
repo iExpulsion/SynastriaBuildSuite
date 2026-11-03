@@ -1,12 +1,12 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- Scrolling list of pooled flat rows: optional icon, text (with an optional second line), right-aligned status,
 -- tooltip, click and item drop. Headers can be collapsible; the selected row gets an accent bar.
 local List = {}
-BF.List = List
+SBS.List = List
 
-local S = BF.Style
+local S = SBS.Style
 
 local STYLES = {
 	content = { rowH = 22, subRowH = 36, header = S.FONTS.small, row = S.FONTS.small },

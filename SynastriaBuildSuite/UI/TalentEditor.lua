@@ -1,12 +1,12 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- The Talents tab: a calculator for any class's three trees, editing the build directly. Left-click adds a
 -- point, right-click removes one, using the rules in TalentCalc.lua.
 local Editor = {}
-BF.TalentEditor = Editor
+SBS.TalentEditor = Editor
 
-local S = BF.Style
+local S = SBS.Style
 local C = S.colors
 local Calc
 
@@ -31,7 +31,7 @@ end
 
 local function buildClasses(build)
 	local classes, seen = {}, {}
-	for _, key in ipairs(build.classes and #build.classes > 0 and build.classes or BF:PlayerClasses()) do
+	for _, key in ipairs(build.classes and #build.classes > 0 and build.classes or SBS:PlayerClasses()) do
 		if Calc.Trees(key) and not seen[key] then classes[#classes + 1] = key; seen[key] = true end
 	end
 	for key in pairs(build.talents or {}) do
@@ -43,8 +43,8 @@ end
 -- Live rank on the character, when this class is the one shown in the talent window and the build's spec is active.
 local function liveRank(class, tab, i)
 	local rank
-	if class == BF.Talents.SelectedClass() and tab <= GetNumTalentTabs(false, false) and BF.Window.IsComparing(current) then
-		rank = select(5, GetTalentInfo(tab, i, false, false, BF:ActiveGroup()))
+	if class == SBS.Talents.SelectedClass() and tab <= GetNumTalentTabs(false, false) and SBS.Window.IsComparing(current) then
+		rank = select(5, GetTalentInfo(tab, i, false, false, SBS:ActiveGroup()))
 	end
 	return rank
 end
@@ -81,7 +81,7 @@ local function onClick(button, mouse)
 	end
 	if changed then
 		PlaySound("igMainMenuOptionCheckBoxOn")
-		BF:Changed()
+		SBS:Changed()
 	elseif reason then
 		UIErrorsFrame:AddMessage(reason, 1, 0.3, 0.3)
 	end
@@ -217,7 +217,7 @@ local function renderClassBar(classes)
 		local key = classes[i]
 		if key and #classes > 1 then
 			b.key = key
-			b:SetLabel(BF.Window.ClassText({ key }, true))
+			b:SetLabel(SBS.Window.ClassText({ key }, true))
 			b:SetKind(key == state.class and "selected" or "secondary")
 			b:Show()
 		else
@@ -242,7 +242,7 @@ end
 
 function Editor.Render(build)
 	current = build
-	Calc = Calc or BF.TalentCalc
+	Calc = Calc or SBS.TalentCalc
 	local classes = buildClasses(build)
 	local summary
 	placeColumns(#classes > 1 and CLASSBAR_H or 0)
@@ -269,14 +269,14 @@ function Editor.Render(build)
 			end
 		end
 		local total = Calc.TotalPoints(trees)
-		summary = ("%s  %s   %s"):format(BF.Window.ClassText({ state.class }), table.concat(parts, " / "),
+		summary = ("%s  %s   %s"):format(SBS.Window.ClassText({ state.class }), table.concat(parts, " / "),
 			S.Hex(total == cap and C.good or C.muted, ("%d of %d Points"):format(total, cap)))
 	end
 	return summary
 end
 
 function Editor.Create(parent, width, height)
-	Calc = BF.TalentCalc
+	Calc = SBS.TalentCalc
 	panel = CreateFrame("Frame", nil, parent)
 	panel:SetSize(width, height)
 
@@ -284,7 +284,7 @@ function Editor.Create(parent, width, height)
 	for i = 1, 3 do
 		local b = S.Button(panel, "", "secondary", 90, function(self)
 			state.class = self.key
-			BF:Changed()
+			SBS:Changed()
 		end)
 		if i == 1 then b:SetPoint("TOPLEFT", 0, 0) else b:SetPoint("LEFT", panel.classButtons[i - 1], "RIGHT", -1, 0) end
 		panel.classButtons[i] = b

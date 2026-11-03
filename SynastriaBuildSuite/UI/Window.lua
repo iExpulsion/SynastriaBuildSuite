@@ -1,13 +1,13 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- The build window: a movable flat panel with a searchable build sidebar on the left and the selected build on
 -- the right (header with the main actions, tabs with difference badges, the tab's content and a footer).
 -- Sized so Phase 2's three-tree talent editor fits beside the sidebar.
 local Window = {}
-BF.Window = Window
+SBS.Window = Window
 
-local S = BF.Style
+local S = SBS.Style
 local C = S.colors
 
 local W, H = 900, 640
@@ -42,15 +42,15 @@ local function className(key)
 	return LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[key] or key
 end
 
--- Synastria's name and color for a two-class pair: the name from BF:ComboName, or else from the client (as its
+-- Synastria's name and color for a two-class pair: the name from SBS:ComboName, or else from the client (as its
 -- Character window does, with the pair packed as first class ID << 8 | second), and the client's color, or the
 -- first class's color when the client has none.
 local function comboName(classes)
-	local a, b = BF.CLASS_IDS[classes[1]], BF.CLASS_IDS[classes[2]]
+	local a, b = SBS.CLASS_IDS[classes[1]], SBS.CLASS_IDS[classes[2]]
 	local name, r, g, bl
 	if #classes == 2 and a and b then
 		local pack = a * 256 + b
-		name = BF:ComboName(classes[1], classes[2]) or (CMCGetClassNameFromPack and CMCGetClassNameFromPack(pack))
+		name = SBS:ComboName(classes[1], classes[2]) or (CMCGetClassNameFromPack and CMCGetClassNameFromPack(pack))
 		if CMCGetClassNameColor then r, g, bl = CMCGetClassNameColor(pack) end
 		local first = RAID_CLASS_COLORS[classes[1]]
 		if not (r and g and bl) and first then r, g, bl = first.r, first.g, first.b end
@@ -83,14 +83,14 @@ end
 local SHARED = "\1shared"
 
 local function selectedBuild()
-	return state.selected == SHARED and BF.Build.SHARED or state.selected and BF.db.builds[state.selected]
+	return state.selected == SHARED and SBS.Build.SHARED or state.selected and SBS.db.builds[state.selected]
 end
 
 -- The spec to switch to for a build, when it's linked and none of its specs is active.
 function Window.SpecToSwitch(build)
-	local groups = BF:LinkedSpecs(build.name)
+	local groups = SBS:LinkedSpecs(build.name)
 	local target = groups[1]
-	for _, g in ipairs(groups) do if g == BF:ActiveGroup() then target = nil end end
+	for _, g in ipairs(groups) do if g == SBS:ActiveGroup() then target = nil end end
 	return target
 end
 
@@ -110,7 +110,7 @@ function Window.SwitchSpec(group)
 		Window.Message(S.Hex(C.bad, "Can't Switch Specs in Combat"))
 	else
 		SetActiveTalentGroup(group)
-		Window.Message(S.Hex(C.muted, "Switching to " .. BF:SpecName(group) .. "..."))
+		Window.Message(S.Hex(C.muted, "Switching to " .. SBS:SpecName(group) .. "..."))
 	end
 end
 
@@ -130,9 +130,9 @@ end
 
 -- This character's specs that have a linked build, in spec order: { group, build }.
 local function linkedSpecs()
-	local rows, links = {}, BF:Links()
-	for g = 1, BF:SpecCount() do
-		local build = links[g] and BF.db.builds[links[g]]
+	local rows, links = {}, SBS:Links()
+	for g = 1, SBS:SpecCount() do
+		local build = links[g] and SBS.db.builds[links[g]]
 		if build and matches(build) then rows[#rows + 1] = { group = g, build = build } end
 	end
 	return rows
@@ -141,12 +141,12 @@ end
 -- The other builds, grouped by class combination; groups that fit the character come first and start expanded.
 local function groupedBuilds()
 	local groups, byKey = {}, {}
-	for _, build in pairs(BF.db.builds) do
-		if matches(build) and #BF:LinkedSpecs(build.name) == 0 then
+	for _, build in pairs(SBS.db.builds) do
+		if matches(build) and #SBS:LinkedSpecs(build.name) == 0 then
 			local key = table.concat(build.classes or {}, "/")
 			local group = byKey[key]
 			if not group then
-				group = { key = key, classes = build.classes or {}, fits = BF.Build.Fits(build), builds = {} }
+				group = { key = key, classes = build.classes or {}, fits = SBS.Build.Fits(build), builds = {} }
 				byKey[key] = group
 				groups[#groups + 1] = group
 			end
@@ -174,10 +174,10 @@ local function renderSidebar()
 	local first, firstFit, shown = nil, nil, 0
 	list:Begin()
 
-	if matches(BF.Build.SHARED) then
+	if matches(SBS.Build.SHARED) then
 		list:Add({
 			text = "Shared Perks", sub = "Misc perks, in every build",
-			status = S.Hex(C.muted, #BF.db.shared.perks),
+			status = S.Hex(C.muted, #SBS.db.shared.perks),
 			selected = state.selected == SHARED,
 			onClick = function() Window.Select(SHARED) end,
 			tooltip = function(tt)
@@ -203,7 +203,7 @@ local function renderSidebar()
 			end,
 		})
 		for _, row in ipairs(specs) do
-			local build, active = row.build, row.group == BF:ActiveGroup()
+			local build, active = row.build, row.group == SBS:ActiveGroup()
 			if active or not firstFit then firstFit = build end
 			first = first or build
 			if not collapsed then
@@ -287,7 +287,7 @@ local function renderTabs(build)
 		setShown(b, not build.sharedOnly or tab.key == "perks")
 		b.label:SetTextColor(unpack(selected and C.text or C.muted))
 		setShown(b.underline, selected)
-		local diff = (comparing or not PER_SPEC[tab.key]) and BF.Tabs.diff[tab.key] and BF.Tabs.diff[tab.key](build)
+		local diff = (comparing or not PER_SPEC[tab.key]) and SBS.Tabs.diff[tab.key] and SBS.Tabs.diff[tab.key](build)
 		if diff and diff > 0 then
 			b.badge:SetText(diff)
 			b.badgeBg:SetWidth(b.badge:GetStringWidth() + 10)
@@ -305,7 +305,7 @@ local function renderTabs(build)
 end
 
 local function renderActions(build)
-	local actions = BF.Tabs.actions[state.tab] or {}
+	local actions = SBS.Tabs.actions[state.tab] or {}
 	for i, b in ipairs(frame.actions) do
 		local action = actions[i]
 		if action then
@@ -322,23 +322,23 @@ local function renderActions(build)
 end
 
 local function renderInnkeeper()
-	local at = BF.Perks.Writable()
+	local at = SBS.Perks.Writable()
 	frame.innDot:SetVertexColor(unpack(at and C.good or C.warn))
 	frame.innText:SetText(at and "Perk Manager Open at an Innkeeper" or "Perk Activations Need an Innkeeper")
 	frame.innText:SetTextColor(unpack(at and C.good or C.muted))
 end
 
 local function renderSpecLink(build)
-	local count = build.sharedOnly and 1 or BF:SpecCount()
-	local groups = BF:LinkedSpecs(build.name)
+	local count = build.sharedOnly and 1 or SBS:SpecCount()
+	local groups = SBS:LinkedSpecs(build.name)
 	local options = { { value = 0, text = "Not Linked", tooltip = "Don't tie this build to a spec on this character." } }
 	for g = 1, count do
-		local other = BF:Links()[g]
+		local other = SBS:Links()[g]
 		local tip = other and other ~= build.name and ("Linked to " .. other .. " now; picking it moves that link here.") or nil
-		options[#options + 1] = { value = g, text = BF:SpecName(g) .. (g == BF:ActiveGroup() and " (Active)" or ""), tooltip = tip }
+		options[#options + 1] = { value = g, text = SBS:SpecName(g) .. (g == SBS:ActiveGroup() and " (Active)" or ""), tooltip = tip }
 	end
 	frame.specLink:SetOptions(options)
-	local label = #groups == 0 and "Not Linked" or BF:SpecName(groups[1])
+	local label = #groups == 0 and "Not Linked" or SBS:SpecName(groups[1])
 	if #groups > 1 then label = label .. (" +%d"):format(#groups - 1) end
 	frame.specLink:SetText(label)
 	frame.specLinkLabel:SetText(#groups == 0 and "Assign to" or "Linked to")
@@ -379,9 +379,9 @@ local function renderBuild(build)
 		if not frame.notes.edit.focused then frame.notes.edit:SetText(build.notes or "") end
 		frame.summary:SetText(state.message or S.Hex(C.muted, "Saved as You Type, Included in Exports"))
 	else
-		local summary = BF[EDITORS[state.tab]].Render(build)
+		local summary = SBS[EDITORS[state.tab]].Render(build)
 		if PER_SPEC[state.tab] and not Window.IsComparing(build) then summary = Window.InactiveNote(build) end
-		local pendingSpec = build.perksPending and BF:LinkedSpecs(build.name)[1]
+		local pendingSpec = build.perksPending and SBS:LinkedSpecs(build.name)[1]
 		if state.tab == "perks" and pendingSpec then
 			summary = S.Hex(C.warn, ("Perks Fill In When You Switch to Spec %d"):format(pendingSpec))
 		end
@@ -396,15 +396,15 @@ function Window.Render()
 		renderInnkeeper()
 		local build = selectedBuild()
 		setShown(frame.main, build ~= nil)
-		setShown(frame.empty, build == nil and next(BF.db.builds) == nil)
+		setShown(frame.empty, build == nil and next(SBS.db.builds) == nil)
 		if build then renderBuild(build) end
-		if frame.review:IsShown() then BF.Review.Render() end
+		if frame.review:IsShown() then SBS.Review.Render() end
 	end
 end
 
 -- Coalesces bursts of events (bag updates) into one render per frame.
 function Window.Refresh()
-	if frame and not BF.Talents.switching then frame.dirty = true end
+	if frame and not SBS.Talents.switching then frame.dirty = true end
 end
 
 -- Shows a one-off status message in the footer until the next tab or build change.
@@ -416,23 +416,23 @@ end
 -- Construction ---------------------------------------------------------------------------------------------
 
 local function saveSpecs()
-	BF:SaveAllSpecs()
+	SBS:SaveAllSpecs()
 	state.search = ""
 	frame.search:SetText("")
-	Window.Select(BF:Links()[BF:ActiveGroup()])
+	Window.Select(SBS:Links()[SBS:ActiveGroup()])
 end
 
 local function newBuild()
-	BF.Dialogs.ShowNew(function(name, classes, sections)
+	SBS.Dialogs.ShowNew(function(name, classes, sections)
 		local function create()
-			BF.Dialogs.HideNew()
-			local build = BF:SaveNew(name, classes, sections)
+			SBS.Dialogs.HideNew()
+			local build = SBS:SaveNew(name, classes, sections)
 			state.search = ""
 			frame.search:SetText("")
 			state.collapsed[table.concat(classes, "/")] = false
 			Window.Select(build.name)
 		end
-		if BF.db.builds[name] then BF.Dialogs.Confirm("BUILDFORGE_OVERWRITE", name, create) else create() end
+		if SBS.db.builds[name] then SBS.Dialogs.Confirm("SBS_OVERWRITE", name, create) else create() end
 	end, saveSpecs)
 end
 
@@ -440,8 +440,8 @@ end
 local function importBuild()
 	local target = selectedBuild()
 	if target and target.sharedOnly then target = nil end
-	BF.Dialogs.ShowImport(function(text, sections, into, name)
-		BF:Import(text, function(build)
+	SBS.Dialogs.ShowImport(function(text, sections, into, name)
+		SBS:Import(text, function(build)
 			state.collapsed[table.concat(build.classes or {}, "/")] = false
 			Window.Select(build.name)
 		end, sections, into and target or nil, name)
@@ -450,7 +450,7 @@ end
 
 local function savePosition(f)
 	local point, _, relPoint, x, y = f:GetPoint()
-	BF.db.window = { point = point, relPoint = relPoint, x = x, y = y }
+	SBS.db.window = { point = point, relPoint = relPoint, x = x, y = y }
 end
 
 local function placeDefault(f)
@@ -459,7 +459,7 @@ local function placeDefault(f)
 end
 
 function Window.ResetPosition()
-	BF.db.window = nil
+	SBS.db.window = nil
 	if frame then placeDefault(frame) end
 end
 
@@ -479,10 +479,10 @@ local function createTitleBar(f)
 
 	local title = S.Text(bar, "normal")
 	title:SetPoint("LEFT", PAD, 0)
-	title:SetText(S.Hex(C.accent, "Build") .. "Forge")
+	title:SetText("Synastria " .. S.Hex(C.accent, "Build Suite"))
 	local version = S.Text(bar, "small", C.muted)
 	version:SetPoint("LEFT", title, "RIGHT", GAP, 0)
-	version:SetText("v" .. BF.version)
+	version:SetText("v" .. SBS.version)
 
 	-- the close button's box sits as far from the right edge as from the top and bottom
 	local inset = (TITLE_H - CONTROL_H) / 2
@@ -510,7 +510,7 @@ local function createSidebar(f)
 	edge:SetPoint("TOPRIGHT")
 	edge:SetPoint("BOTTOMRIGHT")
 
-	f.search = S.Input(side, "BuildForgeSearch", SIDEBAR_W - 2 * PAD, "Search Builds", 40)
+	f.search = S.Input(side, "SynastriaBuildSuiteSearch", SIDEBAR_W - 2 * PAD, "Search Builds", 40)
 	f.search:SetPoint("TOPLEFT", PAD, -PAD)
 	f.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()
@@ -519,7 +519,7 @@ local function createSidebar(f)
 
 	-- the list runs from below the search box to the footer, which lines up with the build pane's footer
 	local listTop = PAD + CONTROL_H + GAP
-	f.list = BF.List.New(side, "BuildForgeListScroll", SIDEBAR_W - 14, H - TITLE_H - listTop - FOOTER_H, "sidebar")
+	f.list = SBS.List.New(side, "SynastriaBuildSuiteListScroll", SIDEBAR_W - 14, H - TITLE_H - listTop - FOOTER_H, "sidebar")
 	f.list.scroll:SetPoint("TOPLEFT", 0, -listTop)
 
 	f.noMatches = S.Text(side, "small", C.muted)
@@ -537,7 +537,7 @@ local function createSidebar(f)
 	new:SetPoint("LEFT", PAD, 0)
 	f.newBuild = new
 	local import = S.Button(footer, "Import", "secondary", half, importBuild,
-		"Paste a BuildForge, SynastriaBuildManager or SynastriaPerkManager string.")
+		"Paste a Synastria Build Suite, SynastriaBuildManager or SynastriaPerkManager string.")
 	import:SetPoint("LEFT", new, "RIGHT", GAP, 0)
 end
 
@@ -554,7 +554,7 @@ local function createBuildHeader(main)
 	row2:SetHeight(CONTROL_H)
 
 	-- reads as a title until hovered or edited; its text lines up with the rows below
-	f.name = CreateFrame("EditBox", "BuildForgeNameBox", main)
+	f.name = CreateFrame("EditBox", "SynastriaBuildSuiteNameBox", main)
 	f.name:SetSize(280, CONTROL_H)
 	f.name:SetAutoFocus(false)
 	f.name:SetMaxLetters(40)
@@ -587,7 +587,7 @@ local function createBuildHeader(main)
 	f.name:SetScript("OnEnterPressed", function(self)
 		local build = selectedBuild()
 		local newName = self:GetText():gsub("^%s+", ""):gsub("%s+$", "")
-		if build and not build.sharedOnly and BF:Rename(build, newName) then
+		if build and not build.sharedOnly and SBS:Rename(build, newName) then
 			state.selected = newName
 			self.committed = newName
 		end
@@ -603,7 +603,7 @@ local function createBuildHeader(main)
 	f.specLabel = S.Text(main, "small", C.muted)
 	f.specLabel:SetPoint("LEFT", f.classes, "RIGHT", 2 * GAP, 0)
 	f.specLabel:SetText("Spec Name")
-	f.spec = S.Input(main, "BuildForgeSpecBox", 110, "None", 14)
+	f.spec = S.Input(main, "SynastriaBuildSuiteSpecBox", 110, "None", 14)
 	f.spec:SetPoint("LEFT", f.specLabel, "RIGHT", GAP, 0)
 	f.spec:SetScript("OnEscapePressed", function(self)
 		self:SetText(self.committed or "")
@@ -622,7 +622,7 @@ local function createBuildHeader(main)
 	-- the spec link sits flush right under the actions, laid out right to left so hiding the tag moves nothing
 	f.specLink = S.Dropdown(main, 140, function(group)
 		local build = selectedBuild()
-		if build then BF:LinkSpec(build.name, group ~= 0 and group or nil) end
+		if build then SBS:LinkSpec(build.name, group ~= 0 and group or nil) end
 		Window.Render()
 	end)
 	f.specLink:SetPoint("RIGHT", row2, "RIGHT", 0, 0)
@@ -637,19 +637,19 @@ local function createBuildHeader(main)
 	-- Apply Build, or Switch to Spec N for a build whose spec isn't active (applying it here would overwrite
 	-- the spec you're in)
 	f.apply = S.Button(main, "Apply Build", "primary", 110, function(self)
-		if self.target then Window.SwitchSpec(self.target) else BF.Review.Open(selectedBuild()) end
+		if self.target then Window.SwitchSpec(self.target) else SBS.Review.Open(selectedBuild()) end
 	end)
 	f.apply:SetPoint("RIGHT", row1, "RIGHT", 0, 0)
-	f.export = S.Button(main, "Export", "secondary", 70, function() BF:Export(selectedBuild()) end,
+	f.export = S.Button(main, "Export", "secondary", 70, function() SBS:Export(selectedBuild()) end,
 		"Copy this build as a one-line string to share.")
 	f.export:SetPoint("RIGHT", f.apply, "LEFT", -GAP, 0)
 	f.duplicate = S.Button(main, "Duplicate", "secondary", 80, function()
-		local dup = BF:Duplicate(selectedBuild())
+		local dup = SBS:Duplicate(selectedBuild())
 		state.collapsed[table.concat(dup.classes or {}, "/")] = false
 		Window.Select(dup.name)
 	end, "Make a copy of this build to try changes on. The copy isn't linked to a spec.")
 	f.duplicate:SetPoint("RIGHT", f.export, "LEFT", -GAP, 0)
-	f.delete = S.Button(main, "Delete", "danger", 70, function() BF:Delete(selectedBuild()) end)
+	f.delete = S.Button(main, "Delete", "danger", 70, function() SBS:Delete(selectedBuild()) end)
 	f.delete:SetPoint("RIGHT", f.duplicate, "LEFT", -GAP, 0)
 end
 
@@ -694,7 +694,7 @@ local function createNotes(main, width, height)
 	local box = CreateFrame("Frame", nil, main)
 	box:SetSize(width, height)
 	S.Panel(box, C.well, C.border)
-	local scroll = CreateFrame("ScrollFrame", "BuildForgeNotesScroll", box, "UIPanelScrollFrameTemplate")
+	local scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuiteNotesScroll", box, "UIPanelScrollFrameTemplate")
 	scroll:SetPoint("TOPLEFT", PAD, -PAD)
 	scroll:SetPoint("BOTTOMRIGHT", -PAD - 10, PAD)
 	local edit = CreateFrame("EditBox", nil, scroll)
@@ -710,7 +710,7 @@ local function createNotes(main, width, height)
 		if userInput and build then build.notes = self:GetText() end
 	end)
 	scroll:SetScrollChild(edit)
-	BF.List.AutoHideBar(scroll, "BuildForgeNotesScroll")
+	SBS.List.AutoHideBar(scroll, "SynastriaBuildSuiteNotesScroll")
 	box:EnableMouse(true)
 	box:SetScript("OnMouseDown", function() edit:SetFocus() end)
 	box.edit = edit
@@ -734,7 +734,7 @@ local function createMain(f)
 	f.notes:SetPoint("TOPLEFT", PAD, -bodyTop)
 	f.editors = {}
 	for key, module in pairs(EDITORS) do
-		f.editors[key] = BF[module].Create(main, bodyW, bodyH)
+		f.editors[key] = SBS[module].Create(main, bodyW, bodyH)
 		f.editors[key]:SetPoint("TOPLEFT", PAD, -bodyTop)
 	end
 
@@ -768,7 +768,7 @@ local function createEmpty(f)
 	body:SetWidth(360)
 	body:SetJustifyH("CENTER")
 	body:SetText("Save every spec on this character as builds, make one from any part of your character or blank for any class, or import one someone shared with you.")
-	f.emptySaveSpecs = S.Button(empty, "Add Current Specs", "primary", 120, saveSpecs, BF.Dialogs.SAVE_SPECS_TIP)
+	f.emptySaveSpecs = S.Button(empty, "Add Current Specs", "primary", 120, saveSpecs, SBS.Dialogs.SAVE_SPECS_TIP)
 	f.emptySaveSpecs:SetPoint("TOP", body, "BOTTOM", 0, -16)
 	local new = S.Button(empty, "New Build", "secondary", 110, newBuild)
 	new:SetPoint("RIGHT", f.emptySaveSpecs, "LEFT", -8, 0)
@@ -778,7 +778,7 @@ local function createEmpty(f)
 end
 
 local function create()
-	local f = CreateFrame("Frame", "BuildForgeFrame", UIParent)
+	local f = CreateFrame("Frame", "SynastriaBuildSuiteFrame", UIParent)
 	frame = f
 	f:SetSize(W, H)
 	f:SetFrameStrata("HIGH")
@@ -786,17 +786,17 @@ local function create()
 	f:EnableMouse(true)
 	f:SetMovable(true)
 	f:SetClampedToScreen(true)
-	local pos = BF.db.window
+	local pos = SBS.db.window
 	if pos then f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y) else placeDefault(f) end
 	S.Panel(f, C.window, C.border)
-	tinsert(UISpecialFrames, "BuildForgeFrame")
+	tinsert(UISpecialFrames, "SynastriaBuildSuiteFrame")
 	f:Hide()
 
 	createTitleBar(f)
 	createSidebar(f)
 	createMain(f)
 	createEmpty(f)
-	f.review = BF.Review.Create(f.main, W - SIDEBAR_W, H - TITLE_H)
+	f.review = SBS.Review.Create(f.main, W - SIDEBAR_W, H - TITLE_H)
 
 	f:SetScript("OnShow", function()
 		PlaySound("igCharacterInfoOpen")

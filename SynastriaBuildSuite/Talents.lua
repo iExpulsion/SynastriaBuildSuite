@@ -1,8 +1,8 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 local Talents = {}
-BF.Talents = Talents
+SBS.Talents = Talents
 
 local function isMultiClass()
 	return CMCGetClassCount ~= nil and CMCGetClassCount() > 1 and not CMCIsDualSingleClass()
@@ -13,7 +13,7 @@ end
 function Talents.Select(class)
 	local ok = true
 	if isMultiClass() then
-		for i, key in ipairs(BF:PlayerClasses()) do
+		for i, key in ipairs(SBS:PlayerClasses()) do
 			if key == class then
 				if GetSelectedTalentClassIndex() ~= i then
 					Talents.switching = true
@@ -28,7 +28,7 @@ function Talents.Select(class)
 end
 
 function Talents.SelectedClass()
-	local classes = BF:PlayerClasses()
+	local classes = SBS:PlayerClasses()
 	return isMultiClass() and classes[GetSelectedTalentClassIndex()] or classes[1]
 end
 
@@ -47,9 +47,9 @@ end
 -- Returns talents by class key for spec `group` (the active spec by default), and the classes it couldn't read.
 function Talents.Capture(group)
 	local shown = Talents.SelectedClass()
-	group = group or BF:ActiveGroup()
+	group = group or SBS:ActiveGroup()
 	local result, missed = {}, {}
-	for _, class in ipairs(BF:PlayerClasses()) do
+	for _, class in ipairs(SBS:PlayerClasses()) do
 		if Talents.Select(class) then
 			result[class] = readTrees(group)
 		else
@@ -63,10 +63,10 @@ end
 -- Per class: the points to add (in tier order), ranks above the build, and classes the character lacks.
 function Talents.Plan(wanted)
 	local plan = { classes = {}, skipped = {} }
-	local group = BF:ActiveGroup()
+	local group = SBS:ActiveGroup()
 	local shown = Talents.SelectedClass()
 	for class, trees in pairs(wanted or {}) do
-		if not BF:HasClass(class) then
+		if not SBS:HasClass(class) then
 			plan.skipped[#plan.skipped + 1] = { class = class, reason = "not one of your classes" }
 		elseif not Talents.Select(class) then
 			plan.skipped[#plan.skipped + 1] = { class = class, reason = "switch to it in the talent window and apply again" }
@@ -102,14 +102,14 @@ end
 function Talents.Spent()
 	local spent = 0
 	for tab = 1, GetNumTalentTabs(false, false) do
-		spent = spent + select(3, GetTalentTabInfo(tab, false, false, BF:ActiveGroup()))
+		spent = spent + select(3, GetTalentTabInfo(tab, false, false, SBS:ActiveGroup()))
 	end
 	return spent
 end
 
 -- Adds preview points tier by tier and learns them. Returns the talents the client refused.
 function Talents.Apply(plan)
-	local group, shown = BF:ActiveGroup(), Talents.SelectedClass()
+	local group, shown = SBS:ActiveGroup(), Talents.SelectedClass()
 	local refused = {}
 	for _, entry in ipairs(plan.classes) do
 		if #entry.conflicts == 0 and #entry.adds > 0 and Talents.Select(entry.class) then

@@ -1,18 +1,18 @@
 local ADDON, NS = ...
 
-local BF = { version = GetAddOnMetadata and GetAddOnMetadata(ADDON, "Version") or "dev" }
-NS.BF = BF
-_G.BuildForge = BF
+local SBS = { version = GetAddOnMetadata and GetAddOnMetadata(ADDON, "Version") or "dev" }
+NS.SBS = SBS
+_G.SynastriaBuildSuite = SBS
 
-BF.CLASS_KEYS = {
+SBS.CLASS_KEYS = {
 	[1] = "WARRIOR", [2] = "PALADIN", [3] = "HUNTER", [4] = "ROGUE", [5] = "PRIEST",
 	[6] = "DEATHKNIGHT", [7] = "SHAMAN", [8] = "MAGE", [9] = "WARLOCK", [11] = "DRUID",
 }
-BF.CLASS_IDS = {}
-for id, key in pairs(BF.CLASS_KEYS) do BF.CLASS_IDS[key] = id end
+SBS.CLASS_IDS = {}
+for id, key in pairs(SBS.CLASS_KEYS) do SBS.CLASS_IDS[key] = id end
 
 -- Synastria's names for two-class pairs, from its GlueXML AccountLogin.lua (SL_DUAL_CLASSES). Looked up by
--- BF:ComboName in either order.
+-- SBS:ComboName in either order.
 local COMBOS = {
 	Champion = { "WARRIOR", "PALADIN" }, Soldier = { "WARRIOR", "HUNTER" }, Blademaster = { "WARRIOR", "ROGUE" },
 	Crusader = { "WARRIOR", "PRIEST" }, Butcher = { "WARRIOR", "DEATHKNIGHT" }, Ravager = { "WARRIOR", "SHAMAN" },
@@ -40,17 +40,17 @@ for combo, pair in pairs(COMBOS) do
 end
 
 -- The combo name for two class keys, or nil (same-class pairs have none here).
-function BF:ComboName(a, b)
+function SBS:ComboName(a, b)
 	return a and b and comboByPair[a .. "/" .. b]
 end
 
-function BF:Print(fmt, ...)
+function SBS:Print(fmt, ...)
 	local msg = select("#", ...) > 0 and fmt:format(...) or fmt
-	DEFAULT_CHAT_FRAME:AddMessage("|cffffc400BuildForge|r: " .. msg)
+	DEFAULT_CHAT_FRAME:AddMessage("|cffffc400Synastria Build Suite|r:" .. msg)
 end
 
 -- The character's classes in pick order, as class keys.
-function BF:PlayerClasses()
+function SBS:PlayerClasses()
 	local classes = {}
 	local count = CMCGetClassCount and CMCGetClassCount() or 0
 	if count >= 1 then
@@ -64,24 +64,24 @@ function BF:PlayerClasses()
 	return classes
 end
 
-function BF:HasClass(key)
+function SBS:HasClass(key)
 	for _, k in ipairs(self:PlayerClasses()) do
 		if k == key then return true end
 	end
 	return false
 end
 
-function BF:ActiveGroup()
+function SBS:ActiveGroup()
 	return GetActiveTalentGroup and GetActiveTalentGroup(false, false) or 1
 end
 
 -- Talent specs (Synastria allows up to 8) ------------------------------------------------------------------
 
-function BF:SpecCount()
+function SBS:SpecCount()
 	return GetNumTalentGroups and GetNumTalentGroups(false, false) or 1
 end
 
-function BF:SpecName(group)
+function SBS:SpecName(group)
 	local name = GetCustomGameDataString and GetCustomGameDataString(21, group) or ""
 	return ("Spec %d"):format(group) .. ((name and name ~= "") and (": " .. name) or "")
 end
@@ -91,14 +91,14 @@ local function charKey()
 end
 
 -- This character's spec-to-build links. Kept in the account file so renames and deletes reach every character.
-function BF:Links()
+function SBS:Links()
 	local key = charKey()
 	self.db.links[key] = self.db.links[key] or {}
 	return self.db.links[key]
 end
 
 -- The specs on this character linked to a build, lowest first.
-function BF:LinkedSpecs(name)
+function SBS:LinkedSpecs(name)
 	local groups = {}
 	for group, linked in pairs(self:Links()) do
 		if linked == name and group <= self:SpecCount() then groups[#groups + 1] = group end
@@ -108,7 +108,7 @@ function BF:LinkedSpecs(name)
 end
 
 -- Links a build to one spec (replacing its other links), or unlinks it when group is nil.
-function BF:LinkSpec(name, group)
+function SBS:LinkSpec(name, group)
 	local links = self:Links()
 	for g, linked in pairs(links) do
 		if linked == name then links[g] = nil end
@@ -117,7 +117,7 @@ function BF:LinkSpec(name, group)
 	self:Changed()
 end
 
-function BF:RenameLinks(old, new)
+function SBS:RenameLinks(old, new)
 	for _, links in pairs(self.db.links) do
 		for g, linked in pairs(links) do
 			if linked == old then links[g] = new end
@@ -126,16 +126,16 @@ function BF:RenameLinks(old, new)
 end
 
 local frame = CreateFrame("Frame")
-BF.frame = frame
+SBS.frame = frame
 frame:RegisterEvent("ADDON_LOADED")
 frame:SetScript("OnEvent", function(self, event, name)
 	if event == "ADDON_LOADED" and name == ADDON then
-		BuildForgeDB = BuildForgeDB or {}
-		BuildForgeDB.builds = BuildForgeDB.builds or {}
-		BuildForgeDB.shared = BuildForgeDB.shared or { perks = {} }
-		BuildForgeDB.links = BuildForgeDB.links or {}
-		BuildForgeCharDB = BuildForgeCharDB or {}
-		BF.db, BF.charDB = BuildForgeDB, BuildForgeCharDB
+		SynastriaBuildSuiteDB = SynastriaBuildSuiteDB or {}
+		SynastriaBuildSuiteDB.builds = SynastriaBuildSuiteDB.builds or {}
+		SynastriaBuildSuiteDB.shared = SynastriaBuildSuiteDB.shared or { perks = {} }
+		SynastriaBuildSuiteDB.links = SynastriaBuildSuiteDB.links or {}
+		SynastriaBuildSuiteCharDB = SynastriaBuildSuiteCharDB or {}
+		SBS.db, SBS.charDB = SynastriaBuildSuiteDB, SynastriaBuildSuiteCharDB
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 end)

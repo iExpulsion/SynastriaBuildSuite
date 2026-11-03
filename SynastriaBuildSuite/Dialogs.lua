@@ -1,8 +1,8 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 local Dialogs = {}
-BF.Dialogs = Dialogs
+SBS.Dialogs = Dialogs
 
 -- The export / import box: a row of section checkboxes (Perks, Talents, Glyphs, Gear, Notes) over the string.
 -- Export re-encodes as sections are toggled and remembers the choice; import shows which sections the pasted
@@ -23,30 +23,30 @@ local function setToggles(available, checked)
 	for _, t in ipairs(box.toggles) do
 		t.check:SetEnabled(available[t.key])
 		t.check:SetChecked(available[t.key] and checked[t.key])
-		t.label:SetTextColor(unpack(available[t.key] and BF.Style.colors.text or BF.Style.colors.muted))
+		t.label:SetTextColor(unpack(available[t.key] and SBS.Style.colors.text or SBS.Style.colors.muted))
 	end
 end
 
 local function refreshExport()
-	local text = BF.Codec.Encode(BF.Codec.Pick(box.build, chosen()))
+	local text = SBS.Codec.Encode(SBS.Codec.Pick(box.build, chosen()))
 	box.edit:SetText(text)
 	box.edit:SetCursorPosition(0)
-	box.note:SetText(BF.Style.Count(#text, "Character"))
+	box.note:SetText(SBS.Style.Count(#text, "Character"))
 end
 
 local function refreshImport()
-	local decoded, err = BF.Codec.Decode(box.edit:GetText())
+	local decoded, err = SBS.Codec.Decode(box.edit:GetText())
 	local text = box.edit:GetText():gsub("%s", "")
-	local has = decoded and BF.Codec.Has(decoded) or {}
+	local has = decoded and SBS.Codec.Has(decoded) or {}
 	setToggles(has, has)
 	box.decoded = decoded
-	local S, C = BF.Style, BF.Style.colors
+	local S, C = SBS.Style, SBS.Style.colors
 	if decoded then
-		local who = decoded.classes and #decoded.classes > 0 and BF.Window.ClassText(decoded.classes, true) or "no classes listed"
+		local who = decoded.classes and #decoded.classes > 0 and SBS.Window.ClassText(decoded.classes, true) or "no classes listed"
 		box.note:SetText(S.Hex(C.good, (decoded.name or "Unnamed build") .. ": ") .. who)
 		-- the string's name, made unique so importing never replaces a build by accident, until the user types one
 		if not box.nameEdited then
-			box.name:SetText(BF:UniqueName(decoded.name or "Imported Build"))
+			box.name:SetText(SBS:UniqueName(decoded.name or "Imported Build"))
 			box.name:UpdatePlaceholder()
 		end
 	else
@@ -58,13 +58,13 @@ end
 local function toggled(row)
 	row.check:SetChecked(not row.check.on)
 	if box.mode == "export" then
-		BF.db.exportSections = chosen()
+		SBS.db.exportSections = chosen()
 		refreshExport()
 	end
 end
 
 local function newToggle(parent, section)
-	local S = BF.Style
+	local S = SBS.Style
 	local row = CreateFrame("Button", nil, parent)
 	row:SetSize(TOGGLE_W, S.CONTROL_H)
 	row.key = section.key
@@ -87,13 +87,13 @@ local function newToggle(parent, section)
 end
 
 local function create()
-	local S, C = BF.Style, BF.Style.colors
+	local S, C = SBS.Style, SBS.Style.colors
 	local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
 	-- rows top to bottom: title and sub line, the Include row, the string, (import: the Name row), the buttons
 	local includeY = PAD + 16 + 4 + 12 + GAP + CONTROL_H / 2
 	local wellTop = includeY + CONTROL_H / 2 + GAP
 	local footerH = PAD + CONTROL_H + PAD
-	local f = CreateFrame("Frame", "BuildForgeTextFrame", UIParent)
+	local f = CreateFrame("Frame", "SynastriaBuildSuiteTextFrame", UIParent)
 	f.pad = PAD
 	f.wellBottom = { export = footerH, import = footerH + CONTROL_H + PAD }
 	f:SetSize(W, H)
@@ -105,7 +105,7 @@ local function create()
 	f:SetScript("OnDragStart", f.StartMoving)
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	S.Panel(f, { C.window[1], C.window[2], C.window[3], 1 }, C.border)
-	tinsert(UISpecialFrames, "BuildForgeTextFrame")
+	tinsert(UISpecialFrames, "SynastriaBuildSuiteTextFrame")
 
 	f.title = S.Text(f, "large")
 	f.title:SetPoint("TOPLEFT", PAD, -PAD)
@@ -119,7 +119,7 @@ local function create()
 	include:SetPoint("LEFT", f, "TOPLEFT", PAD, -includeY)
 	include:SetText("Include")
 	f.toggles = {}
-	for i, section in ipairs(BF.Codec.SECTIONS) do
+	for i, section in ipairs(SBS.Codec.SECTIONS) do
 		local t = newToggle(f, section)
 		t:SetPoint("LEFT", include, "RIGHT", PAD + (i - 1) * (TOGGLE_W + GAP), 0)
 		f.toggles[i] = t
@@ -134,7 +134,7 @@ local function create()
 	f.nameLabel = S.Text(f, "small", C.muted)
 	f.nameLabel:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, footerH + CONTROL_H / 2)
 	f.nameLabel:SetText("Name")
-	f.name = S.Input(f, "BuildForgeImportName", 240, "Build Name", 40)
+	f.name = S.Input(f, "SynastriaBuildSuiteImportName", 240, "Build Name", 40)
 	f.name:SetPoint("LEFT", f.nameLabel, "RIGHT", GAP, 0)
 	f.name:HookScript("OnTextChanged", function(_, userInput)
 		if userInput then box.nameEdited = true end
@@ -144,10 +144,10 @@ local function create()
 	f.nameHint:SetText("For Import as New.")
 	S.Panel(well, C.well, C.border)
 	well:EnableMouse(true)
-	local scroll = CreateFrame("ScrollFrame", "BuildForgeTextScroll", well, "UIPanelScrollFrameTemplate")
+	local scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuiteTextScroll", well, "UIPanelScrollFrameTemplate")
 	scroll:SetPoint("TOPLEFT", PAD, -PAD)
 	scroll:SetPoint("BOTTOMRIGHT", -PAD - 10, PAD)
-	BF.List.AutoHideBar(scroll, "BuildForgeTextScroll")
+	SBS.List.AutoHideBar(scroll, "SynastriaBuildSuiteTextScroll")
 	local edit = CreateFrame("EditBox", nil, scroll)
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
@@ -202,10 +202,10 @@ function Dialogs.ShowExport(build)
 	box.mode, box.build, box.onImport = "export", build, nil
 	box.title:SetText("Export: " .. build.name)
 	box.sub:SetText("Select All, then Ctrl+C to copy. Uncheck what you'd rather not share.")
-	local remembered = BF.db.exportSections
+	local remembered = SBS.db.exportSections
 	local checked = {}
-	for _, section in ipairs(BF.Codec.SECTIONS) do checked[section.key] = not remembered or remembered[section.key] == true end
-	setToggles(BF.Codec.Has(build), checked)
+	for _, section in ipairs(SBS.Codec.SECTIONS) do checked[section.key] = not remembered or remembered[section.key] == true end
+	setToggles(SBS.Codec.Has(build), checked)
 	box.primary:Hide()
 	box.secondary:Hide()
 	box.selectAll:Show()
@@ -222,7 +222,7 @@ function Dialogs.ShowImport(onImport, targetName)
 	box = box or create()
 	box.mode, box.build, box.onImport = "import", nil, onImport
 	box.title:SetText("Import a Build")
-	box.sub:SetText("Paste a BuildForge, SBM or SPM string, then pick the sections to bring in.")
+	box.sub:SetText("Paste a Synastria Build Suite, SBM or SPM string, then pick the sections to bring in.")
 	box.selectAll:Hide()
 	box.placeholder:Show()
 	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Show() end
@@ -268,7 +268,7 @@ end
 local function ownsAny(classes)
 	local any = false
 	for _, class in ipairs(classes) do
-		if BF:HasClass(class) then any = true end
+		if SBS:HasClass(class) then any = true end
 	end
 	return any
 end
@@ -286,9 +286,9 @@ local function copied()
 end
 
 local function refreshSheet()
-	local S, C = BF.Style, BF.Style.colors
-	sheet.firstPick:SetText(BF.Window.ClassText({ sheet.first }))
-	sheet.secondPick:SetText(sheet.second and BF.Window.ClassText({ sheet.second }) or "None")
+	local S, C = SBS.Style, SBS.Style.colors
+	sheet.firstPick:SetText(SBS.Window.ClassText({ sheet.first }))
+	sheet.secondPick:SetText(sheet.second and SBS.Window.ClassText({ sheet.second }) or "None")
 	local sections, names = copied(), {}
 	for _, t in ipairs(sheet.toggles) do
 		local usable = copyUsable(t.key)
@@ -302,7 +302,7 @@ local function refreshSheet()
 end
 
 local function newCopyToggle(parent, c)
-	local S = BF.Style
+	local S = SBS.Style
 	local row = CreateFrame("Button", nil, parent)
 	row:SetSize(TOGGLE_W, S.CONTROL_H)
 	row.key, row.text = c.key, c.label
@@ -331,23 +331,23 @@ local function classOptions(withNone)
 	local options = {}
 	if withNone then options[1] = { value = false, text = "None", tooltip = "A single-class build." } end
 	for id = 1, 11 do
-		local key = BF.CLASS_KEYS[id]
+		local key = SBS.CLASS_KEYS[id]
 		if key then
-			options[#options + 1] = { value = key, text = BF.Window.ClassText({ key }),
-				tooltip = not BF:HasClass(key) and NOT_YOURS or nil }
+			options[#options + 1] = { value = key, text = SBS.Window.ClassText({ key }),
+				tooltip = not SBS:HasClass(key) and NOT_YOURS or nil }
 		end
 	end
 	return options
 end
 
 local function createSheet()
-	local S, C = BF.Style, BF.Style.colors
+	local S, C = SBS.Style, SBS.Style.colors
 	local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
 	-- rows top to bottom: title and sub line, Classes, Copy, Name, the buttons
 	local classesY = PAD + 16 + 4 + 12 + PAD + CONTROL_H / 2
 	local copyY = classesY + CONTROL_H + GAP
 	local nameY = copyY + CONTROL_H + GAP
-	local f = CreateFrame("Frame", "BuildForgeNewFrame", UIParent)
+	local f = CreateFrame("Frame", "SynastriaBuildSuiteNewFrame", UIParent)
 	f:SetSize(NEW_W, nameY + CONTROL_H / 2 + PAD + CONTROL_H + PAD)
 	f:SetPoint("CENTER")
 	f:SetFrameStrata("DIALOG")
@@ -357,7 +357,7 @@ local function createSheet()
 	f:SetScript("OnDragStart", f.StartMoving)
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	S.Panel(f, { C.window[1], C.window[2], C.window[3], 1 }, C.border)
-	tinsert(UISpecialFrames, "BuildForgeNewFrame")
+	tinsert(UISpecialFrames, "SynastriaBuildSuiteNewFrame")
 
 	f.title = S.Text(f, "large")
 	f.title:SetPoint("TOPLEFT", PAD, -PAD)
@@ -395,12 +395,12 @@ local function createSheet()
 	end
 
 	rowLabel("Name", nameY)
-	f.name = S.Input(f, "BuildForgeNewName", PICK_W * 2 + GAP, "Build Name", 40)
+	f.name = S.Input(f, "SynastriaBuildSuiteNewName", PICK_W * 2 + GAP, "Build Name", 40)
 	f.name:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W, -nameY)
 
 	f.create = S.Button(f, "Create Build", "primary", 100, function()
 		local name = sheet.name:GetText():gsub("^%s+", ""):gsub("%s+$", "")
-		sheet.onCreate(name ~= "" and name or BF:UniqueName("New Build"), sheetClasses(), copied())
+		sheet.onCreate(name ~= "" and name or SBS:UniqueName("New Build"), sheetClasses(), copied())
 	end, "Save the new build and open it.")
 	f.create:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 	local cancel = S.Button(f, "Cancel", "secondary", 70, function() f:Hide() end)
@@ -421,11 +421,11 @@ end
 -- runs on Create Build, onSaveSpecs() on Add Current Specs.
 function Dialogs.ShowNew(onCreate, onSaveSpecs)
 	sheet = sheet or createSheet()
-	local mine = BF:PlayerClasses()
+	local mine = SBS:PlayerClasses()
 	sheet.first, sheet.second, sheet.onCreate, sheet.onSaveSpecs = mine[1], mine[2], onCreate, onSaveSpecs
 	sheet.wanted = {}
 	for _, c in ipairs(COPY) do sheet.wanted[c.key] = true end
-	sheet.name:SetText(BF:UniqueName("New Build"))
+	sheet.name:SetText(SBS:UniqueName("New Build"))
 	sheet.name:UpdatePlaceholder()
 	refreshSheet()
 	sheet:Show()
@@ -439,7 +439,7 @@ function Dialogs.NewFrame()
 	return sheet
 end
 
-StaticPopupDialogs["BUILDFORGE_APPLY"] = {
+StaticPopupDialogs["SBS_APPLY"] = {
 	text = "Apply build \"%s\" to your active spec? The changes are listed in chat.",
 	button1 = ACCEPT,
 	button2 = CANCEL,
@@ -449,7 +449,7 @@ StaticPopupDialogs["BUILDFORGE_APPLY"] = {
 	hideOnEscape = true,
 }
 
-StaticPopupDialogs["BUILDFORGE_OVERWRITE"] = {
+StaticPopupDialogs["SBS_OVERWRITE"] = {
 	text = "A build named \"%s\" already exists. Replace it?",
 	button1 = ACCEPT,
 	button2 = CANCEL,
@@ -459,7 +459,7 @@ StaticPopupDialogs["BUILDFORGE_OVERWRITE"] = {
 	hideOnEscape = true,
 }
 
-StaticPopupDialogs["BUILDFORGE_DELETE"] = {
+StaticPopupDialogs["SBS_DELETE"] = {
 	text = "Delete build \"%s\"?",
 	button1 = DELETE,
 	button2 = CANCEL,

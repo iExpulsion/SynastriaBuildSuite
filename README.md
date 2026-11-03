@@ -1,10 +1,10 @@
-# BuildForge
+# Synastria Build Suite
 
 A build manager for Synastria (WoW 3.3.5a). Save, share and apply a whole build in one place: perks with
 their options and chosen abilities, talents for every class, glyphs, recommended gear, Hunter pet aspects, the
 spec name and notes.
 
-![The BuildForge window on the Perks tab: your specs and saved builds in the sidebar, the build's perks by category, and a perk's details](docs/images/perks.png)
+![The Synastria Build Suite window on the Perks tab: your specs and saved builds in the sidebar, the build's perks by category, and a perk's details](docs/images/perks.png)
 
 ## Features
 
@@ -15,7 +15,7 @@ spec name and notes.
 - **Perk Editor:** every perk your build's classes can use, with options, chosen abilities, set bonuses and
   category limits.
 - **Glyphs and Gear:** see what's socketed, worn, in your bags or missing, and equip a build's gear in one click.
-- **Share Builds:** export the sections you choose as a single line, and import BuildForge,
+- **Share Builds:** export the sections you choose as a single line, and import Synastria Build Suite,
   SynastriaBuildManager (SBM) and SynastriaPerkManager (SPM) strings.
 - **Shared Perks:** your Misc perks live in one list that every build applies, and they're never exported or
   overwritten by an import.
@@ -23,15 +23,15 @@ spec name and notes.
 ## Installation
 
 1. Download the latest release.
-2. Extract the `BuildForge` folder into `World of Warcraft\Interface\AddOns`.
+2. Extract the `SynastriaBuildSuite` folder into `World of Warcraft\Interface\AddOns`.
 3. Restart the game, or log out to the character screen and back in.
 
 ## Getting Started
 
-Open BuildForge with `/bforge`, the minimap button, or the **Open BuildForge** line in an innkeeper's chat
+Open Synastria Build Suite with `/sbs`, the minimap button, or the **Open Synastria Build Suite** line in an innkeeper's chat
 options. The innkeeper line also opens the Perk Manager, which perk activations need.
 
-![An innkeeper's chat options with Open BuildForge under Manage perks](docs/images/innkeeper.png)
+![An innkeeper's chat options with Open Synastria Build Suite under Manage perks](docs/images/innkeeper.png)
 
 On first use, click **Add Current Specs** to save all of your specs as builds. Specs you're not in can't show
 their perks yet, so those builds fill theirs in the first time you switch to them.
@@ -63,7 +63,7 @@ and chosen abilities apply anywhere.
 
 Left-click adds a point, right-click removes one, with the same tier and prerequisite rules as the talent
 window. Dual-class builds get a button per class. Talents can only be added, so if your spec has points the
-build doesn't, the review lists them; unlearn at a class trainer and BuildForge reopens the review.
+build doesn't, the review lists them; unlearn at a class trainer and Synastria Build Suite reopens the review.
 
 ![The Talents tab: a Death Knight's three trees with 71 of 71 points spent](docs/images/talents.png)
 
@@ -71,7 +71,7 @@ build doesn't, the review lists them; unlearn at a class trainer and BuildForge 
 
 Each socket shows green when that glyph is socketed, yellow when it's in your bags and red when you don't have
 it. Click a socket to pick a glyph; right-click to clear it. Dual-class builds have glyphs per class. Glyphs are
-used up when socketed, so BuildForge leaves socketing to you; **Open Glyph Frame** opens the game's window.
+used up when socketed, so Synastria Build Suite leaves socketing to you; **Open Glyph Frame** opens the game's window.
 
 ![The Glyphs tab: socketed major glyphs, empty minor sockets and the glyph picker for a socket](docs/images/glyphs.png)
 
@@ -93,7 +93,7 @@ New** makes a new build; **Into** replaces just those sections of the selected b
 
 Import reads:
 
-- **BuildForge** strings.
+- **Synastria Build Suite** strings.
 - **SynastriaBuildManager** (SBM3 and SBM2): perks, talents for each class, chosen abilities and pet aspects.
 - **SynastriaPerkManager** (SPM): perks and their options. SPM strings only carry perks, so importing one
   **Into** an existing build is the handy way to use it.
@@ -104,25 +104,25 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 
 | Command | Does |
 |---|---|
-| `/bforge` | Opens or closes the window |
-| `/bforge help` | Lists the commands |
-| `/bforge list` | Lists saved builds |
-| `/bforge save <name>` | Saves your active spec as a build |
-| `/bforge specs` | Saves every spec as a build linked to it |
-| `/bforge apply <name>` | Lists what would change in chat, then asks before applying |
-| `/bforge export <name>` | Opens the export box for a build |
-| `/bforge import` | Opens the import box |
-| `/bforge gear <name>` | Shows each slot: worn, in bags or missing |
-| `/bforge equip <name>` | Equips the build's gear you're carrying |
-| `/bforge note <name> <text>` | Sets the build's notes |
-| `/bforge delete <name>` | Deletes a build |
-| `/bforge minimap` | Hides or shows the minimap button |
-| `/bforge reset` | Moves the window back to the center of the screen |
+| `/sbs` | Opens or closes the window |
+| `/sbs help` | Lists the commands |
+| `/sbs list` | Lists saved builds |
+| `/sbs save <name>` | Saves your active spec as a build |
+| `/sbs specs` | Saves every spec as a build linked to it |
+| `/sbs apply <name>` | Lists what would change in chat, then asks before applying |
+| `/sbs export <name>` | Opens the export box for a build |
+| `/sbs import` | Opens the import box |
+| `/sbs gear <name>` | Shows each slot: worn, in bags or missing |
+| `/sbs equip <name>` | Equips the build's gear you're carrying |
+| `/sbs note <name> <text>` | Sets the build's notes |
+| `/sbs delete <name>` | Deletes a build |
+| `/sbs minimap` | Hides or shows the minimap button |
+| `/sbs reset` | Moves the window back to the center of the screen |
 
 The minimap button opens the window on left-click and your active spec's build on right-click. Drag it around
-the minimap to move it. With a LibDataBroker display such as Titan Panel, BuildForge appears there too.
+the minimap to move it. With a LibDataBroker display such as Titan Panel, Synastria Build Suite appears there too.
 
 ## License
 
-BuildForge is released under the [MIT License](LICENSE). The game data in `BuildForge/Data` comes from the
+Synastria Build Suite is released under the [MIT License](LICENSE). The game data in `SynastriaBuildSuite/Data` comes from the
 Synastria client and isn't covered by it.

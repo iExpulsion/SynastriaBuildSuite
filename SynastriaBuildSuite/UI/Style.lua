@@ -1,9 +1,9 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- Flat dark style kit on Material 3 color roles: one accent color, 1px borders, and a few button kinds.
 local S = {}
-BF.Style = S
+SBS.Style = S
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 
@@ -128,7 +128,7 @@ end
 S.FONTS = {}
 for size, base in pairs({ small = "GameFontHighlightSmall", normal = "GameFontHighlight", large = "GameFontHighlightLarge",
 	huge = "GameFontNormalHuge", edit = "ChatFontNormal" }) do
-	local name = "BuildForgeFont" .. size:sub(1, 1):upper() .. size:sub(2)
+	local name = "SynastriaBuildSuiteFont" .. size:sub(1, 1):upper() .. size:sub(2)
 	local font = CreateFont(name)
 	font:CopyFontObject(_G[base])
 	font:SetShadowOffset(0, 0)

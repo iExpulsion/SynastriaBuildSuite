@@ -1,8 +1,8 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 local Gear = {}
-BF.Gear = Gear
+SBS.Gear = Gear
 
 local SHIRT = 4
 
@@ -111,8 +111,8 @@ end
 function Gear.CanUse(build, id, slot)
 	local _, _, _, _, _, itemType, subType, _, equipLoc = GetItemInfo(id)
 	local ids = {}
-	for _, key in ipairs(build.classes or {}) do ids[#ids + 1] = BF.CLASS_IDS[key] end
-	local who = #ids > 0 and BF.Window.ClassText(build.classes, true)
+	for _, key in ipairs(build.classes or {}) do ids[#ids + 1] = SBS.CLASS_IDS[key] end
+	local who = #ids > 0 and SBS.Window.ClassText(build.classes, true)
 	local weapon, armor = GetAuctionItemClasses()
 	local rules = itemType == weapon and WEAPON_CLASSES or itemType == armor and ARMOR_CLASSES or {}
 	local subs = { GetAuctionItemSubClasses(itemType == weapon and 1 or 2) }
@@ -133,7 +133,7 @@ function Gear.CanUse(build, id, slot)
 		reason = ("%s can't use %s."):format(who, subType)
 	elseif offHand and not perked and not anyClass(DUAL_WIELD_CLASSES, ids) then
 		reason = ("%s can't dual wield without the Dual Wielding perk."):format(who)
-	elseif classMask and classMask ~= 0 and bit.band(classMask, BF.Perks.ClassMask(build.classes)) == 0 then
+	elseif classMask and classMask ~= 0 and bit.band(classMask, SBS.Perks.ClassMask(build.classes)) == 0 then
 		reason = "That item is for another class."
 	end
 	return reason == nil, reason
@@ -145,7 +145,7 @@ function Gear.Add(build, slot, id)
 	local usable, refusal = Gear.CanUse(build, id, slot)
 	local ok, reason = Gear.Fits(id, slot) and usable and not has(build.gear[slot], id), nil
 	if not Gear.Fits(id, slot) then
-		reason = ("That item doesn't go in the %s slot."):format(BF.SLOT_NAMES[slot])
+		reason = ("That item doesn't go in the %s slot."):format(SBS.SLOT_NAMES[slot])
 	elseif not usable then
 		reason = refusal
 	elseif not ok then

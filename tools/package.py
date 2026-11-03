@@ -2,7 +2,7 @@
 
     python tools/package.py [output folder]
 
-Writes <output>/BuildForge-<version>.zip with a top-level BuildForge/ folder (extract it into
+Writes <output>/SynastriaBuildSuite-<version>.zip with a top-level SynastriaBuildSuite/ folder (extract it into
 Interface/AddOns): the .toc, the Lua files the .toc loads, the README and, when there is one, the LICENSE.
 """
 import os, re, sys, zipfile
@@ -10,7 +10,7 @@ import os, re, sys, zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DIST = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "dist")
-NAME = "BuildForge"
+NAME = "SynastriaBuildSuite"
 
 
 def toc_info(addon):

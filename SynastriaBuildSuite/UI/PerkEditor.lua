@@ -1,13 +1,13 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- The Perks tab: the perks the build's classes can use, by category, with a checkbox for whether the build has
 -- each one, and a detail pane for the selected perk's effect, chosen ability and options. Edits change the build;
 -- Apply Build sends them to the character.
 local Editor = {}
-BF.PerkEditor = Editor
+SBS.PerkEditor = Editor
 
-local S = BF.Style
+local S = SBS.Style
 local C = S.colors
 local Perks
 
@@ -31,8 +31,8 @@ local state = { selected = nil, filter = "build", search = "" }
 Editor.state = state
 
 local function categoryName(cat)
-	local key = BF.CLASS_KEYS[cat]
-	return key and (BF.Window.ClassText({ key }, true) .. " Class") or CATEGORY_NAMES[cat] or "Other"
+	local key = SBS.CLASS_KEYS[cat]
+	return key and (SBS.Window.ClassText({ key }, true) .. " Class") or CATEGORY_NAMES[cat] or "Other"
 end
 
 local function spellIcon(id)
@@ -40,12 +40,12 @@ local function spellIcon(id)
 end
 
 local function buildMask(build)
-	return Perks.ClassMask(build.classes and #build.classes > 0 and build.classes or BF:PlayerClasses())
+	return Perks.ClassMask(build.classes and #build.classes > 0 and build.classes or SBS:PlayerClasses())
 end
 
 -- Misc perks are edited in the shared list, every other perk in the build.
 local function owner(id)
-	return Perks.IsShared(id) and BF.db.shared or current
+	return Perks.IsShared(id) and SBS.db.shared or current
 end
 
 local function entryFor(id)
@@ -56,7 +56,7 @@ end
 -- that isn't active, since the character's perks belong to another spec.
 local function planLookup(build)
 	local plan = Perks.BuildPlan(build)
-	local look = { plan = plan, activate = {}, deactivate = {}, skipped = {}, options = {}, off = not BF.Window.IsComparing(build) }
+	local look = { plan = plan, activate = {}, deactivate = {}, skipped = {}, options = {}, off = not SBS.Window.IsComparing(build) }
 	if look.off then plan = { activate = {}, deactivate = {}, skipped = {}, options = {}, spells = {} } end
 	for _, id in ipairs(plan.activate) do look.activate[id] = true end
 	for _, id in ipairs(plan.deactivate) do look.deactivate[id] = true end
@@ -91,13 +91,13 @@ local function toggle(id)
 	if perk and not Perks.Locked(perk) then
 		state.selected = id
 		PlaySound(Perks.Toggle(owner(id), id) and "igMainMenuOptionCheckBoxOn" or "igMainMenuOptionCheckBoxOff")
-		BF:Changed()
+		SBS:Changed()
 	end
 end
 
 local function selectPerk(id)
 	state.selected = id
-	BF.Window.Render()
+	SBS.Window.Render()
 end
 
 local function rowTooltip(id)
@@ -124,7 +124,7 @@ local function visiblePerks(build, mask, look)
 		-- Misc perks are listed only under Shared Perks, and Shared Perks lists nothing else
 		local inMode = Perks.IsShared(id) == (build.sharedOnly == true)
 		if relevant and matches and inMode then
-			local cat = CATEGORY_NAMES[perk.cat] and perk.cat or BF.CLASS_KEYS[perk.cat] and perk.cat or 0
+			local cat = CATEGORY_NAMES[perk.cat] and perk.cat or SBS.CLASS_KEYS[perk.cat] and perk.cat or 0
 			byCat[cat] = byCat[cat] or {}
 			table.insert(byCat[cat], perk)
 		end
@@ -143,7 +143,7 @@ end
 
 
 local function categoryStatus(build, cat, mask)
-	local count = cat == Perks.SHARED_CAT and #BF.db.shared.perks or Perks.CategoryCount(build, cat, mask)
+	local count = cat == Perks.SHARED_CAT and #SBS.db.shared.perks or Perks.CategoryCount(build, cat, mask)
 	local index = Perks.LimitIndex(cat)
 	local text
 	if index == 6 or index == 0 then
@@ -269,7 +269,7 @@ local function newAbility(parent)
 		if entry then
 			entry.spell = mouse == "RightButton" and 0 or self.spell
 			PlaySound("igMainMenuOptionCheckBoxOn")
-			BF:Changed()
+			SBS:Changed()
 		else
 			UIErrorsFrame:AddMessage("Add the perk first.", 1, 0.3, 0.3)
 		end
@@ -300,7 +300,7 @@ local function newOption(parent, width)
 		local entry = entryFor(self.perk)
 		if entry and Perks.SetOption(entry, self.options, self.index, not self.check.on) then
 			PlaySound("igMainMenuOptionCheckBoxOn")
-			BF:Changed()
+			SBS:Changed()
 		elseif not entry then
 			UIErrorsFrame:AddMessage("Add the perk first.", 1, 0.3, 0.3)
 		end
@@ -497,7 +497,7 @@ end
 function Editor.Render(build)
 	if build ~= current then state.selected = nil end
 	current = build
-	Perks = BF.Perks
+	Perks = SBS.Perks
 	local text
 	renderToolbar()
 	if PerkMgrPerks then
@@ -522,14 +522,14 @@ local function createDetail(width, height)
 	local d = CreateFrame("Frame", nil, panel)
 	d:SetSize(width, height)
 	S.Panel(d, C.well, C.border)
-	d.scroll = CreateFrame("ScrollFrame", "BuildForgePerkDetail", d, "UIPanelScrollFrameTemplate")
+	d.scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuitePerkDetail", d, "UIPanelScrollFrameTemplate")
 	d.scroll:SetPoint("TOPLEFT", 1, -1)
 	d.scroll:SetPoint("BOTTOMRIGHT", -12, 1)
 	local child = CreateFrame("Frame", nil, d.scroll)
 	child:SetSize(width - 14, height)
 	d.scroll:SetScrollChild(child)
 	d.child, d.innerW = child, width - 14 - 2 * PAD
-	d.updateBar = BF.List.AutoHideBar(d.scroll, "BuildForgePerkDetail")
+	d.updateBar = SBS.List.AutoHideBar(d.scroll, "SynastriaBuildSuitePerkDetail")
 
 	d.none = S.Text(d, "small", C.muted)
 	d.none:SetPoint("CENTER")
@@ -566,29 +566,29 @@ local function createDetail(width, height)
 end
 
 function Editor.Create(parent, width, height)
-	Perks = BF.Perks
+	Perks = SBS.Perks
 	panel = CreateFrame("Frame", nil, parent)
 	panel:SetSize(width, height)
 
 	-- a segmented button: the two halves share their middle border
 	panel.showBuild = S.Button(panel, "In Build", "selected", 80, function()
 		state.filter = "build"
-		BF.Window.Render()
+		SBS.Window.Render()
 	end, "Show the perks in this build, and any it would turn off.")
 	panel.showBuild:SetPoint("TOPLEFT", 0, 0)
 	panel.showAll = S.Button(panel, "All Perks", "secondary", 80, function()
 		state.filter = "all"
-		BF.Window.Render()
+		SBS.Window.Render()
 	end, "Show every perk the build's classes can use.")
 	panel.showAll:SetPoint("LEFT", panel.showBuild, "RIGHT", -1, 0)
-	panel.search = S.Input(panel, "BuildForgePerkSearch", LIST_RIGHT - SEGMENTED_W - GAP, "Search Perks", 40)
+	panel.search = S.Input(panel, "SynastriaBuildSuitePerkSearch", LIST_RIGHT - SEGMENTED_W - GAP, "Search Perks", 40)
 	panel.search:SetPoint("LEFT", panel.showAll, "RIGHT", GAP, 0)
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()
-		BF.Window.Render()
+		SBS.Window.Render()
 	end)
 
-	panel.list = BF.List.New(panel, "BuildForgePerkList", LIST_W - 14, height - TOOLBAR_H)
+	panel.list = SBS.List.New(panel, "SynastriaBuildSuitePerkList", LIST_W - 14, height - TOOLBAR_H)
 	panel.list.scroll:SetPoint("TOPLEFT", 0, -TOOLBAR_H)
 
 	panel.detail = createDetail(width - LIST_RIGHT - PAD, height)

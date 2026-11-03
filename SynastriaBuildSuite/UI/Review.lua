@@ -1,38 +1,38 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- "Review Changes" sheet over the build pane: lists everything Apply would change, by section, before anything
 -- is sent. Replaces the chat report and popup for applies started from the window.
 local Review = {}
-BF.Review = Review
+SBS.Review = Review
 
-local S = BF.Style
+local S = SBS.Style
 local C = S.colors
 
 local sheet, current
 
 -- Applying links the build to the active spec; worth saying when that changes the link (and there's a choice of specs).
 local function willRelink(plan)
-	return BF:SpecCount() > 1 and not plan.build.sharedOnly and BF:Links()[plan.group] ~= plan.build.name
+	return SBS:SpecCount() > 1 and not plan.build.sharedOnly and SBS:Links()[plan.group] ~= plan.build.name
 end
 
 local function lines(plan)
 	local out = {}
 	local function add(text, status, header, tooltip) out[#out + 1] = { text = text, status = status, header = header, indent = header and 0 or 12, tooltip = tooltip } end
 
-	local target = BF.Window.SpecToSwitch(plan.build)
+	local target = SBS.Window.SpecToSwitch(plan.build)
 	local relink = willRelink(plan)
-	local linked = BF:Links()[plan.group]
+	local linked = SBS:Links()[plan.group]
 	if target or relink then add("Spec", nil, true) end
 	if relink then
-		add(("Applying links this build to %s"):format(BF:SpecName(plan.group)),
-			linked and BF.db.builds[linked] and S.Hex(C.warn, "Replaces " .. linked) or S.Hex(C.good, "New Link"), false, function(tt)
+		add(("Applying links this build to %s"):format(SBS:SpecName(plan.group)),
+			linked and SBS.db.builds[linked] and S.Hex(C.warn, "Replaces " .. linked) or S.Hex(C.good, "New Link"), false, function(tt)
 				tt:AddLine("Spec Link", 1, 1, 1)
 				tt:AddLine("The build joins Your Specs for this spec. A build linked to it before loses that link.", 0.8, 0.8, 0.8, true)
 			end)
 	end
 	if target then
-		add(S.Hex(C.warn, ("This build is linked to %s; you're in %s."):format(BF:SpecName(target), BF:SpecName(plan.group))),
+		add(S.Hex(C.warn, ("This build is linked to %s; you're in %s."):format(SBS:SpecName(target), SBS:SpecName(plan.group))),
 			nil, false, function(tt)
 				tt:AddLine("Wrong spec?", 1, 1, 1)
 				tt:AddLine("Perks, talents and glyphs belong to the active spec. Switch Spec first, or apply here to link this spec too.", 0.8, 0.8, 0.8, true)
@@ -42,30 +42,30 @@ local function lines(plan)
 	local p = plan.perks
 	if #p.activate + #p.deactivate + #p.options + #p.spells + #p.skipped > 0 then
 		add("Perks", nil, true)
-		if p.needsInnkeeper and not BF.Perks.Writable() then
+		if p.needsInnkeeper and not SBS.Perks.Writable() then
 			add(S.Hex(C.warn, "Turning perks on or off needs the Perk Manager open at an innkeeper."), nil, false, function(tt)
 				tt:AddLine("Away from an Innkeeper", 1, 1, 1)
 				tt:AddLine("Those changes are skipped. Options and chosen abilities still apply; apply again at an innkeeper for the rest.", 0.8, 0.8, 0.8, true)
 			end)
 		end
-		for _, id in ipairs(p.activate) do add(BF.Perks.Name(id), S.Hex(C.good, "Turn On")) end
-		for _, id in ipairs(p.deactivate) do add(BF.Perks.Name(id), S.Hex(C.bad, "Turn Off")) end
+		for _, id in ipairs(p.activate) do add(SBS.Perks.Name(id), S.Hex(C.good, "Turn On")) end
+		for _, id in ipairs(p.deactivate) do add(SBS.Perks.Name(id), S.Hex(C.bad, "Turn Off")) end
 		local optionsByPerk = {}
 		for _, o in ipairs(p.options) do optionsByPerk[o.id] = (optionsByPerk[o.id] or 0) + 1 end
-		for id, n in pairs(optionsByPerk) do add(BF.Perks.Name(id), S.Hex(C.warn, n == 1 and "1 Option" or (n .. " Options"))) end
-		for _, s in ipairs(p.spells) do add(BF.Perks.Name(s.id), S.Hex(C.warn, "Ability: " .. (GetSpellInfo(s.spell) or s.spell))) end
-		for _, s in ipairs(p.skipped) do add(S.Hex(C.muted, BF.Perks.Name(s.id)), S.Hex(C.muted, "Skipped: " .. s.reason)) end
+		for id, n in pairs(optionsByPerk) do add(SBS.Perks.Name(id), S.Hex(C.warn, n == 1 and "1 Option" or (n .. " Options"))) end
+		for _, s in ipairs(p.spells) do add(SBS.Perks.Name(s.id), S.Hex(C.warn, "Ability: " .. (GetSpellInfo(s.spell) or s.spell))) end
+		for _, s in ipairs(p.skipped) do add(S.Hex(C.muted, SBS.Perks.Name(s.id)), S.Hex(C.muted, "Skipped: " .. s.reason)) end
 	end
 
 	local t = plan.talents
 	local talentLines = {}
 	for _, entry in ipairs(t.classes) do
-		local name = BF.Window.ClassText({ entry.class })
+		local name = SBS.Window.ClassText({ entry.class })
 		if #entry.conflicts > 0 then
 			talentLines[#talentLines + 1] = { name, S.Hex(C.bad, S.Count(#entry.conflicts, "talent") .. " above the build: reset first"),
 				function(tt)
 					tt:AddLine("Talents can only be added", 1, 1, 1)
-					tt:AddLine("Your spec has more points in these talents than the build. Unlearn your talents at a class trainer and BuildForge reopens this review, ready to apply. Or use Use Current Talents on the Talents tab if your spec is the one to keep.", 0.8, 0.8, 0.8, true)
+					tt:AddLine("Your spec has more points in these talents than the build. Unlearn your talents at a class trainer and the addon reopens this review, ready to apply. Or use Use Current Talents on the Talents tab if your spec is the one to keep.", 0.8, 0.8, 0.8, true)
 				end }
 			for _, c in ipairs(entry.conflicts) do
 				talentLines[#talentLines + 1] = { S.Hex(C.muted, "    " .. (c.name or "Talent")),
@@ -76,7 +76,7 @@ local function lines(plan)
 			talentLines[#talentLines + 1] = { name, S.Hex(C.good, "Spend " .. S.Count(entry.points, "Point")) .. short }
 		end
 	end
-	for _, s in ipairs(t.skipped) do talentLines[#talentLines + 1] = { BF.Window.ClassText({ s.class }), S.Hex(C.muted, "Skipped: " .. s.reason) } end
+	for _, s in ipairs(t.skipped) do talentLines[#talentLines + 1] = { SBS.Window.ClassText({ s.class }), S.Hex(C.muted, "Skipped: " .. s.reason) } end
 	if #talentLines > 0 then
 		add("Talents", nil, true)
 		for _, l in ipairs(talentLines) do add(l[1], l[2], false, l[3]) end
@@ -102,12 +102,12 @@ local function hasChanges(plan)
 	for _, entry in ipairs(plan.talents.classes) do
 		if #entry.conflicts == 0 and entry.points > 0 then talents = true end
 	end
-	local perks = #p.options + #p.spells > 0 or (p.needsInnkeeper and BF.Perks.Writable())
+	local perks = #p.options + #p.spells > 0 or (p.needsInnkeeper and SBS.Perks.Writable())
 	return perks or talents or plan.pet ~= nil or plan.spec ~= nil or willRelink(plan)
 end
 
 function Review.Render()
-	local plan = BF.Build.Plan(current)
+	local plan = SBS.Build.Plan(current)
 	for _, entry in ipairs(plan.talents.classes) do
 		if #entry.conflicts > 0 then Review.pending = current.name end
 	end
@@ -119,7 +119,7 @@ function Review.Render()
 	sheet.list:End()
 	local changes = hasChanges(plan)
 	if changes then sheet.confirm:Enable() else sheet.confirm:Disable() end
-	sheet.switch.target = BF.Window.SpecToSwitch(current)
+	sheet.switch.target = SBS.Window.SpecToSwitch(current)
 	if sheet.switch.target then sheet.switch:Show() else sheet.switch:Hide() end
 	sheet.note:SetText(changes and "Gear Isn't Changed Here: Use Equip from Bags on the Gear Tab" or "Nothing to Apply")
 end
@@ -137,13 +137,13 @@ end
 local function confirm()
 	local build = current
 	Review.pending = nil
-	local result = BF.Build.Apply(BF.Build.Plan(build))
+	local result = SBS.Build.Apply(SBS.Build.Plan(build))
 	local problems = #result.refused
-	for _, r in ipairs(result.refused) do BF:Print("|cffff6060Couldn't add %s (%s).|r", r.name, r.class) end
+	for _, r in ipairs(result.refused) do SBS:Print("|cffff6060Couldn't add %s (%s).|r", r.name, r.class) end
 	Review.Close()
-	BF:Print("Applied %s.", build.name)
-	BF:Changed()
-	BF.Window.Message(problems > 0 and S.Hex(C.warn, ("Applied, but %s Refused (See Chat)"):format(S.Count(problems, "Talent Was", "Talents Were")))
+	SBS:Print("Applied %s.", build.name)
+	SBS:Changed()
+	SBS.Window.Message(problems > 0 and S.Hex(C.warn, ("Applied, but %s Refused (See Chat)"):format(S.Count(problems, "Talent Was", "Talents Were")))
 		or S.Hex(C.good, "Applied " .. build.name))
 end
 
@@ -157,21 +157,21 @@ resetWatch:RegisterEvent("CHARACTER_POINTS_CHANGED")
 resetWatch:SetScript("OnEvent", function(_, event)
 	if event == "CONFIRM_TALENT_WIPE" then
 		Review.wiping = true
-	elseif Review.wiping and BF.Talents.Spent() == 0 then
+	elseif Review.wiping and SBS.Talents.Spent() == 0 then
 		Review.wiping = false
-		local name = Review.pending or BF:Links()[BF:ActiveGroup()]
-		local build = name and BF.db.builds[name]
+		local name = Review.pending or SBS:Links()[SBS:ActiveGroup()]
+		local build = name and SBS.db.builds[name]
 		Review.pending = nil
 		if build then
-			BF.Window.Open(build.name)
+			SBS.Window.Open(build.name)
 			Review.Open(build)
-			BF:Print("Talents reset. Review %s and click Apply Changes.", build.name)
+			SBS:Print("Talents reset. Review %s and click Apply Changes.", build.name)
 		end
 	end
 end)
 
 function Review.Create(parent, width, height)
-	sheet = CreateFrame("Frame", "BuildForgeReview", parent)
+	sheet = CreateFrame("Frame", "SynastriaBuildSuiteReview", parent)
 	sheet:SetAllPoints()
 	sheet:SetFrameLevel(parent:GetFrameLevel() + 20)
 	sheet:EnableMouse(true)
@@ -195,7 +195,7 @@ function Review.Create(parent, width, height)
 	rule:SetPoint("TOPLEFT", 0, -headerH)
 	rule:SetPoint("TOPRIGHT", 0, -headerH)
 
-	sheet.list = BF.List.New(sheet, "BuildForgeReviewScroll", width - 14, height - headerH - footerH - 2 * GAP)
+	sheet.list = SBS.List.New(sheet, "SynastriaBuildSuiteReviewScroll", width - 14, height - headerH - footerH - 2 * GAP)
 	sheet.list.scroll:SetPoint("TOPLEFT", 0, -(headerH + GAP))
 
 	local footer = S.Solid(sheet, "BORDER", C.border)
@@ -208,7 +208,7 @@ function Review.Create(parent, width, height)
 	cancel:SetPoint("RIGHT", sheet.confirm, "LEFT", -GAP, 0)
 	sheet.switch = S.Button(sheet, "Switch Spec", "secondary", 100, function(self)
 		Review.Close()
-		BF.Window.SwitchSpec(self.target)
+		SBS.Window.SwitchSpec(self.target)
 	end, "Activate the build's linked spec, then apply again.")
 	sheet.switch:SetPoint("RIGHT", cancel, "LEFT", -GAP, 0)
 	sheet.note = S.Text(sheet, "small", C.muted)

@@ -1,11 +1,11 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 local Glyphs = {}
-BF.Glyphs = Glyphs
+SBS.Glyphs = Glyphs
 
 -- Each class has its own glyphs, stored as build.glyphs[class][socket] = spell. Selecting a class in the talent
--- API (BF.Talents.Select) refreshes that class's talent info, glyphs included, so the glyph API reads that class.
+-- API (SBS.Talents.Select) refreshes that class's talent info, glyphs included, so the glyph API reads that class.
 
 local function readSockets(group)
 	local glyphs = {}
@@ -18,22 +18,22 @@ end
 
 -- Each class's socketed glyphs in spec `group` (the active spec by default).
 function Glyphs.Capture(group)
-	local shown = BF.Talents.SelectedClass()
-	group = group or BF:ActiveGroup()
+	local shown = SBS.Talents.SelectedClass()
+	group = group or SBS:ActiveGroup()
 	local result = {}
-	for _, class in ipairs(BF:PlayerClasses()) do
-		local sockets = BF.Talents.Select(class) and readSockets(group)
+	for _, class in ipairs(SBS:PlayerClasses()) do
+		local sockets = SBS.Talents.Select(class) and readSockets(group)
 		if sockets and next(sockets) then result[class] = sockets end
 	end
-	BF.Talents.Select(shown)
+	SBS.Talents.Select(shown)
 	return result
 end
 
 -- Glyphs are used up when socketed, so this only lists what differs, for the classes the character has.
 function Glyphs.Plan(wanted)
-	local missing, group, shown = {}, BF:ActiveGroup(), BF.Talents.SelectedClass()
+	local missing, group, shown = {}, SBS:ActiveGroup(), SBS.Talents.SelectedClass()
 	for class, sockets in pairs(wanted or {}) do
-		if BF:HasClass(class) and BF.Talents.Select(class) then
+		if SBS:HasClass(class) and SBS.Talents.Select(class) then
 			for socket, spell in pairs(sockets) do
 				local _, _, have = GetGlyphSocketInfo(socket, group)
 				if have ~= spell then
@@ -43,7 +43,7 @@ function Glyphs.Plan(wanted)
 			end
 		end
 	end
-	BF.Talents.Select(shown)
+	SBS.Talents.Select(shown)
 	table.sort(missing, function(a, b)
 		if a.class ~= b.class then return a.class < b.class end
 		return a.socket < b.socket
@@ -62,7 +62,7 @@ end
 function Glyphs.OpenFrame()
 	TalentFrame_LoadUI()
 	if PlayerTalentFrame_OpenGlyphFrame then
-		PlayerTalentFrame_OpenGlyphFrame(BF:ActiveGroup())
+		PlayerTalentFrame_OpenGlyphFrame(SBS:ActiveGroup())
 	else
 		ToggleGlyphFrame()
 	end
@@ -143,8 +143,8 @@ end
 -- your bags. Socketed is only known for the class shown in the talent window (the second return), since reading
 -- another class would mean switching to it.
 function Glyphs.Status(build, class)
-	local rows, group = {}, BF:ActiveGroup()
-	local comparable = class == BF.Talents.SelectedClass()
+	local rows, group = {}, SBS:ActiveGroup()
+	local comparable = class == SBS.Talents.SelectedClass()
 	local sockets = Glyphs.For(build, class)
 	for socket in ipairs(Glyphs.SOCKETS) do
 		local spell = sockets[socket]
@@ -162,7 +162,7 @@ end
 -- Glyphs of the class shown in the talent window that aren't socketed; never switches classes.
 function Glyphs.ShownMissing(build)
 	local n = 0
-	for _, row in ipairs(Glyphs.Status(build, BF.Talents.SelectedClass())) do
+	for _, row in ipairs(Glyphs.Status(build, SBS.Talents.SelectedClass())) do
 		if row.spell and not row.socketed then n = n + 1 end
 	end
 	return n

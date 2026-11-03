@@ -1,10 +1,10 @@
 ## Interface: 30300
-## Title: BuildForge
-## Notes: Save, share and apply Synastria builds: Perks with their options, Talents for every class, Glyphs, Recommended Gear and pet aspects. /bforge
+## Title: Synastria Build Suite
+## Notes: Save, share and apply Synastria builds: Perks with their options, Talents for every class, Glyphs, Recommended Gear and pet aspects. /sbs
 ## Author: Expulsion
 ## Version: 1.0.0
-## SavedVariables: BuildForgeDB
-## SavedVariablesPerCharacter: BuildForgeCharDB
+## SavedVariables: SynastriaBuildSuiteDB
+## SavedVariablesPerCharacter: SynastriaBuildSuiteCharDB
 
 Data\Talents.lua
 Data\Abilities.lua

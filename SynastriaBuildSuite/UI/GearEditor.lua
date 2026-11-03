@@ -1,12 +1,12 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- The Gear tab: a paper doll of the build's Best item per slot, bordered by whether you're wearing it, and a
 -- detail pane listing the selected slot's Best and Alts. Items dropped anywhere on the tab go to their slot.
 local Editor = {}
-BF.GearEditor = Editor
+SBS.GearEditor = Editor
 
-local S = BF.Style
+local S = SBS.Style
 local C = S.colors
 local Gear
 
@@ -66,7 +66,7 @@ local function dropItem(id, slot)
 	if ok then
 		state.slot, state.rank = ok, #current.gear[ok]
 		PlaySound("igMainMenuOptionCheckBoxOn")
-		BF:Changed()
+		SBS:Changed()
 	else
 		UIErrorsFrame:AddMessage(reason, 1, 0.3, 0.3)
 	end
@@ -89,7 +89,7 @@ local function slotTooltip(button)
 		if #row.items > 1 then GameTooltip:AddLine(S.Count(#row.items - 1, "Alt") .. " for this slot.", 0.6, 0.8, 1) end
 		GameTooltip:AddLine("Click to see this slot's items.", 0.6, 0.6, 0.66)
 	else
-		GameTooltip:AddLine(BF.SLOT_NAMES[button.slot], 1, 1, 1)
+		GameTooltip:AddLine(SBS.SLOT_NAMES[button.slot], 1, 1, 1)
 		GameTooltip:AddLine("Empty. Drop an item here, or anywhere on this tab.", 0.6, 0.6, 0.66, true)
 	end
 	GameTooltip:Show()
@@ -121,7 +121,7 @@ local function newSlot(parent, slot)
 	b:SetScript("OnClick", function(self)
 		if not acceptDrop(self.slot) then
 			state.slot, state.rank = self.slot, 1
-			BF.Window.Render()
+			SBS.Window.Render()
 		end
 	end)
 	b:SetScript("OnReceiveDrag", function(self) acceptDrop(self.slot) end)
@@ -166,7 +166,7 @@ local function renderDoll(rowsBySlot)
 		end
 		local label = panel.labels[slot]
 		if label then
-			label.name:SetText(row and itemName(row.items[1].id) or S.Hex(C.muted, BF.SLOT_NAMES[slot]))
+			label.name:SetText(row and itemName(row.items[1].id) or S.Hex(C.muted, SBS.SLOT_NAMES[slot]))
 			label.status:SetText(row and where(row.items[1]) or "Empty")
 		end
 	end
@@ -180,7 +180,7 @@ local function renderDetail(rowsBySlot)
 	local row = rowsBySlot[slot]
 	local items = row and row.items or {}
 	if state.rank > #items then state.rank = math.max(1, #items) end
-	d.title:SetText(BF.SLOT_NAMES[slot])
+	d.title:SetText(SBS.SLOT_NAMES[slot])
 	d.sub:SetText(#items == 0 and "No item chosen for this slot."
 		or #items == 1 and "1 item." or ("%d items: Best first, then Alts in order."):format(#items))
 	local list = d.list
@@ -195,17 +195,17 @@ local function renderDetail(rowsBySlot)
 			onClick = function(_, mouse)
 				if mouse == "RightButton" then
 					Gear.Remove(current, slot, rank)
-					BF:Changed()
+					SBS:Changed()
 				elseif IsModifiedClick("CHATLINK") then
 					local link = select(2, GetItemInfo(item.id))
 					if link then ChatEdit_InsertLink(link) end
 				elseif IsControlKeyDown() then
 					Gear.MakeBest(current, slot, rank)
 					state.rank = 1
-					BF:Changed()
+					SBS:Changed()
 				else
 					state.rank = rank
-					BF.Window.Render()
+					SBS.Window.Render()
 				end
 			end,
 			tooltip = function(tt)
@@ -237,7 +237,7 @@ end
 
 function Editor.Render(build)
 	current = build
-	Gear = BF.Gear
+	Gear = SBS.Gear
 	local rows = Gear.Status(build.gear)
 	local rowsBySlot = {}
 	for _, row in ipairs(rows) do rowsBySlot[row.slot] = row end
@@ -260,7 +260,7 @@ local function createDetail(width, height)
 	d.sub = S.Text(d, "small", C.muted)
 	d.sub:SetPoint("TOPLEFT", d.title, "BOTTOMLEFT", 0, -4)
 	d.sub:SetWidth(width - 2 * PAD)
-	d.list = BF.List.New(d, "BuildForgeGearDetail", width - 22, height - 52 - 92)
+	d.list = SBS.List.New(d, "SynastriaBuildSuiteGearDetail", width - 22, height - 52 - 92)
 	d.list.scroll:SetPoint("TOPLEFT", 1, -52)
 	d.hint = S.Text(d, "small", C.muted)
 	d.hint:SetPoint("BOTTOMLEFT", PAD, PAD + CONTROL_H + GAP)
@@ -269,19 +269,19 @@ local function createDetail(width, height)
 	d.best = S.Button(d, "Make Best", "secondary", 90, function()
 		Gear.MakeBest(current, state.slot, state.rank)
 		state.rank = 1
-		BF:Changed()
+		SBS:Changed()
 	end, "Move the selected item to the top of this slot.")
 	d.best:SetPoint("BOTTOMLEFT", PAD, PAD)
 	d.remove = S.Button(d, "Remove", "danger", 80, function()
 		Gear.Remove(current, state.slot, state.rank)
-		BF:Changed()
+		SBS:Changed()
 	end, "Take the selected item out of this slot.")
 	d.remove:SetPoint("LEFT", d.best, "RIGHT", GAP, 0)
 	return d
 end
 
 function Editor.Create(parent, width, height)
-	Gear = BF.Gear
+	Gear = SBS.Gear
 	panel = CreateFrame("Frame", nil, parent)
 	panel:SetSize(width, height)
 	panel:EnableMouse(true)

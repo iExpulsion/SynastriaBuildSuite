@@ -1,11 +1,11 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- Minimap button: left-click opens the window, right-click opens the build linked to the active spec, drag moves
--- it around the minimap. Position and visibility are saved in BuildForgeDB.minimap. When a LibDataBroker display
+-- it around the minimap. Position and visibility are saved in SynastriaBuildSuiteDB.minimap. When a LibDataBroker display
 -- is installed, a launcher is registered there too.
 local MinimapButton = {}
-BF.MinimapButton = MinimapButton
+SBS.MinimapButton = MinimapButton
 
 local ICON = "Interface\\Icons\\INV_Misc_Book_11"
 local DEFAULT_ANGLE = 200
@@ -30,7 +30,7 @@ local SHAPES = {
 }
 
 local function place()
-	local angle = math.rad(BF.db.minimap.angle or DEFAULT_ANGLE)
+	local angle = math.rad(SBS.db.minimap.angle or DEFAULT_ANGLE)
 	local x, y = math.cos(angle), math.sin(angle)
 	local quadrant = 1 + (x < 0 and 1 or 0) + (y > 0 and 2 or 0)
 	local shape = GetMinimapShape and GetMinimapShape() or "ROUND"
@@ -47,42 +47,42 @@ local function place()
 end
 
 local function linkedBuild()
-	local name = BF:Links()[BF:ActiveGroup()]
-	return name and BF.db.builds[name] and name
+	local name = SBS:Links()[SBS:ActiveGroup()]
+	return name and SBS.db.builds[name] and name
 end
 
 local function onClick(_, mouse)
 	if mouse == "RightButton" then
 		local name = linkedBuild()
 		if name then
-			BF.Window.Open(name)
+			SBS.Window.Open(name)
 		else
-			BF:Print("No build is linked to %s yet. Apply one, or pick it in a build's Linked to menu.", BF:SpecName(BF:ActiveGroup()))
+			SBS:Print("No build is linked to %s yet. Apply one, or pick it in a build's Linked to menu.", SBS:SpecName(SBS:ActiveGroup()))
 		end
 	else
-		BF.Window.Toggle()
+		SBS.Window.Toggle()
 	end
 end
 
 local function fillTooltip(tt)
-	tt:AddLine("BuildForge", 1, 0.77, 0)
+	tt:AddLine("Synastria Build Suite", 1, 0.77, 0)
 	local name = linkedBuild()
-	tt:AddLine(BF:SpecName(BF:ActiveGroup()) .. ": " .. (name or "no linked build"), 1, 1, 1)
+	tt:AddLine(SBS:SpecName(SBS:ActiveGroup()) .. ": " .. (name or "no linked build"), 1, 1, 1)
 	tt:AddLine("Left-click to open or close the build window.", 0.8, 0.8, 0.8)
 	tt:AddLine("Right-click to open the build linked to this spec.", 0.8, 0.8, 0.8)
-	tt:AddLine("Drag to move. /bforge minimap hides it.", 0.6, 0.6, 0.66)
+	tt:AddLine("Drag to move. /sbs minimap hides it.", 0.6, 0.6, 0.66)
 end
 
 local function onDragUpdate()
 	local mx, my = Minimap:GetCenter()
 	local px, py = GetCursorPosition()
 	local scale = Minimap:GetEffectiveScale()
-	BF.db.minimap.angle = math.deg(math.atan2(py / scale - my, px / scale - mx)) % 360
+	SBS.db.minimap.angle = math.deg(math.atan2(py / scale - my, px / scale - mx)) % 360
 	place()
 end
 
 local function create()
-	button = CreateFrame("Button", "BuildForgeMinimapButton", Minimap)
+	button = CreateFrame("Button", "SynastriaBuildSuiteMinimapButton", Minimap)
 	button:SetSize(31, 31)
 	button:SetFrameStrata("MEDIUM")
 	button:SetFrameLevel(8)
@@ -121,10 +121,10 @@ end
 local function registerBroker()
 	local ldb = LibStub and LibStub("LibDataBroker-1.1", true)
 	if ldb then
-		ldb:NewDataObject("BuildForge", {
+		ldb:NewDataObject("SynastriaBuildSuite", {
 			type = "launcher",
 			icon = ICON,
-			label = "BuildForge",
+			label = "Synastria Build Suite",
 			OnClick = onClick,
 			OnTooltipShow = fillTooltip,
 		})
@@ -132,13 +132,13 @@ local function registerBroker()
 end
 
 function MinimapButton.Refresh()
-	if BF.db.minimap.hide then button:Hide() else button:Show() end
+	if SBS.db.minimap.hide then button:Hide() else button:Show() end
 end
 
 function MinimapButton.Toggle()
-	BF.db.minimap.hide = not BF.db.minimap.hide
+	SBS.db.minimap.hide = not SBS.db.minimap.hide
 	MinimapButton.Refresh()
-	BF:Print(BF.db.minimap.hide and "Minimap button hidden. /bforge minimap shows it again." or "Minimap button shown.")
+	SBS:Print(SBS.db.minimap.hide and "Minimap button hidden. /sbs minimap shows it again." or "Minimap button shown.")
 end
 
 function MinimapButton.Frame()
@@ -148,7 +148,7 @@ end
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("PLAYER_LOGIN")
 loader:SetScript("OnEvent", function(self)
-	BF.db.minimap = BF.db.minimap or {}
+	SBS.db.minimap = SBS.db.minimap or {}
 	create()
 	registerBroker()
 	MinimapButton.Refresh()

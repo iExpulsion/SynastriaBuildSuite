@@ -1,8 +1,8 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 local Perks = {}
-BF.Perks = Perks
+SBS.Perks = Perks
 
 local FLAG_LOCKED = 0x80
 local MAX_OPTION = 32
@@ -63,7 +63,7 @@ end
 function Perks.ClassMask(classes)
 	local mask = 0
 	for _, key in ipairs(classes or {}) do
-		local id = BF.CLASS_IDS[key]
+		local id = SBS.CLASS_IDS[key]
 		if id then mask = bit.bor(mask, bit.lshift(1, id - 1)) end
 	end
 	return mask
@@ -207,7 +207,7 @@ function Perks.Name(id)
 end
 
 -- Shared perks ----------------------------------------------------------------------------------------------
--- Misc perks (category 19) live in one account-wide list, BuildForgeDB.shared, that every build applies.
+-- Misc perks (category 19) live in one account-wide list, SynastriaBuildSuiteDB.shared, that every build applies.
 
 Perks.SHARED_CAT = 19
 
@@ -227,10 +227,10 @@ end
 
 -- Adds perks to the shared list, keeping entries it already has. Returns how many were new.
 function Perks.AddShared(list)
-	local shared = BF.db.shared.perks
+	local shared = SBS.db.shared.perks
 	local added = 0
 	for _, w in ipairs(list) do
-		if not Perks.Entry(BF.db.shared, w.id) then
+		if not Perks.Entry(SBS.db.shared, w.id) then
 			shared[#shared + 1] = { id = w.id, opt = w.opt or 0, spell = w.spell or 0 }
 			added = added + 1
 		end
@@ -249,7 +249,7 @@ end
 function Perks.Wanted(build)
 	local list = {}
 	for _, w in ipairs(build.perks or {}) do list[#list + 1] = w end
-	for _, w in ipairs(BF.db.shared.perks) do list[#list + 1] = w end
+	for _, w in ipairs(SBS.db.shared.perks) do list[#list + 1] = w end
 	return list
 end
 

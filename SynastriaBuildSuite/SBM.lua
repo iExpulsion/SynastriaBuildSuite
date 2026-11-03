@@ -1,12 +1,12 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- Reads SynastriaBuildManager (SBM) strings, versions SBM2 and SBM3: one item per line, "SBM3", then the active
 -- perk IDs, a "Class:tab:ranks,tab:ranks" line per class, "Sage:" with the chosen spell for perks 1561-1568,
 -- "Opts:" with SBM's option bits and "BM:" with the pet aspect mask. Misc perks are left out, and so are the
 -- option bits, which are all Misc perk options: Shared Perks stay under the user's control.
 local SBM = {}
-BF.SBM = SBM
+SBS.SBM = SBM
 
 local SAGE_FIRST = 1561
 
@@ -28,7 +28,7 @@ end
 -- A class key for SBM's class names, which are class tokens ("DEATHKNIGHT") or, for dual-class characters, the
 -- talent window's localized names ("Death Knight").
 local function classKey(name)
-	local key = BF.CLASS_IDS[name:upper()] and name:upper()
+	local key = SBS.CLASS_IDS[name:upper()] and name:upper()
 	for token, localized in pairs(LOCALIZED_CLASS_NAMES_MALE or {}) do
 		if localized == name then key = token end
 	end
@@ -58,7 +58,7 @@ local function parse(all)
 		if i == 2 and line:match("^[%d,]+$") then
 			for id in line:gmatch("%d+") do
 				local perk = { id = tonumber(id), opt = 0, spell = 0 }
-				if perk.id > 0 and not BF.Perks.IsShared(perk.id) then build.perks[#build.perks + 1] = perk end
+				if perk.id > 0 and not SBS.Perks.IsShared(perk.id) then build.perks[#build.perks + 1] = perk end
 			end
 		elseif lower == "sage" then
 			local slot = 0

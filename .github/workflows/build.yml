@@ -27,18 +27,18 @@ jobs:
           sudo apt-get install -y -qq lua5.1
 
       - name: Check Lua syntax
-        run: find BuildForge -name '*.lua' -print0 | xargs -0 -n1 luac5.1 -p
+        run: find SynastriaBuildSuite -name '*.lua' -print0 | xargs -0 -n1 luac5.1 -p
 
       - name: Build zip
         id: pkg
         run: |
           python tools/package.py
-          version=$(sed -n 's/^## Version: *//p' BuildForge/BuildForge.toc | tr -d '\r')
+          version=$(sed -n 's/^## Version: *//p' SynastriaBuildSuite/SynastriaBuildSuite.toc | tr -d '\r')
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: BuildForge-${{ steps.pkg.outputs.version }}
+          name: SynastriaBuildSuite-${{ steps.pkg.outputs.version }}
           path: dist/*.zip
 
       - name: Publish a release if the version is new
@@ -52,4 +52,4 @@ jobs:
             echo "$tag is already released; raise ## Version in the .toc to publish a new one."
             exit 0
           fi
-          gh release create "$tag" dist/*.zip --target "$GITHUB_SHA" --title "BuildForge $VERSION" --generate-notes
+          gh release create "$tag" dist/*.zip --target "$GITHUB_SHA" --title "Synastria Build Suite $VERSION" --generate-notes

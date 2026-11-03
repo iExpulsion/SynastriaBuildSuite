@@ -1,8 +1,8 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 local Codec = {}
-BF.Codec = Codec
+SBS.Codec = Codec
 
 local FORMAT = 1
 local DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -136,7 +136,7 @@ function Codec.Encode(build)
 	f[#f + 1] = "n=" .. esc(build.name)
 	if build.classes and #build.classes > 0 then
 		local ids = {}
-		for i, key in ipairs(build.classes) do ids[i] = b36(BF.CLASS_IDS[key]) end
+		for i, key in ipairs(build.classes) do ids[i] = b36(SBS.CLASS_IDS[key]) end
 		f[#f + 1] = "c=" .. table.concat(ids)
 	end
 	-- an empty s= means "same as the build name"
@@ -145,7 +145,7 @@ function Codec.Encode(build)
 	end
 
 	-- Misc perks are the player's own business, never shared
-	local perks = (BF.Perks.Split(build.perks))
+	local perks = (SBS.Perks.Split(build.perks))
 	if #perks > 0 then
 		table.sort(perks, function(a, b) return a.id < b.id end)
 		local parts, prev = {}, 0
@@ -167,7 +167,7 @@ function Codec.Encode(build)
 		for _, class in ipairs(sortedKeys(build.talents)) do
 			local trees = {}
 			for i, ranks in ipairs(build.talents[class]) do trees[i] = encodeTree(ranks) end
-			parts[#parts + 1] = b36(BF.CLASS_IDS[class]) .. ":" .. table.concat(trees, "-")
+			parts[#parts + 1] = b36(SBS.CLASS_IDS[class]) .. ":" .. table.concat(trees, "-")
 		end
 		if #parts > 0 then f[#f + 1] = "t=" .. table.concat(parts, ",") end
 	end
@@ -176,7 +176,7 @@ function Codec.Encode(build)
 		local parts = {}
 		for _, class in ipairs(sortedKeys(build.glyphs)) do
 			local sockets = encodeSlots(build.glyphs[class], GLYPH_SOCKETS, b36)
-			if sockets ~= "" then parts[#parts + 1] = b36(BF.CLASS_IDS[class]) .. ":" .. sockets end
+			if sockets ~= "" then parts[#parts + 1] = b36(SBS.CLASS_IDS[class]) .. ":" .. sockets end
 		end
 		if #parts > 0 then f[#f + 1] = "gl=" .. table.concat(parts, ",") end
 	end
@@ -192,7 +192,7 @@ function Codec.Encode(build)
 
 	if build.notes and build.notes ~= "" then f[#f + 1] = "x=" .. esc(build.notes) end
 
-	return ("!BF%d!%s!"):format(FORMAT, table.concat(f, ";"))
+	return ("!SBS%d!%s!"):format(FORMAT, table.concat(f, ";"))
 end
 
 local readers = {}
@@ -205,7 +205,7 @@ readers.h = function(b, v) b.pet = num(v) end
 readers.c = function(b, v)
 	b.classes = {}
 	for i = 1, #v do
-		local key = BF.CLASS_KEYS[num(v:sub(i, i))]
+		local key = SBS.CLASS_KEYS[num(v:sub(i, i))]
 		if key then b.classes[#b.classes + 1] = key end
 	end
 end
@@ -227,7 +227,7 @@ readers.t = function(b, v)
 	b.talents = {}
 	for _, entry in ipairs(split(v, ",")) do
 		local id, trees = entry:match("^(%w):(.*)$")
-		local class = id and BF.CLASS_KEYS[num(id)]
+		local class = id and SBS.CLASS_KEYS[num(id)]
 		if class then
 			local t = {}
 			for i, tree in ipairs(split(trees, "-")) do t[i] = decodeTree(tree) end
@@ -240,7 +240,7 @@ readers.gl = function(b, v)
 	b.glyphs = {}
 	for _, entry in ipairs(split(v, ",")) do
 		local id, sockets = entry:match("^(%w):(.*)$")
-		local class = id and BF.CLASS_KEYS[num(id)]
+		local class = id and SBS.CLASS_KEYS[num(id)]
 		if class then
 			local g = {}
 			for socket, spell in ipairs(split(sockets, ".")) do
@@ -260,20 +260,20 @@ readers.g = function(b, v)
 	end
 end
 
--- Returns the build table, or nil and an error message. SynastriaBuildManager strings go to BF.SBM, and
--- SynastriaPerkManager perk lists to BF.SPM.
+-- Returns the build table, or nil and an error message. SynastriaBuildManager strings go to SBS.SBM, and
+-- SynastriaPerkManager perk lists to SBS.SPM.
 function Codec.Decode(text)
 	local raw = text
 	text = (text or ""):gsub("%s", "")
-	local fmt, body = text:match("^!BF(%d+)!(.*)!$")
+	local fmt, body = text:match("^!SBS(%d+)!(.*)!$")
 	local result, err
-	if BF.SBM.Version(raw) then
-		result, err = BF.SBM.Decode(raw)
-	elseif BF.SPM.Is(raw) then
-		result, err = BF.SPM.Decode(raw)
+	if SBS.SBM.Version(raw) then
+		result, err = SBS.SBM.Decode(raw)
+	elseif SBS.SPM.Is(raw) then
+		result, err = SBS.SPM.Decode(raw)
 	elseif fmt then
 		if tonumber(fmt) > FORMAT then
-			err = "this build was exported by a newer BuildForge; update to import it"
+			err = "this build was exported by a newer Synastria Build Suite; update to import it"
 		else
 			result = {}
 			for _, field in ipairs(split(body, ";")) do
@@ -283,7 +283,7 @@ function Codec.Decode(text)
 			if result.spec == true then result.spec = result.name end
 		end
 	else
-		err = "not a BuildForge, SynastriaBuildManager or SynastriaPerkManager string"
+		err = "not a Synastria Build Suite, SynastriaBuildManager or SynastriaPerkManager string"
 	end
 	return result, err
 end

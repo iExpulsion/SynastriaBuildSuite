@@ -1,10 +1,10 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- Talent calculator rules over NS.TalentData, the same as the 3.3.5 talent frame: 5 points per tier, ranks
 -- capped, prerequisites at their required rank, and a point can't be removed if something else depends on it.
 local Calc = {}
-BF.TalentCalc = Calc
+SBS.TalentCalc = Calc
 
 Calc.MAX_POINTS = 71
 Calc.POINTS_PER_TIER = 5
@@ -15,7 +15,7 @@ end
 
 -- Each copy of a class brings its own 71 points to that class's trees, so a Warrior/Warrior build has 142.
 function Calc.MaxPoints(build, class)
-	local classes = build.classes and #build.classes > 0 and build.classes or BF:PlayerClasses()
+	local classes = build.classes and #build.classes > 0 and build.classes or SBS:PlayerClasses()
 	local copies = 0
 	for _, key in ipairs(classes) do
 		if key == class then copies = copies + 1 end
@@ -124,7 +124,7 @@ end
 
 -- Compares the data file with the live talent API for the class shown in the talent window. Returns mismatches.
 function Calc.CheckLive()
-	local class = BF.Talents.SelectedClass()
+	local class = SBS.Talents.SelectedClass()
 	local trees = Calc.Trees(class)
 	local problems = {}
 	if not trees then

@@ -1,27 +1,27 @@
 local _, NS = ...
-local BF = NS.BF
+local SBS = NS.SBS
 
 -- The innkeeper gossip line, and the Perk Manager watch that keeps the window's innkeeper status current.
 local Launchers = {}
-BF.Launchers = Launchers
+SBS.Launchers = Launchers
 
 local CHECK_EVERY, GIVE_UP_AFTER = 1, 600
 local watching = false
 
 -- The server sends the Perk Manager's Lua after login, so this checks until it exists. The window redraws when it
--- opens or closes, since the server opens it after BuildForge when both come from the gossip line.
+-- opens or closes, since the server opens it after Synastria Build Suite when both come from the gossip line.
 function Launchers.Check()
 	local perkMgr = PerkMgrFrame
 	if perkMgr and not watching then
-		perkMgr:HookScript("OnShow", function() BF.Window.Render() end)
-		perkMgr:HookScript("OnHide", function() BF.Window.Render() end)
+		perkMgr:HookScript("OnShow", function() SBS.Window.Render() end)
+		perkMgr:HookScript("OnHide", function() SBS.Window.Render() end)
 		watching = true
 	end
 	return watching
 end
 
--- An "Open BuildForge" line under an innkeeper's "Manage perks" gossip option: it opens the Perk Manager, so
--- perk changes can apply, and BuildForge with it. The line is client-side and drawn after Blizzard's buttons.
+-- An "Open Synastria Build Suite" line under an innkeeper's "Manage perks" gossip option: it opens the Perk Manager,
+-- so perk changes can apply, and Synastria Build Suite with it. The line is client-side and drawn after Blizzard's buttons.
 local MANAGE_PERKS = "manage perks"
 local gossip
 
@@ -32,12 +32,12 @@ local function managePerksOption(...)
 end
 
 local function createGossip()
-	local b = CreateFrame("Button", "BuildForgeGossipButton", GossipGreetingScrollChildFrame, "GossipTitleButtonTemplate")
-	b:SetText("Open BuildForge")
-	BuildForgeGossipButtonGossipIcon:SetTexture("Interface\\GossipFrame\\GossipGossipIcon")
+	local b = CreateFrame("Button", "SynastriaBuildSuiteGossipButton", GossipGreetingScrollChildFrame, "GossipTitleButtonTemplate")
+	b:SetText("Open Synastria Build Suite")
+	SynastriaBuildSuiteGossipButtonGossipIcon:SetTexture("Interface\\GossipFrame\\GossipGossipIcon")
 	b:SetScript("OnClick", function(self)
 		SelectGossipOption(self.option)
-		BF.Window.Open()
+		SBS.Window.Open()
 	end)
 	return b
 end
