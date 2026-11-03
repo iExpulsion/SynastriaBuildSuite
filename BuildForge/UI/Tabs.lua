@@ -2,7 +2,8 @@ local _, NS = ...
 local BF = NS.BF
 
 -- Per tab: diff(build) counts what differs from the character (for the tab badge), and actions are the footer
--- buttons. Each tab's content is its editor in UI/.
+-- buttons, right to left: each tab's Use Current action comes first so it keeps the same spot. Each tab's content
+-- is its editor in UI/.
 local Tabs = { actions = {}, diff = {} }
 BF.Tabs = Tabs
 
@@ -84,12 +85,12 @@ Tabs.diff.glyphs = function(build)
 end
 
 Tabs.actions.glyphs = {
-	{ label = "Open Glyph Frame", tooltip = "Open the game's glyph window to socket the glyphs you're carrying.", run = function()
-		BF.Glyphs.OpenFrame()
-	end },
 	{ label = "Use Current Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec, for each of its classes you have.", usable = hasBuildClass, unusableTip = NOT_YOURS, run = function(build)
 		BF.Build.CopyCurrent(build, { glyphs = true })
 		BF:Changed()
+	end },
+	{ label = "Open Glyph Frame", tooltip = "Open the game's glyph window to socket the glyphs you're carrying.", run = function()
+		BF.Glyphs.OpenFrame()
 	end },
 }
 
@@ -106,9 +107,9 @@ Tabs.diff.gear = function(build)
 end
 
 Tabs.actions.gear = {
-	{ label = "Equip from Bags", tooltip = "Put on the highest-ranked item you're carrying for each slot.", run = function(build) BF:EquipGear(build) end },
 	{ label = "Use Current Gear", tooltip = "Replace this build's gear with what you have equipped. Alts are cleared.", run = function(build)
 		BF.Build.CopyCurrent(build, { gear = true })
 		BF:Changed()
 	end },
+	{ label = "Equip from Bags", tooltip = "Put on the highest-ranked item you're carrying for each slot.", run = function(build) BF:EquipGear(build) end },
 }
