@@ -278,8 +278,6 @@ function Codec.Decode(text)
 				if key and readers[key] then readers[key](result, value) end
 			end
 			if result.spec == true then result.spec = result.name end
-			-- Misc perks in a string are dropped: Shared Perks are only ever set by the player
-			if result.perks then result.perks = (BF.Perks.Split(result.perks)) end
 		end
 	else
 		err = "not a BuildForge or SynastriaBuildManager string"

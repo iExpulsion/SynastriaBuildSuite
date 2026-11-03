@@ -66,7 +66,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   it shows every Misc perk you can use, checked if it's in the list. Its Apply Perks sets your active spec's Misc
   perks and leaves the rest alone, and
   its Use Current Perks takes your active Misc perks. Misc perks are yours alone: exports never include them,
-  and imports drop any a string has, so only you change Shared Perks.
+  and imports never touch Shared Perks.
 - **Glyphs:** the six sockets, Major and Minor, each with a green border when the glyph is socketed in your
   active spec, yellow when the glyph item is in your bags and red when you don't have it. Click a socket to
   list that class's glyphs of that kind (with a search box) and click one to choose it; right-click a
