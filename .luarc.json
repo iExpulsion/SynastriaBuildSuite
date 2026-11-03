@@ -1,6 +1,0 @@
-{
-  "runtime.version": "Lua 5.1",
-  "diagnostics.disable": ["undefined-global", "lowercase-global"],
-  "workspace.ignoreDir": ["dev"],
-  "workspace.library": []
-}
