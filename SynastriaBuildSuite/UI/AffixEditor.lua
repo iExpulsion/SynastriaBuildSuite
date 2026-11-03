@@ -17,11 +17,18 @@ local panel, current
 local state = { slot = 1, search = "" }
 Editor.state = state
 
+-- Tooltips: the affix name in the accent, like an item name, then its stats in the game's bonus-stat green.
+local STAT_COLOR = { 0.1, 1, 0.1 }
+
+local function nameLine(tt, text)
+	tt:AddLine(text, unpack(C.accent))
+end
+
 local function statLines(tt, id)
 	local info = Affixes.Info(id)
 	local stats = info and info.stats or {}
 	if #stats > 0 then
-		for _, name in ipairs(stats) do tt:AddLine(name, 1, 1, 1) end
+		for _, name in ipairs(stats) do tt:AddLine(name, unpack(STAT_COLOR)) end
 	else
 		tt:AddLine("No stats", 0.6, 0.6, 0.66)
 	end
@@ -57,11 +64,11 @@ local function renderOrder(order, now, comparing)
 				end
 			end,
 			tooltip = function(tt)
-				tt:AddLine(("%d. %s"):format(i, Affixes.Name(id)), 1, 1, 1)
+				nameLine(tt, ("%d. %s"):format(i, Affixes.Name(id)))
 				statLines(tt, id)
 				if differs then
 					tt:AddLine(" ")
-					tt:AddLine(("Your spec has %s here."):format(now[i] and Affixes.Name(now[i]) or "nothing"), 1, 0.82, 0)
+					tt:AddLine(("Your spec has %s here."):format(now[i] and Affixes.Name(now[i]) or "nothing"), 0.8, 0.8, 0.8, true)
 				end
 				tt:AddLine(" ")
 				tt:AddLine("Right-click to remove it.", 0.6, 0.6, 0.66)
@@ -102,7 +109,7 @@ local function renderPicker(order)
 					end
 				end,
 				tooltip = function(tt)
-					tt:AddLine(info.name, 1, 1, 1)
+					nameLine(tt, info.name)
 					statLines(tt, id)
 					tt:AddLine(" ")
 					tt:AddLine(at and ("Number %d in the order. Click to select it."):format(at)
