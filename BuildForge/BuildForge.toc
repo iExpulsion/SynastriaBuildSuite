@@ -11,6 +11,7 @@ Data\Abilities.lua
 Data\Glyphs.lua
 Core.lua
 Codec.lua
+SBM.lua
 Perks.lua
 Talents.lua
 TalentCalc.lua

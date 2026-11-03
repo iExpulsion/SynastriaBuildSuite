@@ -34,7 +34,9 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   pasted string has; Import as New makes a build from the checked ones, named in the Name field (filled with the
   string's build name, numbered if you already have one by that name), and Into (the selected build) replaces
   just those sections of it, leaving the rest. Hunter pet aspects go with Perks; the name, classes and spec name
-  always go.
+  always go. Import also reads SynastriaBuildManager strings (SBM3 and SBM2): their perks, talents for each
+  class, chosen abilities, perk options and pet aspects. Most SBM options belong to Misc perks, so they come in
+  with the Shared Perks offer; a Misc perk already in Shared Perks keeps its own options.
 - **Specs:** Synastria keeps perks, talents and glyphs per talent spec (up to 8). With more than one spec, the
   header's Assign to menu ties a saved build to one of this character's specs (it then reads Linked to, with
   Active Spec when that spec is active), and applying a build links it to the active spec; Review Changes says

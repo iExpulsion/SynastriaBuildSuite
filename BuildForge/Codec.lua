@@ -260,12 +260,15 @@ readers.g = function(b, v)
 	end
 end
 
--- Returns the build table, or nil and an error message.
+-- Returns the build table, or nil and an error message. SynastriaBuildManager strings go to BF.SBM.
 function Codec.Decode(text)
+	local raw = text
 	text = (text or ""):gsub("%s", "")
 	local fmt, body = text:match("^!BF(%d+)!(.*)!$")
 	local result, err
-	if fmt then
+	if BF.SBM.Version(raw) then
+		result = BF.SBM.Decode(raw)
+	elseif fmt then
 		if tonumber(fmt) > FORMAT then
 			err = "this build was exported by a newer BuildForge; update to import it"
 		else
@@ -277,7 +280,7 @@ function Codec.Decode(text)
 			if result.spec == true then result.spec = result.name end
 		end
 	else
-		err = "not a BuildForge string"
+		err = "not a BuildForge or SynastriaBuildManager string"
 	end
 	return result, err
 end

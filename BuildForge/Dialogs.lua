@@ -222,7 +222,7 @@ function Dialogs.ShowImport(onImport, targetName)
 	box = box or create()
 	box.mode, box.build, box.onImport = "import", nil, onImport
 	box.title:SetText("Import a Build")
-	box.sub:SetText("Paste a BuildForge string, then pick the sections to bring in.")
+	box.sub:SetText("Paste a BuildForge or SynastriaBuildManager string, then pick the sections to bring in.")
 	box.selectAll:Hide()
 	box.placeholder:Show()
 	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Show() end
