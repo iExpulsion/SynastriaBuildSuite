@@ -20,13 +20,13 @@ Tabs.diff.perks = function(build)
 end
 
 Tabs.actions.perks = {
-	{ label = "Use Current Perks", tooltip = "Replace this list with the perks active on your character now: your Misc perks for Shared Perks, everything else for a build.", run = function(build)
-		local own, misc = BF.Perks.Split(BF.Perks.Capture())
+	{ label = "Use Current Perks", tooltip = "Replace this list with the perks active on your character now: your Misc perks for Shared Perks, and for a build the ones its classes can use. Class perks for its classes you don't have stay.", run = function(build)
 		if build.sharedOnly then
+			local _, misc = BF.Perks.Split(BF.Perks.Capture())
 			BF.db.shared.perks = {}
 			BF.Perks.AddShared(misc)
 		else
-			build.perks = own
+			BF.Build.CopyCurrent(build, { perks = true })
 		end
 		BF:Changed()
 	end },
@@ -54,11 +54,8 @@ Tabs.diff.talents = function(build)
 end
 
 Tabs.actions.talents = {
-	{ label = "Use Current Talents", tooltip = "Replace this build's talents with your active spec's, for each of your classes.", run = function(build)
-		local talents, missed = BF.Talents.Capture()
-		build.talents = talents
-		build.classes = BF:PlayerClasses()
-		for _, class in ipairs(missed) do
+	{ label = "Use Current Talents", tooltip = "Replace this build's talents with your active spec's, for each of its classes you have.", run = function(build)
+		for _, class in ipairs(BF.Build.CopyCurrent(build, { talents = true })) do
 			BF:Print("|cffff6060Couldn't read %s talents; select it in the talent window and try again.|r", class)
 		end
 		BF:Changed()
@@ -79,8 +76,8 @@ Tabs.actions.glyphs = {
 	{ label = "Open Glyph Frame", tooltip = "Open the game's glyph window to socket the glyphs you're carrying.", run = function()
 		BF.Glyphs.OpenFrame()
 	end },
-	{ label = "Use Current Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec, for each of your classes.", run = function(build)
-		build.glyphs = BF.Glyphs.Capture()
+	{ label = "Use Current Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec, for each of its classes you have.", run = function(build)
+		BF.Build.CopyCurrent(build, { glyphs = true })
 		BF:Changed()
 	end },
 }
@@ -100,7 +97,7 @@ end
 Tabs.actions.gear = {
 	{ label = "Equip from Bags", tooltip = "Put on the highest-ranked item you're carrying for each slot.", run = function(build) BF:EquipGear(build) end },
 	{ label = "Use Current Gear", tooltip = "Replace this build's gear with what you have equipped. Alts are cleared.", run = function(build)
-		build.gear = BF.Gear.Capture()
+		BF.Build.CopyCurrent(build, { gear = true })
 		BF:Changed()
 	end },
 }
