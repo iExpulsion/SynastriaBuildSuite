@@ -151,6 +151,7 @@ end
 function Review.Close()
 	S.Dismiss()
 	sheet:Hide()
+	SBS.Window.Render()
 end
 
 local function confirm()

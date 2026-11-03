@@ -198,8 +198,10 @@ local function paint(b)
 	b.label:SetTextColor(unpack(kind.text))
 end
 
-function S.Button(parent, label, kind, width, onClick, tooltip)
-	local b = CreateFrame("Button", nil, parent)
+-- `template` makes it from a frame template; a secure one keeps the template's own click handler, so onClick is
+-- left unset (hook OnClick instead).
+function S.Button(parent, label, kind, width, onClick, tooltip, template)
+	local b = CreateFrame("Button", nil, parent, template)
 	b:SetSize(width or 90, S.CONTROL_H)
 	b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
 	b.kind = kind or "secondary"
@@ -207,7 +209,7 @@ function S.Button(parent, label, kind, width, onClick, tooltip)
 	b.label:SetPoint("CENTER")
 	b.label:SetText(label)
 	b.tooltipText = tooltip
-	b:SetScript("OnClick", onClick)
+	if not template then b:SetScript("OnClick", onClick) end
 	b:SetScript("OnEnter", function(self)
 		self.hovered = true
 		paint(self)
@@ -279,7 +281,12 @@ function S.Check(parent, size, onClick)
 	return b
 end
 
-local menus, inputs = {}, {}
+local menus, inputs, dismissers = {}, {}, {}
+
+-- Runs fn whenever S.Dismiss does, for other things that shouldn't outlive their view.
+function S.OnDismiss(fn)
+	dismissers[#dismissers + 1] = fn
+end
 
 function S.CloseMenus()
 	for _, menu in ipairs(menus) do menu:Hide() end
@@ -302,6 +309,7 @@ function S.Dismiss()
 	for _, e in ipairs(inputs) do
 		if e.focused then e:ClearFocus() end
 	end
+	for _, fn in ipairs(dismissers) do fn() end
 end
 
 -- A mouse press anywhere else closes an open menu and takes focus from an edit box. The client has no event for

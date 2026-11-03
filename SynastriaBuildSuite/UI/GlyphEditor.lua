@@ -118,8 +118,82 @@ local function newSocket(parent, socket, width)
 	return b
 end
 
+-- Socketing from bags ---------------------------------------------------------------------------------------
+-- The game only lets a glyph item be used from a secure button the player clicks, so each socket can show one that
+-- runs Glyphs.SocketMacro. Secure buttons can't be shown, moved or changed in combat, and a frame they're anchored
+-- to gets locked the same way, so they sit on UIParent at their socket's screen position, are only placed out of
+-- combat, and hide whenever their socket is covered, moved or hidden, or combat starts.
+local SOCKET_W, ARM_FOR = 64, 5
+local socketButtons, armed = {}, {}
+
+local function hideSocketButtons()
+	if not InCombatLockdown() then
+		for _, b in pairs(socketButtons) do b:Hide() end
+	end
+end
+
+local function newSocketButton(socket)
+	local b = S.Button(UIParent, "Socket", "primary", SOCKET_W, nil, nil, "SecureActionButtonTemplate")
+	b:SetFrameStrata("HIGH")
+	b:Hide()
+	-- a replace takes two clicks: the first only arms it, since the glyph in the socket is destroyed
+	b:HookScript("OnClick", function(self)
+		if self.replacing and not self.armed then
+			armed[socket] = { spell = self.spell, at = GetTime() }
+			SBS.Window.Render()
+		end
+	end)
+	socketButtons[socket] = b
+	return b
+end
+
+-- Shows the socket's button when its glyph can be socketed from bags right now, else hides it.
+local function placeSocketButton(row, socketFrame, canSocket)
+	local b = socketButtons[row.socket]
+	local bag, slot
+	if canSocket then bag, slot = Glyphs.BagSlot(row.glyph.item) end
+	if not InCombatLockdown() then
+		if bag then
+			local replacing = row.have ~= nil
+			local a = armed[row.socket]
+			local isArmed = replacing and a ~= nil and a.spell == row.spell and GetTime() - a.at < ARM_FOR
+			b.spell, b.replacing, b.armed = row.spell, replacing, isArmed
+			b:SetAttribute("type", (not replacing or isArmed) and "macro" or nil)
+			b:SetAttribute("macrotext", Glyphs.SocketMacro(bag, slot, row.socket))
+			b:SetLabel(isArmed and "Confirm" or replacing and "Replace" or "Socket")
+			b:SetKind(replacing and "danger" or "primary")
+			b.tooltipText = isArmed and "Click again to replace the socketed glyph. It's destroyed."
+				or replacing and "Socket this glyph from your bags in place of the one there now, which is destroyed. Asks you to click again."
+				or "Socket this glyph from your bags. It's used up."
+			local scale = socketFrame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+			local _, y = socketFrame:GetCenter()
+			b:ClearAllPoints()
+			b:SetPoint("RIGHT", UIParent, "BOTTOMLEFT", (socketFrame:GetRight() - GAP) * scale, y * scale)
+			b:SetFrameLevel(SBS.Window.Frame():GetFrameLevel() + 50)
+			b:Show()
+		else
+			b:Hide()
+		end
+	end
+	return bag ~= nil
+end
+
+local socketWatch = CreateFrame("Frame")
+socketWatch:RegisterEvent("PLAYER_REGEN_DISABLED")
+socketWatch:RegisterEvent("PLAYER_REGEN_ENABLED")
+socketWatch:SetScript("OnEvent", function(_, event)
+	-- PLAYER_REGEN_DISABLED fires just before the lockdown starts, so they can still hide here
+	if event == "PLAYER_REGEN_DISABLED" then
+		for _, b in pairs(socketButtons) do b:Hide() end
+	else
+		SBS:Changed()
+	end
+end)
+S.OnDismiss(hideSocketButtons)
+
 local function renderSockets(rows, comparable)
 	local comparing = comparable and SBS.Window.IsComparing(current)
+	local open = panel:IsVisible() and not SBS.Window.Frame().review:IsShown()
 	for socket, b in pairs(panel.sockets) do
 		local row = rows[socket]
 		local look = lookFor(row, comparing)
@@ -131,6 +205,10 @@ local function renderSockets(rows, comparable)
 		b.name:SetText(glyphName(row) or S.Hex(C.muted, ("Level %d Socket"):format(Glyphs.SOCKETS[socket].level)))
 		b.status:SetText(STATUS[look])
 		if socket == state.socket then b.selectedBg:Show() else b.selectedBg:Hide() end
+		local canSocket = open and comparing and look == "bags" and SBS:HasClass(state.class)
+			and UnitLevel("player") >= Glyphs.SOCKETS[socket].level
+		local shown = placeSocketButton(row, b, canSocket)
+		b.name:SetWidth(SOCKETS_W - ICON - 20 - (shown and SOCKET_W + GAP or 0))
 	end
 end
 
@@ -253,6 +331,8 @@ function Editor.Create(parent, width, height)
 	panel = CreateFrame("Frame", nil, parent)
 	panel:SetSize(width, height)
 	panel.sockets, panel.placed = {}, {}
+	panel:HookScript("OnHide", hideSocketButtons)
+	for socket in ipairs(Glyphs.SOCKETS) do newSocketButton(socket) end
 
 	panel.classButtons = {}
 	for i = 1, 3 do

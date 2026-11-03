@@ -151,12 +151,28 @@ function Glyphs.Status(build, class)
 		local have = comparable and select(3, GetGlyphSocketInfo(socket, group))
 		local g = spell and Glyphs.Find(spell)
 		rows[socket] = {
-			socket = socket, spell = spell, glyph = g,
+			socket = socket, spell = spell, glyph = g, have = have or nil,
 			socketed = spell ~= nil and have == spell,
 			inBags = g ~= nil and GetItemCount(g.item) > 0,
 		}
 	end
 	return rows, comparable
+end
+
+-- The first bag and slot holding the item, or nil.
+function Glyphs.BagSlot(item)
+	for bag = 0, 4 do
+		for slot = 1, GetContainerNumSlots(bag) do
+			local link = GetContainerItemLink(bag, slot)
+			if link and tonumber(link:match("item:(%d+)")) == item then return bag, slot end
+		end
+	end
+end
+
+-- The macro a secure button runs to socket a glyph from bags: using the glyph item asks for a socket, which
+-- PlaceGlyphInSocket answers, as clicking a socket in the game's glyph window does.
+function Glyphs.SocketMacro(bag, slot, socket)
+	return ("/use %d %d\n/run PlaceGlyphInSocket(%d)"):format(bag, slot, socket)
 end
 
 -- Glyphs of the class shown in the talent window that aren't socketed; never switches classes.

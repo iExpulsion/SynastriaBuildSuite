@@ -72,8 +72,12 @@ build doesn't, the review lists them; unlearn at a class trainer and Synastria B
 ### Glyphs
 
 Each socket shows green when that glyph is socketed, yellow when it's in your bags and red when you don't have
-it. Click a socket to pick a glyph; right-click to clear it. Dual-class builds have glyphs per class. Glyphs are
-used up when socketed, so Synastria Build Suite leaves socketing to you; **Open Glyph Frame** opens the game's window.
+it. Click a socket to pick a glyph; right-click to clear it. Dual-class builds have glyphs per class.
+
+When a build's glyph is in your bags and you're in its spec, its socket shows a **Socket** button that sockets it
+for you (glyphs are used up when socketed). If the socket already holds a different glyph, the button says
+**Replace** and asks for a second click, since the old glyph is destroyed. The buttons hide in combat. **Open Glyph
+Frame** opens the game's window for anything else, such as removing a glyph.
 
 ![The Glyphs tab: socketed major glyphs, empty minor sockets and the glyph picker for a socket](docs/images/glyphs.png)
 

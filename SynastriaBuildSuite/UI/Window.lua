@@ -464,7 +464,10 @@ end
 
 function Window.ResetPosition()
 	SBS.db.window = nil
-	if frame then placeDefault(frame) end
+	if frame then
+		placeDefault(frame)
+		Window.Render()
+	end
 end
 
 local function createTitleBar(f)
@@ -474,10 +477,15 @@ local function createTitleBar(f)
 	bar:SetHeight(TITLE_H)
 	bar:EnableMouse(true)
 	bar:RegisterForDrag("LeftButton")
-	bar:SetScript("OnDragStart", function() f:StartMoving() end)
+	-- anything placed by screen position over the window (the glyph Socket buttons) goes while it moves
+	bar:SetScript("OnDragStart", function()
+		S.Dismiss()
+		f:StartMoving()
+	end)
 	bar:SetScript("OnDragStop", function()
 		f:StopMovingOrSizing()
 		savePosition(f)
+		Window.Render()
 	end)
 	S.Rule(bar, "BOTTOM")
 
