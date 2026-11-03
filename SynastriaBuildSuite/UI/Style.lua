@@ -123,50 +123,48 @@ function S.ScrollBar(scroll, scrollName)
 	return bar
 end
 
--- Copies of the stock fonts without their drop shadow, which smears dark text on light fills and blurs small text
--- on flat panels. S.FONTS[size] is the font object, for S.FontString and SetFontObject.
+-- The stock fonts' faces and sizes without their drop shadow, which smears dark text on light fills and blurs
+-- small text on flat panels. S.SetFont gives a font string or edit box one of them, setting the face and size on
+-- it directly as well as the font object: in game, with the stock fonts restyled by ElvUI, a font string given only
+-- the object could be left with no font, and SetText then fails with "Font not set". S.FONTS[size] is the object.
 local STOCK = { small = "GameFontHighlightSmall", normal = "GameFontHighlight", large = "GameFontHighlightLarge",
 	huge = "GameFontNormalHuge", edit = "ChatFontNormal" }
 local FALLBACK_SIZE = { small = 10, normal = 12, large = 16, huge = 20, edit = 14 }
 S.FONTS = {}
 for size in pairs(STOCK) do
-	S.FONTS[size] = CreateFont("SynastriaBuildSuiteFont" .. size:sub(1, 1):upper() .. size:sub(2))
+	S.FONTS[size] = CreateFont("SBSFont" .. size:sub(1, 1):upper() .. size:sub(2))
 end
 local FONTS = S.FONTS
+local specs = {}
 
-local function usable(font)
-	local face, height = font:GetFont()
-	return face ~= nil and (height or 0) > 0
-end
-
--- Copies the stock fonts into ours. UI addons such as ElvUI restyle the stock fonts after this file loads and can
--- leave a copy without a size, which makes SetText fail with "Font not set"; so this runs again when a window is
--- built, and a copy that still isn't usable gets the stock face (or the default one) at a fixed size.
+-- Reads the stock fonts again. UI addons restyle them after this file loads, so windows run it as they're built.
 function S.RefreshFonts()
 	for size, base in pairs(STOCK) do
-		local font, stock = FONTS[size], _G[base]
-		if stock then font:CopyFontObject(stock) end
-		if not usable(font) then
-			local face, _, flags = stock and stock:GetFont()
-			font:SetFont(face or STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", FALLBACK_SIZE[size], flags or "")
-			font:SetTextColor(1, 1, 1)
-		end
+		local stock = _G[base]
+		local face, height, flags
+		if stock then face, height, flags = stock:GetFont() end
+		local spec = { face = face or STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",
+			height = (height or 0) > 0 and height or FALLBACK_SIZE[size], flags = flags or "" }
+		specs[size] = spec
+		local font = FONTS[size]
+		font:SetFont(spec.face, spec.height, spec.flags)
+		font:SetTextColor(1, 1, 1)
 		font:SetShadowOffset(0, 0)
 		font:SetShadowColor(0, 0, 0, 0)
 	end
 end
 S.RefreshFonts()
 
--- A font string in one of the fonts above, set by object rather than by name. If it still has no usable font,
--- it gets the font object's face and size directly, so SetText can never fail on it.
+function S.SetFont(region, size)
+	local spec = specs[size or "normal"]
+	region:SetFontObject(FONTS[size or "normal"])
+	region:SetFont(spec.face, spec.height, spec.flags)
+	region:SetShadowOffset(0, 0)
+end
+
 function S.FontString(parent, size, layer)
-	local font = FONTS[size or "normal"]
 	local fs = parent:CreateFontString(nil, layer or "ARTWORK")
-	fs:SetFontObject(font)
-	if not usable(fs) then
-		local face, height, flags = font:GetFont()
-		fs:SetFont(face or STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", (height or 0) > 0 and height or FALLBACK_SIZE[size or "normal"], flags or "")
-	end
+	S.SetFont(fs, size)
 	return fs
 end
 
@@ -356,7 +354,7 @@ function S.Input(parent, name, width, placeholder, maxLetters)
 	e:SetSize(width, S.CONTROL_H)
 	e:SetAutoFocus(false)
 	e:SetMaxLetters(maxLetters or 40)
-	e:SetFontObject(FONTS.small)
+	S.SetFont(e, "small")
 	e:SetTextInsets(8, 8, 0, 0)
 	S.Panel(e, S.colors.well, S.colors.border)
 	e.placeholder = S.Text(e, "small", S.colors.muted)

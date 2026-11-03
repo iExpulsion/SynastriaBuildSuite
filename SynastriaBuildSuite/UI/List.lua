@@ -9,8 +9,8 @@ SBS.List = List
 local S = SBS.Style
 
 local STYLES = {
-	content = { rowH = 22, subRowH = 36, header = S.FONTS.small, row = S.FONTS.small },
-	sidebar = { rowH = 22, subRowH = 36, header = S.FONTS.small, row = S.FONTS.normal },
+	content = { rowH = 22, subRowH = 36, header = "small", row = "small" },
+	sidebar = { rowH = 22, subRowH = 36, header = "small", row = "normal" },
 }
 
 local function runTooltip(row)
@@ -58,8 +58,7 @@ local function newRow(self)
 	row.status = S.FontString(row, "small")
 	row.status:SetPoint("RIGHT", -S.PAD, 0)
 	row.status:SetJustifyH("RIGHT")
-	row.text = row:CreateFontString(nil, "ARTWORK")
-	row.text:SetFontObject(style.row)
+	row.text = S.FontString(row, style.row)
 	row.text:SetJustifyH("LEFT")
 	row.text:SetPoint("RIGHT", row.status, "LEFT", -6, 0)
 	row.sub = S.Text(row, "small", S.colors.muted)
@@ -164,7 +163,7 @@ function List:Add(entry)
 		row.sub:Hide()
 	end
 
-	row.text:SetFontObject(entry.header and style.header or style.row)
+	S.SetFont(row.text, entry.header and style.header or style.row)
 	row.text:SetText(entry.text or "")
 	-- rows are reused, so both kinds set their color; a header left to its font would keep a build row's white
 	row.text:SetTextColor(unpack(entry.header and S.colors.heading or S.colors.text))
