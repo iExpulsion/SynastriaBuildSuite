@@ -49,9 +49,7 @@ local function trees(body)
 	return out
 end
 
--- Decodes an SBM string into a build, in the shape Codec.Decode returns.
-function SBM.Decode(text)
-	local all = lines(text)
+local function parse(all)
 	local build = { name = "SBM Import", classes = {}, perks = {}, talents = {}, notes = "" }
 	for i = 2, #all do
 		local line = all[i]
@@ -83,4 +81,16 @@ function SBM.Decode(text)
 		end
 	end
 	return build
+end
+
+-- Decodes an SBM string into a build, in the shape Codec.Decode returns. Telling Misc perks apart needs the perk
+-- list from the server, so until it arrives this returns nil and a reason.
+function SBM.Decode(text)
+	local build, err
+	if PerkMgrPerks then
+		build = parse(lines(text))
+	else
+		err = "the perk list hasn't loaded yet; try again in a moment"
+	end
+	return build, err
 end

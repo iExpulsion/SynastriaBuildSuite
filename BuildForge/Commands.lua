@@ -174,7 +174,6 @@ end
 
 -- Shared perks are personal setup, so exports leave them out. The export box picks which sections go.
 function BF:Export(build)
-	BF.Perks.MoveShared(build)
 	BF.Dialogs.ShowExport(build)
 end
 

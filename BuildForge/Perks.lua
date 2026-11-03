@@ -239,18 +239,6 @@ function Perks.AddShared(list)
 	return added
 end
 
--- Moves Misc perks saved in a build (older builds, or ones imported before the perk list arrived) into the
--- shared list. Needs the perk list from the server, so it runs whenever a build is about to be used.
-function Perks.MoveShared(build)
-	if PerkMgrPerks and build.perks then
-		local own, shared = Perks.Split(build.perks)
-		if #shared > 0 then
-			Perks.AddShared(shared)
-			build.perks = own
-		end
-	end
-end
-
 -- The perk plan for a build: its own perks plus the shared ones. The Shared Perks entry (`sharedOnly`) plans the
 -- shared list alone and leaves every other perk as it is.
 function Perks.BuildPlan(build)
@@ -259,7 +247,6 @@ end
 
 -- What applying a build wants: its own perks plus the shared ones.
 function Perks.Wanted(build)
-	Perks.MoveShared(build)
 	local list = {}
 	for _, w in ipairs(build.perks or {}) do list[#list + 1] = w end
 	for _, w in ipairs(BF.db.shared.perks) do list[#list + 1] = w end

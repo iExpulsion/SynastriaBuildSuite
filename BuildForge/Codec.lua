@@ -267,7 +267,7 @@ function Codec.Decode(text)
 	local fmt, body = text:match("^!BF(%d+)!(.*)!$")
 	local result, err
 	if BF.SBM.Version(raw) then
-		result = BF.SBM.Decode(raw)
+		result, err = BF.SBM.Decode(raw)
 	elseif fmt then
 		if tonumber(fmt) > FORMAT then
 			err = "this build was exported by a newer BuildForge; update to import it"
