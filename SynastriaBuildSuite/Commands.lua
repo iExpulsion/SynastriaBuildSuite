@@ -61,10 +61,7 @@ function SBS:Report(plan)
 	for _, s in ipairs(plan.talents.skipped) do self:Print("  |cffaaaaaaSkipped %s talents: %s|r", s.class, s.reason) end
 
 	for _, g in ipairs(plan.glyphs) do self:Print("  Glyph to socket yourself: %s", g.name) end
-	if plan.affixes then
-		self:Print(SBS.Perks.Writable() and "  Affix order will change"
-			or "  |cffff6060The affix order needs the Perk Manager open at an innkeeper; it'll be skipped.|r")
-	end
+	if plan.affixes then self:Print("  Affix order will change (the server only takes it near an innkeeper)") end
 	if plan.pet then self:Print("  Pet aspects will change") end
 	if plan.spec then self:Print("  Spec name: %s", plan.spec) end
 end

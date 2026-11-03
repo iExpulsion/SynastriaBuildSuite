@@ -126,10 +126,8 @@ local function summary(order, now)
 		text = S.Hex(C.muted, "Your Spec's Affix Order Can't Be Read")
 	elseif Affixes.Diff(order) == 0 then
 		text = S.Hex(C.good, "Your Affix Order Matches This Build")
-	elseif SBS.Perks.Writable() then
-		text = "Affix Order Differs: Apply Build to Set It"
 	else
-		text = "Affix Order Differs: Apply Build at an Innkeeper"
+		text = "Affix Order Differs: Apply Build Near an Innkeeper"
 	end
 	return text
 end

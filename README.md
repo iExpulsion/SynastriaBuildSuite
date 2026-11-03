@@ -93,8 +93,8 @@ order, most wanted first: select an affix to move it up or down or remove it, or
 **Load Preset** starts from one of the game's orders (Strength DPS, Agility DPS, Tank, Caster). The right side
 lists every affix with its stats on hover; click one to add it to the end.
 
-Like perk activations, the affix order belongs to the spec and only changes with the Perk Manager open at an
-innkeeper. Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.
+The affix order belongs to the spec and only changes near an innkeeper; the Perk Manager doesn't need to be open.
+Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.
 
 ## Sharing Builds
 

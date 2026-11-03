@@ -2,8 +2,8 @@ local _, NS = ...
 local SBS = NS.SBS
 
 -- Item affix priority: when an item has more than one of its affixes attuned, the server activates the first one
--- in this order. It has the same 16 slots as the game's Item Affix Manager, belongs to the talent spec, and like
--- perk activations can only be changed at an innkeeper. Builds keep it as a list of affix IDs, most wanted first.
+-- in this order. It has the same 16 slots as the game's Item Affix Manager, belongs to the talent spec, and can
+-- only be changed near an innkeeper. Builds keep it as a list of affix IDs, most wanted first.
 local Affixes = {}
 SBS.Affixes = Affixes
 
@@ -128,10 +128,10 @@ function Affixes.Plan(order)
 	return current and #wanted > 0 and not same(wanted, current) and { order = wanted, current = current } or nil
 end
 
--- Sends the order the way the game's Apply button does. Like perk activations it needs an innkeeper, so it's
--- skipped elsewhere. Returns whether it was sent.
+-- Sends the order the way the game's Apply button does. The server only takes it near an innkeeper, which the
+-- client can't check, so it's always sent and the server decides. Returns whether it was sent.
 function Affixes.Apply(plan)
-	local sent = plan ~= nil and SBS.Perks.Writable()
+	local sent = plan ~= nil
 	if sent then
 		local slots = {}
 		for i = 1, Affixes.SLOTS do slots[i] = plan.order[i] or 0 end
