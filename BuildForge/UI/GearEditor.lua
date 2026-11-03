@@ -227,7 +227,7 @@ local function summary(rows)
 	end
 	local text
 	if #rows == 0 then
-		text = S.Hex(C.muted, "No Gear Yet: Drop Items Here or Use My Gear")
+		text = S.Hex(C.muted, "No Gear Yet: Drop Items Here or Use Current Gear")
 	else
 		text = ("Wearing the Best Item in %d of %d Slots"):format(worn, #rows)
 		if inBags > 0 then text = text .. ", " .. S.Count(inBags, "Better Item") .. " in Your Bags" end

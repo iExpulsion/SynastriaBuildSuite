@@ -46,7 +46,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   right-click removes one; tier, prerequisite and point limits work like the talent frame, and the tooltip
   shows your character's rank when it's the class shown in your talent window. Each class gets 71 points for
   its own trees, so a same-class dual (Warrior x2) gets 142. Builds with two different classes get a button
-  per class. Use My Talents copies your spec; Reset Class clears the class shown.
+  per class. Use Current Talents copies your spec; Reset Class clears the class shown.
 - **Perks:** a perk editor for the build's classes, any class, not just yours. In Build lists the build's perks
   (and any it would turn off); All Perks lists every perk the classes can use, with a search box. Check a perk
   to add it to the build. Click a perk to see its effect, notes, options and, for perks that grant one, the
@@ -60,7 +60,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   sidebar, that every build applies along with its own perks, so each spec gets them. Select it to edit the list:
   it shows every Misc perk you can use, checked if it's in the list. Its Apply Perks sets your active spec's Misc
   perks and leaves the rest alone, and
-  its Use My Perks takes your active Misc perks. Exports leave it out; importing a string with Misc perks asks
+  its Use Current Perks takes your active Misc perks. Exports leave it out; importing a string with Misc perks asks
   before adding them.
 - **Glyphs:** the six sockets, Major and Minor, each with a green border when the glyph is socketed in your
   active spec, yellow when the glyph item is in your bags and red when you don't have it. Click a socket to
@@ -68,7 +68,7 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   socket or use Clear Socket to empty it. A glyph can only be in one socket. Each class of a dual-class
   character has its own glyphs, so those builds get a button per class, like the Talents tab; sockets are only
   compared for the class shown in the talent window. Glyphs are used up when socketed, so BuildForge leaves
-  that to you: Open Glyph Frame opens the game's glyph window. Use My Glyphs copies yours, for every class.
+  that to you: Open Glyph Frame opens the game's glyph window. Use Current Glyphs copies yours, for every class.
 - **Gear:** a paper doll of the build's Best item per slot, with a green border when you're wearing it, yellow
   when it's in your bags and red when you don't have it; a badge counts the slot's Alts (stand-ins, in order of
   preference). Click a slot to list its Best and Alts beside the doll, where Make Best and Remove (or Ctrl-click

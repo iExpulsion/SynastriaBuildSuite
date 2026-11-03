@@ -20,7 +20,7 @@ Tabs.diff.perks = function(build)
 end
 
 Tabs.actions.perks = {
-	{ label = "Use My Perks", tooltip = "Replace this list with the perks active on your character now: your Misc perks for Shared Perks, everything else for a build.", run = function(build)
+	{ label = "Use Current Perks", tooltip = "Replace this list with the perks active on your character now: your Misc perks for Shared Perks, everything else for a build.", run = function(build)
 		local own, misc = BF.Perks.Split(BF.Perks.Capture())
 		if build.sharedOnly then
 			BF.db.shared.perks = {}
@@ -54,7 +54,7 @@ Tabs.diff.talents = function(build)
 end
 
 Tabs.actions.talents = {
-	{ label = "Use My Talents", tooltip = "Replace this build's talents with your active spec's, for each of your classes.", run = function(build)
+	{ label = "Use Current Talents", tooltip = "Replace this build's talents with your active spec's, for each of your classes.", run = function(build)
 		local talents, missed = BF.Talents.Capture()
 		build.talents = talents
 		build.classes = BF:PlayerClasses()
@@ -79,7 +79,7 @@ Tabs.actions.glyphs = {
 	{ label = "Open Glyph Frame", tooltip = "Open the game's glyph window to socket the glyphs you're carrying.", run = function()
 		BF.Glyphs.OpenFrame()
 	end },
-	{ label = "Use My Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec, for each of your classes.", run = function(build)
+	{ label = "Use Current Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec, for each of your classes.", run = function(build)
 		build.glyphs = BF.Glyphs.Capture()
 		BF:Changed()
 	end },
@@ -99,7 +99,7 @@ end
 
 Tabs.actions.gear = {
 	{ label = "Equip from Bags", tooltip = "Put on the highest-ranked item you're carrying for each slot.", run = function(build) BF:EquipGear(build) end },
-	{ label = "Use My Gear", tooltip = "Replace this build's gear with what you have equipped. Alts are cleared.", run = function(build)
+	{ label = "Use Current Gear", tooltip = "Replace this build's gear with what you have equipped. Alts are cleared.", run = function(build)
 		build.gear = BF.Gear.Capture()
 		BF:Changed()
 	end },

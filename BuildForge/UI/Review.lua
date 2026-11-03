@@ -65,7 +65,7 @@ local function lines(plan)
 			talentLines[#talentLines + 1] = { name, S.Hex(C.bad, S.Count(#entry.conflicts, "talent") .. " above the build: reset first"),
 				function(tt)
 					tt:AddLine("Talents can only be added", 1, 1, 1)
-					tt:AddLine("Your spec has more points in these talents than the build. Unlearn your talents at a class trainer and BuildForge reopens this review, ready to apply. Or use Use My Talents on the Talents tab if your spec is the one to keep.", 0.8, 0.8, 0.8, true)
+					tt:AddLine("Your spec has more points in these talents than the build. Unlearn your talents at a class trainer and BuildForge reopens this review, ready to apply. Or use Use Current Talents on the Talents tab if your spec is the one to keep.", 0.8, 0.8, 0.8, true)
 				end }
 			for _, c in ipairs(entry.conflicts) do
 				talentLines[#talentLines + 1] = { S.Hex(C.muted, "    " .. (c.name or "Talent")),
