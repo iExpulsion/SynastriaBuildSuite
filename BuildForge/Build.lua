@@ -31,6 +31,41 @@ function Build.Capture(name)
 	return build, missed
 end
 
+-- A build for `classes` copying the checked sections ({ key = true }) of the character: only the perks, talents
+-- and glyphs those classes can use, and nothing for classes the character doesn't have.
+function Build.New(name, classes, sections)
+	local own = {}
+	for _, class in ipairs(classes) do own[class] = BF:HasClass(class) end
+	local function ownOnly(byClass)
+		local out = {}
+		for class, value in pairs(byClass) do
+			if own[class] then out[class] = value end
+		end
+		return out
+	end
+	local build = { name = name, classes = classes, spec = "", perks = {}, talents = {}, glyphs = {}, gear = {}, notes = "" }
+	if Build.Fits(build) then build.spec = specName(BF:ActiveGroup()) end
+	local missed = {}
+	if sections.perks then
+		local mask = BF.Perks.ClassMask(classes)
+		for _, p in ipairs((BF.Perks.Split(BF.Perks.Capture()))) do
+			local perk = PerkMgrPerks[p.id]
+			if perk and BF.Perks.UsableFor(perk, mask) then build.perks[#build.perks + 1] = p end
+		end
+		build.pet = own.HUNTER and isHunter() and GetHunterBM() or nil
+	end
+	if sections.talents then
+		local talents, failed = BF.Talents.Capture()
+		build.talents = ownOnly(talents)
+		for _, class in ipairs(failed) do
+			if own[class] then missed[#missed + 1] = class end
+		end
+	end
+	if sections.glyphs then build.glyphs = ownOnly(BF.Glyphs.Capture()) end
+	if sections.gear then build.gear = BF.Gear.Capture() end
+	return build, missed
+end
+
 -- Class keys taken from the build's class perks, for strings that don't list classes.
 function Build.InferClasses(build)
 	local classes, seen = {}, {}

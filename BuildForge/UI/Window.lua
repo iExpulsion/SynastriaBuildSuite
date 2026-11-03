@@ -407,10 +407,17 @@ end
 -- Construction ---------------------------------------------------------------------------------------------
 
 local function newBuild()
-	local build = BF:SaveCurrent(BF:UniqueName("New Build"))
-	state.search = ""
-	frame.search:SetText("")
-	Window.Select(build.name)
+	BF.Dialogs.ShowNew(function(name, classes, sections)
+		local function create()
+			BF.Dialogs.HideNew()
+			local build = BF:SaveNew(name, classes, sections)
+			state.search = ""
+			frame.search:SetText("")
+			state.collapsed[table.concat(classes, "/")] = false
+			Window.Select(build.name)
+		end
+		if BF.db.builds[name] then BF.Dialogs.Confirm("BUILDFORGE_OVERWRITE", name, create) else create() end
+	end)
 end
 
 -- Import offers to bring sections into the selected build as well as making a new one.
@@ -510,8 +517,9 @@ local function createSidebar(f)
 	S.Rule(footer, "TOP")
 	local half = (SIDEBAR_W - 2 * PAD - GAP) / 2
 	local new = S.Button(footer, "New Build", "secondary", half, newBuild,
-		"Save your character's current perks, talents, glyphs and gear as a new build.")
+		"Make a build from any part of your character, or a blank one for any class.")
 	new:SetPoint("LEFT", PAD, 0)
+	f.newBuild = new
 	local import = S.Button(footer, "Import", "secondary", half, importBuild,
 		"Paste a BuildForge string.")
 	import:SetPoint("LEFT", new, "RIGHT", GAP, 0)
@@ -742,7 +750,7 @@ local function createEmpty(f)
 	body:SetPoint("TOP", title, "BOTTOM", 0, -10)
 	body:SetWidth(360)
 	body:SetJustifyH("CENTER")
-	body:SetText("Save your character's current perks, talents, glyphs and gear as a build, or import one someone shared with you.")
+	body:SetText("Save your character's perks, talents, glyphs and gear as a build, start a blank one for any class, or import one someone shared with you.")
 	local new = S.Button(empty, "New Build", "primary", 110, newBuild)
 	new:SetPoint("TOPRIGHT", body, "BOTTOM", -4, -16)
 	local import = S.Button(empty, "Import", "secondary", 110, importBuild)

@@ -16,7 +16,11 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 
 - **Sidebar:** search your builds, grouped by class; click a group to collapse it. Groups for classes you
   don't have start collapsed. Builds linked to this character's specs sit at the top in Your Specs, one row
-  per spec, numbered in spec order, with the active one in green. Everything else is under Saved Builds. New Build saves your character as a build; Import pastes one in.
+  per spec, numbered in spec order, with the active one in green. Everything else is under Saved Builds. Import
+  pastes a build in. New Build opens a sheet with one or two classes (yours to start with, but any class works)
+  and Perks, Talents, Glyphs and Gear checkboxes for what to copy from your character. Only what applies to the
+  chosen classes is copied, so a class you don't have can only take your gear; uncheck everything to start blank.
+  For classes you don't have, perk values, ranks and category limits still show your character's.
 - **Build header:** click the name to rename it and set the spec name (press Enter to keep). Apply Build opens
   a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
   Talents can only be added, so if your spec has more points in a talent than the build, the review lists them;

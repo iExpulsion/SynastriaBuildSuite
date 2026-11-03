@@ -65,6 +65,21 @@ function BF:Report(plan)
 	if plan.spec then self:Print("  Spec name: %s", plan.spec) end
 end
 
+-- Stores a captured build; the first save that reads perks also fills an empty Shared Perks list.
+local function saveBuild(self, build, missed, readPerks)
+	if readPerks and #self.db.shared.perks == 0 then
+		local _, misc = BF.Perks.Split(BF.Perks.Capture())
+		BF.Perks.AddShared(misc)
+	end
+	self.db.builds[build.name] = build
+	self:Print("Saved %s.", build.name)
+	for _, class in ipairs(missed) do
+		self:Print("|cffff6060Couldn't read %s talents; select it in the talent window and save again.|r", class)
+	end
+	self:Changed()
+	return build
+end
+
 -- Saves the character's current build under `name`, keeping notes and gear choices of a build it replaces.
 function BF:SaveCurrent(name)
 	local build, missed = BF.Build.Capture(name)
@@ -73,17 +88,13 @@ function BF:SaveCurrent(name)
 		build.notes = old.notes
 		build.gear = old.gear
 	end
-	if #self.db.shared.perks == 0 then
-		local _, misc = BF.Perks.Split(BF.Perks.Capture())
-		BF.Perks.AddShared(misc)
-	end
-	self.db.builds[name] = build
-	self:Print("Saved %s.", name)
-	for _, class in ipairs(missed) do
-		self:Print("|cffff6060Couldn't read %s talents; select it in the talent window and save again.|r", class)
-	end
-	self:Changed()
-	return build
+	return saveBuild(self, build, missed, true)
+end
+
+-- Saves a new build for `classes` with the checked sections of the character (see Build.New).
+function BF:SaveNew(name, classes, sections)
+	local build, missed = BF.Build.New(name, classes, sections)
+	return saveBuild(self, build, missed, sections.perks)
 end
 
 function BF:Rename(build, newName)

@@ -247,6 +247,190 @@ function Dialogs.Frame()
 	return box
 end
 
+-- The New Build sheet: one or two classes, any class, and which sections of the character to copy. Only sections
+-- that apply to the chosen classes are copied; with none checked the build starts blank.
+local sheet
+
+local COPY = {
+	{ key = "perks", label = "Perks" }, { key = "talents", label = "Talents" },
+	{ key = "glyphs", label = "Glyphs" }, { key = "gear", label = "Gear" },
+}
+local NEW_W, LABEL_W, PICK_W = 440, 56, 150
+local NOT_YOURS = "Not one of your classes, so there's nothing of it to copy. Perk values, ranks and category "
+	.. "limits will show your character's."
+
+local function sheetClasses()
+	return { sheet.first, sheet.second }
+end
+
+local function ownsAny(classes)
+	local any = false
+	for _, class in ipairs(classes) do
+		if BF:HasClass(class) then any = true end
+	end
+	return any
+end
+
+local function copyUsable(key)
+	return key == "gear" or ownsAny(sheetClasses())
+end
+
+local function copied()
+	local sections = {}
+	for _, c in ipairs(COPY) do
+		if sheet.wanted[c.key] and copyUsable(c.key) then sections[c.key] = true end
+	end
+	return sections
+end
+
+local function refreshSheet()
+	local S, C = BF.Style, BF.Style.colors
+	sheet.firstPick:SetText(BF.Window.ClassText({ sheet.first }))
+	sheet.secondPick:SetText(sheet.second and BF.Window.ClassText({ sheet.second }) or "None")
+	local sections, names = copied(), {}
+	for _, t in ipairs(sheet.toggles) do
+		local usable = copyUsable(t.key)
+		t.check:SetEnabled(usable)
+		t.check:SetChecked(sections[t.key])
+		t.label:SetTextColor(unpack(usable and C.text or C.muted))
+		if sections[t.key] then names[#names + 1] = t.text end
+	end
+	local list = #names > 1 and (table.concat(names, ", ", 1, #names - 1) .. " and " .. names[#names]) or names[1]
+	sheet.note:SetText(list and ("Copies " .. list) or S.Hex(C.good, "Blank Build"))
+end
+
+local function newCopyToggle(parent, c)
+	local S = BF.Style
+	local row = CreateFrame("Button", nil, parent)
+	row:SetSize(TOGGLE_W, S.CONTROL_H)
+	row.key, row.text = c.key, c.label
+	row.check = S.Check(row, 14, function() row:Click() end)
+	row.check:SetPoint("LEFT", 0, 0)
+	row.label = S.Text(row, "small")
+	row.label:SetPoint("LEFT", row.check, "RIGHT", S.GAP, 0)
+	row.label:SetText(c.label)
+	row:SetScript("OnClick", function(self)
+		if copyUsable(self.key) then
+			sheet.wanted[self.key] = not sheet.wanted[self.key]
+			refreshSheet()
+		end
+	end)
+	row:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_TOP")
+		GameTooltip:SetText(copyUsable(self.key) and ("Copy your character's %s."):format(c.label:lower())
+			or "Neither class is yours, so there's nothing to copy.", nil, nil, nil, nil, true)
+		GameTooltip:Show()
+	end)
+	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	return row
+end
+
+local function classOptions(withNone)
+	local options = {}
+	if withNone then options[1] = { value = false, text = "None", tooltip = "A single-class build." } end
+	for id = 1, 11 do
+		local key = BF.CLASS_KEYS[id]
+		if key then
+			options[#options + 1] = { value = key, text = BF.Window.ClassText({ key }),
+				tooltip = not BF:HasClass(key) and NOT_YOURS or nil }
+		end
+	end
+	return options
+end
+
+local function createSheet()
+	local S, C = BF.Style, BF.Style.colors
+	local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
+	-- rows top to bottom: title and sub line, Classes, Copy, Name, the buttons
+	local classesY = PAD + 16 + 4 + 12 + PAD + CONTROL_H / 2
+	local copyY = classesY + CONTROL_H + GAP
+	local nameY = copyY + CONTROL_H + GAP
+	local f = CreateFrame("Frame", "BuildForgeNewFrame", UIParent)
+	f:SetSize(NEW_W, nameY + CONTROL_H / 2 + PAD + CONTROL_H + PAD)
+	f:SetPoint("CENTER")
+	f:SetFrameStrata("DIALOG")
+	f:EnableMouse(true)
+	f:SetMovable(true)
+	f:RegisterForDrag("LeftButton")
+	f:SetScript("OnDragStart", f.StartMoving)
+	f:SetScript("OnDragStop", f.StopMovingOrSizing)
+	S.Panel(f, { C.window[1], C.window[2], C.window[3], 1 }, C.border)
+	tinsert(UISpecialFrames, "BuildForgeNewFrame")
+
+	f.title = S.Text(f, "large")
+	f.title:SetPoint("TOPLEFT", PAD, -PAD)
+	f.title:SetText("New Build")
+	f.sub = S.Text(f, "small", C.muted)
+	f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
+	f.sub:SetText("Copy parts of your character, or leave them unchecked to start blank.")
+
+	local function rowLabel(text, y)
+		local label = S.Text(f, "small", C.muted)
+		label:SetPoint("LEFT", f, "TOPLEFT", PAD, -y)
+		label:SetText(text)
+		return label
+	end
+	rowLabel("Classes", classesY)
+	f.firstPick = S.Dropdown(f, PICK_W, function(key)
+		sheet.first = key
+		refreshSheet()
+	end)
+	f.firstPick:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W, -classesY)
+	f.firstPick:SetOptions(classOptions(false))
+	f.secondPick = S.Dropdown(f, PICK_W, function(key)
+		sheet.second = key or nil
+		refreshSheet()
+	end)
+	f.secondPick:SetPoint("LEFT", f.firstPick, "RIGHT", GAP, 0)
+	f.secondPick:SetOptions(classOptions(true))
+
+	rowLabel("Copy", copyY)
+	f.toggles = {}
+	for i, c in ipairs(COPY) do
+		local t = newCopyToggle(f, c)
+		t:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W + (i - 1) * (TOGGLE_W + GAP), -copyY)
+		f.toggles[i] = t
+	end
+
+	rowLabel("Name", nameY)
+	f.name = S.Input(f, "BuildForgeNewName", PICK_W * 2 + GAP, "Build Name", 40)
+	f.name:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W, -nameY)
+
+	f.create = S.Button(f, "Create Build", "primary", 100, function()
+		local name = sheet.name:GetText():gsub("^%s+", ""):gsub("%s+$", "")
+		sheet.onCreate(name ~= "" and name or BF:UniqueName("New Build"), sheetClasses(), copied())
+	end, "Save the new build and open it.")
+	f.create:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+	local cancel = S.Button(f, "Cancel", "secondary", 70, function() f:Hide() end)
+	cancel:SetPoint("RIGHT", f.create, "LEFT", -GAP, 0)
+	f.note = S.Text(f, "small", C.muted)
+	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, PAD + CONTROL_H / 2)
+	f.note:SetPoint("RIGHT", cancel, "LEFT", -PAD, 0)
+	return f
+end
+
+-- Opens the sheet set to the character's classes with every section checked; onCreate(name, classes, sections)
+-- runs on Create Build.
+function Dialogs.ShowNew(onCreate)
+	sheet = sheet or createSheet()
+	local mine = BF:PlayerClasses()
+	sheet.first, sheet.second, sheet.onCreate = mine[1], mine[2], onCreate
+	sheet.wanted = {}
+	for _, c in ipairs(COPY) do sheet.wanted[c.key] = true end
+	sheet.name:SetText(BF:UniqueName("New Build"))
+	sheet.name:UpdatePlaceholder()
+	refreshSheet()
+	sheet:Show()
+end
+
+function Dialogs.HideNew()
+	if sheet then sheet:Hide() end
+end
+
+function Dialogs.NewFrame()
+	return sheet
+end
+
 StaticPopupDialogs["BUILDFORGE_APPLY"] = {
 	text = "Apply build \"%s\" to your active spec? The changes are listed in chat.",
 	button1 = ACCEPT,
