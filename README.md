@@ -4,6 +4,8 @@ A build manager for Synastria (WoW 3.3.5a). Save, share and apply a whole build 
 their options and chosen abilities, talents for every class, glyphs, recommended gear, Hunter pet aspects, the
 spec name and notes.
 
+![The BuildForge window on the Perks tab: your specs and saved builds in the sidebar, the build's perks by category, and a perk's details](docs/images/perks.png)
+
 ## Features
 
 - **Save Every Spec at Once:** one click saves each of your specs as its own build, linked to that spec.
@@ -28,6 +30,8 @@ spec name and notes.
 
 Open BuildForge with `/bforge`, the minimap button, or the **Open BuildForge** line in an innkeeper's chat
 options. The innkeeper line also opens the Perk Manager, which perk activations need.
+
+![An innkeeper's chat options with Open BuildForge under Manage perks](docs/images/innkeeper.png)
 
 On first use, click **Add Current Specs** to save all of your specs as builds. Specs you're not in can't show
 their perks yet, so those builds fill theirs in the first time you switch to them.
@@ -61,17 +65,23 @@ Left-click adds a point, right-click removes one, with the same tier and prerequ
 window. Dual-class builds get a button per class. Talents can only be added, so if your spec has points the
 build doesn't, the review lists them; unlearn at a class trainer and BuildForge reopens the review.
 
+![The Talents tab: a Death Knight's three trees with 71 of 71 points spent](docs/images/talents.png)
+
 ### Glyphs
 
 Each socket shows green when that glyph is socketed, yellow when it's in your bags and red when you don't have
 it. Click a socket to pick a glyph; right-click to clear it. Dual-class builds have glyphs per class. Glyphs are
 used up when socketed, so BuildForge leaves socketing to you; **Open Glyph Frame** opens the game's window.
 
+![The Glyphs tab: socketed major glyphs, empty minor sockets and the glyph picker for a socket](docs/images/glyphs.png)
+
 ### Gear
 
 A paper doll of the build's Best item per slot, plus Alts in order of preference. Drop an item anywhere on the
 tab to add it to its slot. Items the build's classes can't use are refused. **Equip from Bags** puts on the
 highest-ranked item you're carrying in each slot.
+
+![The Gear tab: the paper doll with every slot worn, and the Head slot's items beside it](docs/images/gear.png)
 
 ## Sharing Builds
 
