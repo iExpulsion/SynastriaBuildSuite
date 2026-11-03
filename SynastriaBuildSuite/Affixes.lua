@@ -128,6 +128,10 @@ function Affixes.Plan(order)
 	return current and #wanted > 0 and not same(wanted, current) and { order = wanted, current = current } or nil
 end
 
+-- The server's chat reply when the order is sent away from an innkeeper, and how long after sending to watch for it.
+local REFUSED, WATCH_FOR = "near an innkeeper", 5
+local watchUntil = 0
+
 -- Sends the order the way the game's Apply button does. The server only takes it near an innkeeper, which the
 -- client can't check, so it's always sent and the server decides. Returns whether it was sent.
 function Affixes.Apply(plan)
@@ -136,9 +140,21 @@ function Affixes.Apply(plan)
 		local slots = {}
 		for i = 1, Affixes.SLOTS do slots[i] = plan.order[i] or 0 end
 		NotifyServer(4, 0, table.concat(slots, ","))
+		watchUntil = GetTime() + WATCH_FOR
 	end
 	return sent
 end
+
+-- A refusal right after sending replaces the window's "Applied" message.
+local refusals = CreateFrame("Frame")
+refusals:RegisterEvent("CHAT_MSG_SYSTEM")
+refusals:SetScript("OnEvent", function(_, _, msg)
+	if GetTime() < watchUntil and (msg or ""):lower():find(REFUSED, 1, true) then
+		watchUntil = 0
+		local S = SBS.Style
+		SBS.Window.Message(S.Hex(S.colors.warn, "Affix Order Not Changed: Apply Again Near an Innkeeper"))
+	end
+end)
 
 -- Editing ---------------------------------------------------------------------------------------------------
 
