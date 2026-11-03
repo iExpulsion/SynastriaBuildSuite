@@ -130,8 +130,8 @@ end
 
 -- Near an innkeeper the server answers by casting "Changing Affix Choices"; away from one it says so in chat.
 -- After sending, both are watched for a while (the cast takes a few seconds) to tell the window how it went.
-local REFUSED, CAST, WATCH_FOR, REDRAW_AFTER = "near an innkeeper", "affix", 30, 1
-local watchUntil, redrawAt = 0, nil
+local REFUSED, CAST, WATCH_FOR, POLL_EVERY, POLL_FOR = "near an innkeeper", "affix", 30, 1, 10
+local watchUntil, sentOrder, pollUntil, nextPoll = 0, nil, nil, nil
 
 -- Sends the order the way the game's Apply button does. The server only takes it near an innkeeper, which the
 -- client can't check, so it's always sent and the server decides. Returns whether it was sent.
@@ -141,7 +141,7 @@ function Affixes.Apply(plan)
 		local slots = {}
 		for i = 1, Affixes.SLOTS do slots[i] = plan.order[i] or 0 end
 		NotifyServer(4, 0, table.concat(slots, ","))
-		watchUntil = GetTime() + WATCH_FOR
+		watchUntil, sentOrder = GetTime() + WATCH_FOR, plan.order
 	end
 	return sent
 end
@@ -152,8 +152,8 @@ local function finish(text, color)
 	SBS.Window.Message(S.Hex(S.colors[color], text))
 end
 
--- The server updates the order Current reads once the cast finishes, with no event of its own, so the window
--- redraws then and again a moment later.
+-- The server updates the order Current reads some time after the cast finishes, with no event of its own, so the
+-- window redraws every second until the order matches what was sent, for up to 10 seconds on a slow connection.
 local watch = CreateFrame("Frame")
 watch:RegisterEvent("CHAT_MSG_SYSTEM")
 watch:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
@@ -165,16 +165,22 @@ watch:SetScript("OnEvent", function(_, event, unitOrMsg, spell)
 	if watching and event == "CHAT_MSG_SYSTEM" and (unitOrMsg or ""):lower():find(REFUSED, 1, true) then
 		finish("Affix Order Not Changed: Apply Again Near an Innkeeper", "warn")
 	elseif watching and ours and event == "UNIT_SPELLCAST_SUCCEEDED" then
-		redrawAt = GetTime() + REDRAW_AFTER
+		pollUntil, nextPoll = GetTime() + POLL_FOR, GetTime() + POLL_EVERY
 		finish("Affix Order Changed", "good")
 	elseif watching and ours then
 		finish("Affix Order Not Changed: The Cast Was Interrupted", "warn")
 	end
 end)
 watch:SetScript("OnUpdate", function()
-	if redrawAt and GetTime() >= redrawAt then
-		redrawAt = nil
+	local now = GetTime()
+	if pollUntil and now >= nextPoll then
 		SBS:Changed()
+		local current = Affixes.Current()
+		if (current and same(current, sentOrder)) or now >= pollUntil then
+			pollUntil = nil
+		else
+			nextPoll = now + POLL_EVERY
+		end
 	end
 end)
 
