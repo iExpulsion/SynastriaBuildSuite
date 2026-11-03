@@ -76,8 +76,10 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   when it's in your bags and red when you don't have it; a badge counts the slot's Alts (stand-ins, in order of
   preference). Click a slot to list its Best and Alts beside the doll, where Make Best and Remove (or Ctrl-click
   and right-click) reorder them. Drop an item anywhere on the tab and it goes to its slot; rings, trinkets and
-  one-hand weapons fill an empty slot of the pair first. Equip from Bags puts on the highest-ranked item you're
-  carrying in each slot.
+  one-hand weapons fill an empty slot of the pair first. Items the build's classes can't use are refused: armor
+  and weapon types (a Priest can't take plate), off-hand weapons without a dual-wielding class or the Dual
+  Wielding perk, and items made for other classes. A dual-class build can use what either class can. Equip from
+  Bags puts on the highest-ranked item you're carrying in each slot.
 - **Notes:** free text saved with the build and included in exports.
 
 ## Commands

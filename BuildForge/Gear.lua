@@ -80,12 +80,74 @@ local function has(items, id)
 	return false
 end
 
+-- Class IDs that can use each item subclass, indexed as GetAuctionItemSubClasses lists them. Weapons follow the
+-- client's attune check (IsItemTypeValidForClass in its 08-ITEM_ATTUNE_WEAPONS.lua); armor is 3.3.5's equip rule.
+local WEAPON_CLASSES = {
+	[1] = { 1, 2, 3, 4, 6, 7 }, [2] = { 1, 2, 3, 6, 7 }, [3] = { 1, 3, 4 }, [4] = { 1, 3, 4 },
+	[5] = { 1, 2, 4, 5, 6, 7, 11 }, [6] = { 1, 2, 6, 7, 11 }, [7] = { 1, 2, 3, 6, 11 }, [8] = { 1, 2, 3, 4, 6, 8, 9 },
+	[9] = { 1, 2, 3, 6 }, [10] = { 1, 3, 5, 7, 8, 9, 11 }, [11] = { 1, 3, 4, 7, 11 }, [13] = { 1, 3, 4, 5, 7, 8, 9, 11 },
+	[14] = { 1, 3, 4 }, [15] = { 1, 3, 4 }, [16] = { 5, 8, 9 },
+}
+local ARMOR_CLASSES = {
+	[3] = { 1, 2, 3, 4, 6, 7, 11 }, [4] = { 1, 2, 3, 6, 7 }, [5] = { 1, 2, 6 }, [6] = { 1, 2, 7 },
+	[7] = { 2 }, [8] = { 11 }, [9] = { 7 }, [10] = { 6 },
+}
+local DUAL_WIELD_CLASSES = { 1, 3, 4, 6, 7 }
+local DUAL_WIELD_PERK = 188
+
+local function anyClass(allowed, ids)
+	local any = false
+	for _, a in ipairs(allowed) do
+		for _, id in ipairs(ids) do
+			if a == id then any = true end
+		end
+	end
+	return any
+end
+
+-- Whether the build's classes can use the item in `slot`: its armor or weapon type, dual wielding (or the Dual
+-- Wielding perk) for an off-hand weapon, and the item's own class list. Uncached items and builds with no classes
+-- pass. Returns ok, and a reason when not.
+function Gear.CanUse(build, id, slot)
+	local _, _, _, _, _, itemType, subType, _, equipLoc = GetItemInfo(id)
+	local ids = {}
+	for _, key in ipairs(build.classes or {}) do ids[#ids + 1] = BF.CLASS_IDS[key] end
+	local who = #ids > 0 and BF.Window.ClassText(build.classes, true)
+	local weapon, armor = GetAuctionItemClasses()
+	local rules = itemType == weapon and WEAPON_CLASSES or itemType == armor and ARMOR_CLASSES or {}
+	local subs = { GetAuctionItemSubClasses(itemType == weapon and 1 or 2) }
+	local rule
+	for i, name in ipairs(subs) do
+		if name == subType then rule = rules[i] end
+	end
+	local offHand = slot == 17 and (equipLoc == "INVTYPE_WEAPON" or equipLoc == "INVTYPE_WEAPONOFFHAND")
+	local perked = false
+	for _, p in ipairs(build.perks or {}) do
+		if p.id == DUAL_WIELD_PERK then perked = true end
+	end
+	local classMask = GetItemExtraCustom and GetItemExtraCustom(id)
+	local reason
+	if not who or not itemType then
+		reason = nil
+	elseif rule and not anyClass(rule, ids) then
+		reason = ("%s can't use %s."):format(who, subType)
+	elseif offHand and not perked and not anyClass(DUAL_WIELD_CLASSES, ids) then
+		reason = ("%s can't dual wield without the Dual Wielding perk."):format(who)
+	elseif classMask and classMask ~= 0 and bit.band(classMask, BF.Perks.ClassMask(build.classes)) == 0 then
+		reason = "That item is for another class."
+	end
+	return reason == nil, reason
+end
+
 -- Adds an item to a slot as its next Alt (or Best, if the slot is empty). Returns ok and a reason when not.
 function Gear.Add(build, slot, id)
 	build.gear = build.gear or {}
-	local ok, reason = Gear.Fits(id, slot) and not has(build.gear[slot], id), nil
+	local usable, refusal = Gear.CanUse(build, id, slot)
+	local ok, reason = Gear.Fits(id, slot) and usable and not has(build.gear[slot], id), nil
 	if not Gear.Fits(id, slot) then
 		reason = ("That item doesn't go in the %s slot."):format(BF.SLOT_NAMES[slot])
+	elseif not usable then
+		reason = refusal
 	elseif not ok then
 		reason = "That item is already in this slot."
 	else
