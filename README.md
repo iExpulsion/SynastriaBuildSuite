@@ -121,3 +121,8 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 
 The minimap button opens the window on left-click and your active spec's build on right-click. Drag it around
 the minimap to move it. With a LibDataBroker display such as Titan Panel, BuildForge appears there too.
+
+## License
+
+BuildForge is released under the [MIT License](LICENSE). The game data in `BuildForge/Data` comes from the
+Synastria client and isn't covered by it.
