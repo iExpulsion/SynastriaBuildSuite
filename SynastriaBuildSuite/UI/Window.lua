@@ -117,6 +117,7 @@ function Window.SwitchSpec(group)
 end
 
 function Window.Select(name)
+	S.Dismiss()
 	state.selected = name
 	state.message = nil
 	if frame then frame.review:Hide() end
@@ -597,6 +598,7 @@ local function createBuildHeader(main)
 		self:ClearFocus()
 		Window.Render()
 	end)
+	S.TrackInput(f.name)
 
 	f.classes = S.Text(main, "small")
 	f.classes:SetPoint("LEFT", row2, "LEFT", 0, 0)
@@ -685,6 +687,7 @@ local function createTabBar(main)
 		hover:SetAllPoints()
 		b:SetScript("OnClick", function()
 			PlaySound("igCharacterInfoTab")
+			S.Dismiss()
 			state.tab = tab.key
 			state.message = nil
 			Window.Render()
@@ -713,6 +716,7 @@ local function createNotes(main, width, height)
 		if userInput and build then build.notes = self:GetText() end
 	end)
 	scroll:SetScrollChild(edit)
+	S.TrackInput(edit)
 	SBS.List.AutoHideBar(scroll, "SynastriaBuildSuiteNotesScroll")
 	box:EnableMouse(true)
 	box:SetScript("OnMouseDown", function() edit:SetFocus() end)
@@ -809,6 +813,7 @@ local function create()
 	f:SetScript("OnHide", function()
 		PlaySound("igCharacterInfoClose")
 		f.review:Hide()
+		S.Dismiss()
 	end)
 	f:SetScript("OnUpdate", function(self)
 		if self.dirty then Window.Render() end

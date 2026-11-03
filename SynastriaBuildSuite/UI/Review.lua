@@ -142,12 +142,14 @@ function Review.Render()
 end
 
 function Review.Open(build)
+	S.Dismiss()
 	current = build
 	sheet:Show()
 	Review.Render()
 end
 
 function Review.Close()
+	S.Dismiss()
 	sheet:Hide()
 end
 

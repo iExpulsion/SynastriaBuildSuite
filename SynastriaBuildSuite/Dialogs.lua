@@ -107,6 +107,7 @@ local function create()
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	S.Panel(f, { C.window[1], C.window[2], C.window[3], 1 }, C.border)
 	tinsert(UISpecialFrames, "SynastriaBuildSuiteTextFrame")
+	f:HookScript("OnHide", S.Dismiss)
 
 	f.title = S.Text(f, "large")
 	f.title:SetPoint("TOPLEFT", PAD, -PAD)
@@ -170,6 +171,7 @@ local function create()
 		end
 	end)
 	scroll:SetScrollChild(edit)
+	S.TrackInput(edit)
 	well:SetScript("OnMouseDown", function() edit:SetFocus() end)
 	f.edit = edit
 	f.placeholder = S.Text(well, "normal", C.muted)
@@ -199,6 +201,7 @@ end
 
 -- Shows the build as a string, with the sections last chosen for export.
 function Dialogs.ShowExport(build)
+	SBS.Style.Dismiss()
 	box = box or create()
 	box.mode, box.build, box.onImport = "export", build, nil
 	box.title:SetText("Export: " .. build.name)
@@ -220,6 +223,7 @@ end
 -- Asks for a string; onImport(text, sections, into, name) runs with the checked sections, `into` true when the
 -- user chose to import into `targetName` (the selected build) rather than as a new build named `name`.
 function Dialogs.ShowImport(onImport, targetName)
+	SBS.Style.Dismiss()
 	box = box or create()
 	box.mode, box.build, box.onImport = "import", nil, onImport
 	box.title:SetText("Import a Build")
@@ -360,6 +364,7 @@ local function createSheet()
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	S.Panel(f, { C.window[1], C.window[2], C.window[3], 1 }, C.border)
 	tinsert(UISpecialFrames, "SynastriaBuildSuiteNewFrame")
+	f:HookScript("OnHide", S.Dismiss)
 
 	f.title = S.Text(f, "large")
 	f.title:SetPoint("TOPLEFT", PAD, -PAD)
@@ -422,6 +427,7 @@ end
 -- Opens the sheet set to the character's classes with every section checked; onCreate(name, classes, sections)
 -- runs on Create Build, onSaveSpecs() on Add Current Specs.
 function Dialogs.ShowNew(onCreate, onSaveSpecs)
+	SBS.Style.Dismiss()
 	sheet = sheet or createSheet()
 	local mine = SBS:PlayerClasses()
 	sheet.first, sheet.second, sheet.onCreate, sheet.onSaveSpecs = mine[1], mine[2], onCreate, onSaveSpecs

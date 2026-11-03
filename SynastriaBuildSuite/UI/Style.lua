@@ -279,8 +279,31 @@ function S.Check(parent, size, onClick)
 	return b
 end
 
+local menus, inputs = {}, {}
+
+function S.CloseMenus()
+	for _, menu in ipairs(menus) do menu:Hide() end
+end
+
+-- Edit boxes S.Dismiss clears. S.Input tracks its own; the other edit boxes call this once their scripts are set.
+function S.TrackInput(e)
+	e:HookScript("OnEditFocusGained", function(self) self.focused = true end)
+	e:HookScript("OnEditFocusLost", function(self) self.focused = false end)
+	inputs[#inputs + 1] = e
+end
+
+-- Closes every dropdown menu and takes keyboard focus from every edit box. Neither goes away when its view is
+-- covered or replaced (a menu only hides with its dropdown, and a hidden edit box keeps the keyboard), so views
+-- that do that (another tab, another build, the review sheet, a dialog, closing the window) call this.
+function S.Dismiss()
+	S.CloseMenus()
+	for _, e in ipairs(inputs) do
+		if e.focused then e:ClearFocus() end
+	end
+end
+
 -- Flat dropdown: a button showing the current choice that opens a menu below it. SetOptions takes
--- { { value, text, tooltip } }; picking one calls onSelect(value) and closes the menu.
+-- { { value, text, tooltip } }; picking one calls onSelect(value) and closes the menu. Opening one closes the others.
 function S.Dropdown(parent, width, onSelect)
 	local b = S.Button(parent, "", "secondary", width)
 	b.label:ClearAllPoints()
@@ -305,6 +328,7 @@ function S.Dropdown(parent, width, onSelect)
 	S.Panel(menu, S.colors.panel, S.colors.border)
 	menu:EnableMouse(true)
 	menu:Hide()
+	menus[#menus + 1] = menu
 	b.menu, b.items = menu, {}
 
 	function b:SetText(text) self.label:SetText(text) end
@@ -343,7 +367,9 @@ function S.Dropdown(parent, width, onSelect)
 		menu:SetHeight(#options * S.CONTROL_H + 2)
 	end
 	b:SetScript("OnClick", function()
-		if menu:IsShown() then menu:Hide() else menu:Show() end
+		local open = menu:IsShown()
+		S.CloseMenus()
+		if not open then menu:Show() end
 	end)
 	b:HookScript("OnHide", function() menu:Hide() end)
 	return b
@@ -374,5 +400,6 @@ function S.Input(parent, name, width, placeholder, maxLetters)
 	e:HookScript("OnTextChanged", update)
 	e.UpdatePlaceholder = update
 	update(e)
+	inputs[#inputs + 1] = e
 	return e
 end
