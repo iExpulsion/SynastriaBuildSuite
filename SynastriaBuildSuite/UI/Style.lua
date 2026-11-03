@@ -124,21 +124,35 @@ function S.ScrollBar(scroll, scrollName)
 end
 
 -- Copies of the stock fonts without their drop shadow, which smears dark text on light fills and blurs small text
--- on flat panels. S.FONTS[size] is the font object's name, for CreateFontString and SetFontObject.
+-- on flat panels. S.FONTS[size] is the font object, for S.FontString and SetFontObject. A copy that comes back
+-- without a font face (seen in game, cause unknown) falls back to the stock font's face and size.
 S.FONTS = {}
+local FALLBACK_SIZE = { small = 10, normal = 12, large = 16, huge = 20, edit = 14 }
 for size, base in pairs({ small = "GameFontHighlightSmall", normal = "GameFontHighlight", large = "GameFontHighlightLarge",
 	huge = "GameFontNormalHuge", edit = "ChatFontNormal" }) do
-	local name = "SynastriaBuildSuiteFont" .. size:sub(1, 1):upper() .. size:sub(2)
-	local font = CreateFont(name)
-	font:CopyFontObject(_G[base])
+	local font = CreateFont("SynastriaBuildSuiteFont" .. size:sub(1, 1):upper() .. size:sub(2))
+	local stock = _G[base]
+	if stock then font:CopyFontObject(stock) end
+	if not font:GetFont() then
+		local face, height, flags = stock and stock:GetFont()
+		font:SetFont(face or STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", height or FALLBACK_SIZE[size], flags or "")
+		font:SetTextColor(1, 1, 1)
+	end
 	font:SetShadowOffset(0, 0)
 	font:SetShadowColor(0, 0, 0, 0)
-	S.FONTS[size] = name
+	S.FONTS[size] = font
 end
 local FONTS = S.FONTS
 
+-- A font string in one of the fonts above, set by object rather than by name.
+function S.FontString(parent, size, layer)
+	local fs = parent:CreateFontString(nil, layer or "ARTWORK")
+	fs:SetFontObject(FONTS[size or "normal"])
+	return fs
+end
+
 function S.Text(parent, size, color, layer)
-	local fs = parent:CreateFontString(nil, layer or "ARTWORK", FONTS[size or "normal"])
+	local fs = S.FontString(parent, size, layer)
 	fs:SetTextColor(unpack(color or S.colors.text))
 	fs:SetJustifyH("LEFT")
 	return fs
@@ -172,7 +186,7 @@ function S.Button(parent, label, kind, width, onClick, tooltip)
 	b:SetSize(width or 90, S.CONTROL_H)
 	b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
 	b.kind = kind or "secondary"
-	b.label = b:CreateFontString(nil, "ARTWORK", FONTS.small)
+	b.label = S.FontString(b, "small")
 	b.label:SetPoint("CENTER")
 	b.label:SetText(label)
 	b.tooltipText = tooltip
