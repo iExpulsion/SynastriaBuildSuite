@@ -264,7 +264,8 @@ function S.Dropdown(parent, width, onSelect)
 	arrow:SetVertexColor(unpack(S.colors.muted))
 
 	local menu = CreateFrame("Frame", nil, b)
-	menu:SetFrameStrata("DIALOG")
+	-- above DIALOG, so the menu covers the controls of the dialog it opens from
+	menu:SetFrameStrata("FULLSCREEN_DIALOG")
 	menu:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -2)
 	menu:SetWidth(width)
 	S.Panel(menu, S.colors.panel, S.colors.border)
