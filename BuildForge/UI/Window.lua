@@ -309,9 +309,11 @@ local function renderActions(build)
 	for i, b in ipairs(frame.actions) do
 		local action = actions[i]
 		if action then
+			local usable = not action.usable or action.usable(build)
 			b:SetLabel(action.label)
 			b:SetScript("OnClick", function() action.run(build) end)
-			b.tooltipText = action.tooltip
+			b.tooltipText = usable and action.tooltip or action.unusableTip
+			if usable then b:Enable() else b:Disable() end
 			b:Show()
 		else
 			b:Hide()

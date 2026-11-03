@@ -48,7 +48,8 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   its own trees, so a same-class dual (Warrior x2) gets 142. Builds with two different classes get a button
   per class. Use Current Talents copies your spec; Reset Class clears the class shown. The Use Current buttons
   only replace the parts for the build's classes you have, so a dual build keeps its other class's talents,
-  glyphs and class perks, and a build for a class you don't have keeps its classes.
+  glyphs and class perks. On a build with none of your classes, Use Current Perks, Talents and Glyphs are
+  disabled; Use Current Gear still works.
 - **Perks:** a perk editor for the build's classes, any class, not just yours. In Build lists the build's perks
   (and any it would turn off); All Perks lists every perk the classes can use, with a search box. Check a perk
   to add it to the build. Click a perk to see its effect, notes, options and, for perks that grant one, the

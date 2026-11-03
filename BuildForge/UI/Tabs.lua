@@ -6,6 +6,17 @@ local BF = NS.BF
 local Tabs = { actions = {}, diff = {} }
 BF.Tabs = Tabs
 
+-- An action's optional usable(build) disables its button, showing unusableTip instead of its tooltip.
+local NOT_YOURS = "None of this build's classes are yours, so there's nothing to copy."
+
+local function hasBuildClass(build)
+	local any = build.sharedOnly or not build.classes or #build.classes == 0
+	for _, class in ipairs(build.classes or {}) do
+		if BF:HasClass(class) then any = true end
+	end
+	return any
+end
+
 -- Perks
 
 -- (the tab itself is the editor in UI/PerkEditor.lua)
@@ -20,7 +31,7 @@ Tabs.diff.perks = function(build)
 end
 
 Tabs.actions.perks = {
-	{ label = "Use Current Perks", tooltip = "Replace this list with the perks active on your character now: your Misc perks for Shared Perks, and for a build the ones its classes can use. Class perks for its classes you don't have stay.", run = function(build)
+	{ label = "Use Current Perks", tooltip = "Replace this list with the perks active on your character now: your Misc perks for Shared Perks, and for a build the ones its classes can use. Class perks for its classes you don't have stay.", usable = hasBuildClass, unusableTip = NOT_YOURS, run = function(build)
 		if build.sharedOnly then
 			local _, misc = BF.Perks.Split(BF.Perks.Capture())
 			BF.db.shared.perks = {}
@@ -54,7 +65,7 @@ Tabs.diff.talents = function(build)
 end
 
 Tabs.actions.talents = {
-	{ label = "Use Current Talents", tooltip = "Replace this build's talents with your active spec's, for each of its classes you have.", run = function(build)
+	{ label = "Use Current Talents", tooltip = "Replace this build's talents with your active spec's, for each of its classes you have.", usable = hasBuildClass, unusableTip = NOT_YOURS, run = function(build)
 		for _, class in ipairs(BF.Build.CopyCurrent(build, { talents = true })) do
 			BF:Print("|cffff6060Couldn't read %s talents; select it in the talent window and try again.|r", class)
 		end
@@ -76,7 +87,7 @@ Tabs.actions.glyphs = {
 	{ label = "Open Glyph Frame", tooltip = "Open the game's glyph window to socket the glyphs you're carrying.", run = function()
 		BF.Glyphs.OpenFrame()
 	end },
-	{ label = "Use Current Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec, for each of its classes you have.", run = function(build)
+	{ label = "Use Current Glyphs", tooltip = "Replace this build's glyphs with the ones socketed in your active spec, for each of its classes you have.", usable = hasBuildClass, unusableTip = NOT_YOURS, run = function(build)
 		BF.Build.CopyCurrent(build, { glyphs = true })
 		BF:Changed()
 	end },
