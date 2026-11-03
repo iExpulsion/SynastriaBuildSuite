@@ -610,10 +610,9 @@ local function createBuildHeader(main)
 	f.specLabel:SetText("Spec Name")
 	f.spec = S.Input(main, "SynastriaBuildSuiteSpecBox", 110, "None", 14)
 	f.spec:SetPoint("LEFT", f.specLabel, "RIGHT", GAP, 0)
-	f.spec:SetScript("OnEscapePressed", function(self)
-		self:SetText(self.committed or "")
-		self:ClearFocus()
-	end)
+	-- like the name, it saves only on Enter: Esc or clicking away puts back the saved spec name
+	f.spec:SetScript("OnEscapePressed", f.spec.ClearFocus)
+	f.spec:HookScript("OnEditFocusLost", function(self) self:SetText(self.committed or "") end)
 	f.spec:SetScript("OnEnterPressed", function(self)
 		local build = selectedBuild()
 		if build then
