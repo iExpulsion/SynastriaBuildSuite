@@ -14,8 +14,9 @@ local function specName(group)
 	return GetCustomGameDataString and GetCustomGameDataString(21, group) or ""
 end
 
--- Captures the character's build for spec `group` (the active spec by default). Perks and pet aspects can only be
--- read for the active spec, so another spec's build is marked perksPending until the player switches to it.
+-- Captures the character's build for spec `group` (the active spec by default). Perks, pet aspects and the affix
+-- order can only be read for the active spec, so another spec's build is marked perksPending until the player
+-- switches to it.
 function Build.Capture(name, group)
 	group = group or SBS:ActiveGroup()
 	local active = group == SBS:ActiveGroup()
@@ -29,16 +30,18 @@ function Build.Capture(name, group)
 		glyphs = SBS.Glyphs.Capture(group),
 		gear = SBS.Gear.Capture(),
 		pet = active and isHunter() and GetHunterBM() or nil,
+		affixes = active and SBS.Affixes.Current() or nil,
 		perksPending = not active or nil,
 		notes = "",
 	}
 	return build, missed
 end
 
--- Fills in a perksPending build's perks from the active spec.
+-- Fills in a perksPending build's perks, pet aspects and affix order from the active spec.
 function Build.FillPending(build)
 	build.perks = (SBS.Perks.Split(SBS.Perks.Capture()))
 	build.pet = isHunter() and GetHunterBM() or nil
+	build.affixes = SBS.Affixes.Current()
 	build.perksPending = nil
 end
 
@@ -84,6 +87,7 @@ function Build.CopyCurrent(build, sections)
 	end
 	if sections.glyphs then build.glyphs = merge(build.glyphs, SBS.Glyphs.Capture()) end
 	if sections.gear then build.gear = SBS.Gear.Capture() end
+	if sections.affixes then build.affixes = SBS.Affixes.Current() end
 	return missed
 end
 
@@ -127,7 +131,8 @@ function Build.Plan(build)
 		talents = SBS.Talents.Plan(build.talents),
 		glyphs = SBS.Glyphs.Plan(build.glyphs),
 		gear = SBS.Gear.Status(build.gear),
-		pet = build.pet and isHunter() and GetHunterBM() ~= build.pet and build.pet or nil,
+		affixes = not build.sharedOnly and SBS.Affixes.Plan(build.affixes) or nil,
+		pet =build.pet and isHunter() and GetHunterBM() ~= build.pet and build.pet or nil,
 		spec = spec and spec ~= "" and spec ~= specName(group) and spec or nil,
 	}
 end
@@ -141,6 +146,7 @@ function Build.Apply(plan)
 	local result = {
 		perksSent = SBS.Perks.Apply(plan.perks),
 		refused = SBS.Talents.Apply(plan.talents),
+		affixesSent = SBS.Affixes.Apply(plan.affixes),
 	}
 	if plan.pet then ChangeHunterBM(plan.pet) end
 	if plan.spec then

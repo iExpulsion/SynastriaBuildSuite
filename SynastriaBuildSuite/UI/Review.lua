@@ -87,6 +87,25 @@ local function lines(plan)
 		for _, g in ipairs(plan.glyphs) do add(g.name, S.Hex(C.muted, "Socket Yourself")) end
 	end
 
+	local a = plan.affixes
+	if a then
+		local Affixes = SBS.Affixes
+		add("Affix Priority", nil, true)
+		if not SBS.Perks.Writable() then
+			add(S.Hex(C.warn, "Changing the affix order needs the Perk Manager open at an innkeeper."), nil, false, function(tt)
+				tt:AddLine("Away from an Innkeeper", 1, 1, 1)
+				tt:AddLine("The order is skipped. Apply again at an innkeeper to set it.", 0.8, 0.8, 0.8, true)
+			end)
+		end
+		for i = 1, math.max(#a.order, #a.current) do
+			local want, have = a.order[i], a.current[i]
+			if want ~= have then
+				add(("%d. %s"):format(i, want and Affixes.Name(want) or S.Hex(C.muted, "None")),
+					S.Hex(C.muted, "Was " .. (have and Affixes.Name(have) or "None")))
+			end
+		end
+	end
+
 	if plan.pet or plan.spec then
 		add("Other", nil, true)
 		if plan.pet then add("Hunter Pet Aspects", S.Hex(C.good, "Change")) end
@@ -103,7 +122,8 @@ local function hasChanges(plan)
 		if #entry.conflicts == 0 and entry.points > 0 then talents = true end
 	end
 	local perks = #p.options + #p.spells > 0 or (p.needsInnkeeper and SBS.Perks.Writable())
-	return perks or talents or plan.pet ~= nil or plan.spec ~= nil or willRelink(plan)
+	local affixes = plan.affixes ~= nil and SBS.Perks.Writable()
+	return perks or talents or affixes or plan.pet ~= nil or plan.spec ~= nil or willRelink(plan)
 end
 
 function Review.Render()

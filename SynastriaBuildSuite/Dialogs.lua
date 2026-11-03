@@ -4,12 +4,12 @@ local SBS = NS.SBS
 local Dialogs = {}
 SBS.Dialogs = Dialogs
 
--- The export / import box: a row of section checkboxes (Perks, Talents, Glyphs, Gear, Notes) over the string.
+-- The export / import box: a row of section checkboxes (Perks, Talents, Glyphs, Gear, Affixes, Notes) over the string.
 -- Export re-encodes as sections are toggled and remembers the choice; import shows which sections the pasted
 -- string has and imports only the checked ones, as a new build or into the selected build.
 local box
 
-local W, H, TOGGLE_W = 560, 340, 80
+local W, H, TOGGLE_W = 560, 340, 72
 
 local function chosen()
 	local sections = {}
@@ -222,7 +222,7 @@ function Dialogs.ShowImport(onImport, targetName)
 	box = box or create()
 	box.mode, box.build, box.onImport = "import", nil, onImport
 	box.title:SetText("Import a Build")
-	box.sub:SetText("Paste a Synastria Build Suite, SBM or SPM string, then pick the sections to bring in.")
+	box.sub:SetText("Paste a Synastria Build Suite, SBM, SPM or affix order string, then pick the sections to bring in.")
 	box.selectAll:Hide()
 	box.placeholder:Show()
 	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Show() end
@@ -253,7 +253,7 @@ local sheet
 
 local COPY = {
 	{ key = "perks", label = "Perks" }, { key = "talents", label = "Talents" },
-	{ key = "glyphs", label = "Glyphs" }, { key = "gear", label = "Gear" },
+	{ key = "glyphs", label = "Glyphs" }, { key = "gear", label = "Gear" }, { key = "affixes", label = "Affixes" },
 }
 local NEW_W, LABEL_W, PICK_W = 540, 56, 150
 Dialogs.SAVE_SPECS_TIP = "Save every spec on this character as a build linked to it, or refresh the ones already "
@@ -274,7 +274,7 @@ local function ownsAny(classes)
 end
 
 local function copyUsable(key)
-	return key == "gear" or ownsAny(sheetClasses())
+	return key == "gear" or key == "affixes" or ownsAny(sheetClasses())
 end
 
 local function copied()

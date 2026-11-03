@@ -18,6 +18,7 @@ Talents.lua
 TalentCalc.lua
 Glyphs.lua
 Gear.lua
+Affixes.lua
 Build.lua
 Dialogs.lua
 Commands.lua
@@ -28,6 +29,7 @@ UI\TalentEditor.lua
 UI\PerkEditor.lua
 UI\GearEditor.lua
 UI\GlyphEditor.lua
+UI\AffixEditor.lua
 UI\Window.lua
 UI\Tabs.lua
 UI\Launchers.lua

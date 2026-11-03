@@ -113,3 +113,20 @@ Tabs.actions.gear = {
 	end },
 	{ label = "Equip from Bags", tooltip = "Put on the highest-ranked item you're carrying for each slot.", run = function(build) SBS:EquipGear(build) end },
 }
+
+-- Affixes (the tab itself is the priority list in UI/AffixEditor.lua)
+
+Tabs.diff.affixes = function(build)
+	return SBS.Affixes.Diff(build.affixes)
+end
+
+Tabs.actions.affixes = {
+	{ label = "Use Current Affixes", tooltip = "Replace this build's affix order with your active spec's.", run = function(build)
+		SBS.Build.CopyCurrent(build, { affixes = true })
+		SBS:Changed()
+	end },
+	{ label = "Clear Order", tooltip = "Empty this build's affix order. Applying the build then leaves your spec's order alone.", run = function(build)
+		build.affixes = {}
+		SBS:Changed()
+	end },
+}

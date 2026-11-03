@@ -21,6 +21,7 @@ local TABS = {
 	{ key = "talents", label = "Talents" },
 	{ key = "glyphs", label = "Glyphs" },
 	{ key = "gear", label = "Gear" },
+	{ key = "affixes", label = "Affixes" },
 	{ key = "notes", label = "Notes" },
 }
 
@@ -28,9 +29,10 @@ local frame
 local SPECS_KEY = "\1specs"
 local CLASSES_W = 150
 -- Tabs whose comparison depends on the active spec (gear and bags are the same in every spec).
-local PER_SPEC = { perks = true, talents = true, glyphs = true }
+local PER_SPEC = { perks = true, talents = true, glyphs = true, affixes = true }
 -- The editor module behind each tab except Notes.
-local EDITORS = { perks = "PerkEditor", talents = "TalentEditor", glyphs = "GlyphEditor", gear = "GearEditor" }
+local EDITORS = { perks = "PerkEditor", talents = "TalentEditor", glyphs = "GlyphEditor", gear = "GearEditor",
+	affixes = "AffixEditor" }
 local state = { selected = nil, tab = "perks", collapsed = {}, search = "" }
 Window.state = state
 
@@ -382,8 +384,9 @@ local function renderBuild(build)
 		local summary = SBS[EDITORS[state.tab]].Render(build)
 		if PER_SPEC[state.tab] and not Window.IsComparing(build) then summary = Window.InactiveNote(build) end
 		local pendingSpec = build.perksPending and SBS:LinkedSpecs(build.name)[1]
-		if state.tab == "perks" and pendingSpec then
-			summary = S.Hex(C.warn, ("Perks Fill In When You Switch to Spec %d"):format(pendingSpec))
+		if pendingSpec and (state.tab == "perks" or state.tab == "affixes") then
+			summary = S.Hex(C.warn, ("%s Fill In When You Switch to Spec %d"):format(state.tab == "perks" and "Perks"
+				or "Affixes", pendingSpec))
 		end
 		frame.summary:SetText(state.message or summary or "")
 	end
@@ -537,7 +540,7 @@ local function createSidebar(f)
 	new:SetPoint("LEFT", PAD, 0)
 	f.newBuild = new
 	local import = S.Button(footer, "Import", "secondary", half, importBuild,
-		"Paste a Synastria Build Suite, SynastriaBuildManager or SynastriaPerkManager string.")
+		"Paste a Synastria Build Suite, SynastriaBuildManager, SynastriaPerkManager or affix order string.")
 	import:SetPoint("LEFT", new, "RIGHT", GAP, 0)
 end
 

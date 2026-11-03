@@ -99,6 +99,7 @@ Codec.SECTIONS = {
 	{ key = "talents", label = "Talents", fields = { "talents" } },
 	{ key = "glyphs", label = "Glyphs", fields = { "glyphs" } },
 	{ key = "gear", label = "Gear", fields = { "gear" } },
+	{ key = "affixes", label = "Affixes", fields = { "affixes" } },
 	{ key = "notes", label = "Notes", fields = { "notes" } },
 }
 
@@ -190,6 +191,13 @@ function Codec.Encode(build)
 	end) or ""
 	if gear ~= "" then f[#f + 1] = "g=" .. gear end
 
+	local affixes = SBS.Affixes.Compact(build.affixes)
+	if #affixes > 0 then
+		local ids = {}
+		for i, id in ipairs(affixes) do ids[i] = b36(id) end
+		f[#f + 1] = "af=" .. table.concat(ids, ".")
+	end
+
 	if build.notes and build.notes ~= "" then f[#f + 1] = "x=" .. esc(build.notes) end
 
 	return ("!SBS%d!%s!"):format(FORMAT, table.concat(f, ";"))
@@ -251,6 +259,12 @@ readers.gl = function(b, v)
 	end
 end
 
+readers.af = function(b, v)
+	local ids = {}
+	for _, id in ipairs(split(v, ".")) do ids[#ids + 1] = num(id) end
+	b.affixes = SBS.Affixes.Compact(ids)
+end
+
 readers.g = function(b, v)
 	b.gear = {}
 	for slot, items in ipairs(split(v, ".")) do
@@ -260,8 +274,8 @@ readers.g = function(b, v)
 	end
 end
 
--- Returns the build table, or nil and an error message. SynastriaBuildManager strings go to SBS.SBM, and
--- SynastriaPerkManager perk lists to SBS.SPM.
+-- Returns the build table, or nil and an error message. SynastriaBuildManager strings go to SBS.SBM, the Item
+-- Affix Manager's exports to SBS.Affixes, and SynastriaPerkManager perk lists to SBS.SPM.
 function Codec.Decode(text)
 	local raw = text
 	text = (text or ""):gsub("%s", "")
@@ -269,6 +283,8 @@ function Codec.Decode(text)
 	local result, err
 	if SBS.SBM.Version(raw) then
 		result, err = SBS.SBM.Decode(raw)
+	elseif SBS.Affixes.IsGameString(raw) then
+		result = SBS.Affixes.DecodeGameString(raw)
 	elseif SBS.SPM.Is(raw) then
 		result, err = SBS.SPM.Decode(raw)
 	elseif fmt then
@@ -283,7 +299,7 @@ function Codec.Decode(text)
 			if result.spec == true then result.spec = result.name end
 		end
 	else
-		err = "not a Synastria Build Suite, SynastriaBuildManager or SynastriaPerkManager string"
+		err = "not a Synastria Build Suite, SynastriaBuildManager, SynastriaPerkManager or affix order string"
 	end
 	return result, err
 end

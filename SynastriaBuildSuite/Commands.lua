@@ -61,6 +61,10 @@ function SBS:Report(plan)
 	for _, s in ipairs(plan.talents.skipped) do self:Print("  |cffaaaaaaSkipped %s talents: %s|r", s.class, s.reason) end
 
 	for _, g in ipairs(plan.glyphs) do self:Print("  Glyph to socket yourself: %s", g.name) end
+	if plan.affixes then
+		self:Print(SBS.Perks.Writable() and "  Affix order will change"
+			or "  |cffff6060The affix order needs the Perk Manager open at an innkeeper; it'll be skipped.|r")
+	end
 	if plan.pet then self:Print("  Pet aspects will change") end
 	if plan.spec then self:Print("  Spec name: %s", plan.spec) end
 end
@@ -113,7 +117,9 @@ function SBS:SaveAllSpecs()
 		local build, missed = SBS.Build.Capture(name, group)
 		if old then
 			build.notes, build.gear = old.notes, old.gear
-			if group ~= active then build.perks, build.pet, build.perksPending = old.perks, old.pet, old.perksPending end
+			if group ~= active then
+				build.perks, build.pet, build.affixes, build.perksPending = old.perks, old.pet, old.affixes, old.perksPending
+			end
 		end
 		if build.perksPending then waiting[#waiting + 1] = "Spec " .. group end
 		for _, class in ipairs(missed) do
@@ -139,7 +145,7 @@ function SBS:FillPendingSpec()
 	local build = self.db.builds[self:Links()[group] or ""]
 	if build and build.perksPending then
 		SBS.Build.FillPending(build)
-		self:Print("Filled in %s's perks from Spec %d.", build.name, group)
+		self:Print("Filled in %s's perks and affix order from Spec %d.", build.name, group)
 		self:Changed()
 	end
 end
