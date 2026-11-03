@@ -14,21 +14,32 @@ local function specName(group)
 	return GetCustomGameDataString and GetCustomGameDataString(21, group) or ""
 end
 
--- Captures the character's current build for the active spec.
-function Build.Capture(name)
-	local talents, missed = BF.Talents.Capture()
+-- Captures the character's build for spec `group` (the active spec by default). Perks and pet aspects can only be
+-- read for the active spec, so another spec's build is marked perksPending until the player switches to it.
+function Build.Capture(name, group)
+	group = group or BF:ActiveGroup()
+	local active = group == BF:ActiveGroup()
+	local talents, missed = BF.Talents.Capture(group)
 	local build = {
 		name = name,
 		classes = BF:PlayerClasses(),
-		spec = specName(BF:ActiveGroup()),
-		perks = (BF.Perks.Split(BF.Perks.Capture())),
+		spec = specName(group),
+		perks = active and (BF.Perks.Split(BF.Perks.Capture())) or {},
 		talents = talents,
-		glyphs = BF.Glyphs.Capture(),
+		glyphs = BF.Glyphs.Capture(group),
 		gear = BF.Gear.Capture(),
-		pet = isHunter() and GetHunterBM() or nil,
+		pet = active and isHunter() and GetHunterBM() or nil,
+		perksPending = not active or nil,
 		notes = "",
 	}
 	return build, missed
+end
+
+-- Fills in a perksPending build's perks from the active spec.
+function Build.FillPending(build)
+	build.perks = (BF.Perks.Split(BF.Perks.Capture()))
+	build.pet = isHunter() and GetHunterBM() or nil
+	build.perksPending = nil
 end
 
 -- Replaces the checked sections ({ key = true }) of `build` with the character's, only for the build's classes the
@@ -61,6 +72,7 @@ function Build.CopyCurrent(build, sections)
 		end
 		table.sort(perks, function(a, b) return a.id < b.id end)
 		build.perks = perks
+		build.perksPending = nil
 		if own.HUNTER and isHunter() then build.pet = GetHunterBM() end
 	end
 	if sections.talents then

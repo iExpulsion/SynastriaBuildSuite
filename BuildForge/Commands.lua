@@ -97,6 +97,53 @@ function BF:SaveNew(name, classes, sections)
 	return saveBuild(self, build, missed, sections.perks)
 end
 
+-- Saves every spec on this character as a build linked to it. A spec's linked build is refreshed (keeping its name,
+-- notes and gear, and its perks unless the spec is active); other specs get a new build named after the spec.
+-- Specs other than the active one can't show their perks, so their new builds fill them in on first switching.
+function BF:SaveAllSpecs()
+	local links, active, waiting, saved = self:Links(), self:ActiveGroup(), {}, 0
+	if #self.db.shared.perks == 0 then
+		local _, misc = BF.Perks.Split(BF.Perks.Capture())
+		BF.Perks.AddShared(misc)
+	end
+	for group = 1, self:SpecCount() do
+		local old = links[group] and self.db.builds[links[group]]
+		local label = GetCustomGameDataString and GetCustomGameDataString(21, group) or ""
+		local name = old and old.name or self:UniqueName(label ~= "" and label or ("Spec " .. group))
+		local build, missed = BF.Build.Capture(name, group)
+		if old then
+			build.notes, build.gear = old.notes, old.gear
+			if group ~= active then build.perks, build.pet, build.perksPending = old.perks, old.pet, old.perksPending end
+		end
+		if build.perksPending then waiting[#waiting + 1] = "Spec " .. group end
+		for _, class in ipairs(missed) do
+			self:Print("|cffff6060Couldn't read %s talents for Spec %d; select it in the talent window and try again.|r",
+				class, group)
+		end
+		self.db.builds[name] = build
+		links[group] = name
+		saved = saved + 1
+	end
+	self:Print("Saved %s, each linked to its spec.", BF.Style.Count(saved, "spec"))
+	if #waiting > 0 then
+		self:Print("Switch to %s to fill in %s perks.", table.concat(waiting, ", "), #waiting > 1 and "their" or "its")
+	end
+	self:Changed()
+	return saved
+end
+
+-- Fills in the perks of the active spec's linked build if it's still waiting for them. Called a moment after a
+-- spec switch, once the server has sent the new spec's perks.
+function BF:FillPendingSpec()
+	local group = self:ActiveGroup()
+	local build = self.db.builds[self:Links()[group] or ""]
+	if build and build.perksPending then
+		BF.Build.FillPending(build)
+		self:Print("Filled in %s's perks from Spec %d.", build.name, group)
+		self:Changed()
+	end
+end
+
 function BF:Rename(build, newName)
 	local ok = newName ~= "" and not self.db.builds[newName]
 	if ok then
@@ -198,6 +245,8 @@ end
 function BF:Duplicate(build)
 	local dup = copy(build)
 	dup.name = self:UniqueName(build.name .. " Copy")
+	-- an unlinked copy has no spec to fill its perks from
+	dup.perksPending = nil
 	self.db.builds[dup.name] = dup
 	self:Print("Duplicated %s as %s.", build.name, dup.name)
 	self:Changed()
@@ -238,7 +287,7 @@ end
 
 local function help()
 	BF:Print("v%s commands (/bforge alone opens the window):", BF.version)
-	BF:Print("  /bforge list | save <name> | apply <name> | export <name> | import")
+	BF:Print("  /bforge list | save <name> | specs | apply <name> | export <name> | import")
 	BF:Print("  /bforge gear <name> | equip <name> | delete <name> | note <name> <text> | minimap | reset")
 end
 
@@ -247,6 +296,7 @@ local handlers = {}
 handlers[""] = function() BF.Window.Toggle() end
 handlers.help = help
 handlers.list = list
+handlers.specs = function() BF:SaveAllSpecs() end
 handlers.import = function()
 	BF.Dialogs.ShowImport(function(text, sections, _, name) BF:Import(text, nil, sections, nil, name) end)
 end
@@ -309,3 +359,22 @@ SlashCmdList.BUILDFORGE = function(msg)
 	local handler = handlers[cmd:lower()]
 	if handler then handler(arg) else help() end
 end
+
+-- The server sends a spec's perks after the switch (and after login), so a pending build is filled a moment later,
+-- once the perk list is there.
+local PENDING_DELAY = 2
+local pendingWatch = CreateFrame("Frame")
+pendingWatch:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+pendingWatch:RegisterEvent("PLAYER_ENTERING_WORLD")
+pendingWatch:SetScript("OnEvent", function(self) self.wait = PENDING_DELAY end)
+pendingWatch:SetScript("OnUpdate", function(self, elapsed)
+	if self.wait then
+		self.wait = self.wait - elapsed
+		if self.wait <= 0 and PerkMgrPerks then
+			self.wait = nil
+			BF:FillPendingSpec()
+		elseif self.wait <= 0 then
+			self.wait = PENDING_DELAY
+		end
+	end
+end)

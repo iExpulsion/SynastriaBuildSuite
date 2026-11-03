@@ -239,10 +239,10 @@ function Perks.AddShared(list)
 	return added
 end
 
--- The perk plan for a build: its own perks plus the shared ones. The Shared Perks entry (`sharedOnly`) plans the
--- shared list alone and leaves every other perk as it is.
+-- The perk plan for a build: its own perks plus the shared ones. The Shared Perks entry (`sharedOnly`), and a build
+-- still waiting for its perks (`perksPending`), plan the shared list alone and leave every other perk as it is.
 function Perks.BuildPlan(build)
-	return Perks.Plan(Perks.Wanted(build), build.sharedOnly and Perks.IsShared or nil)
+	return Perks.Plan(Perks.Wanted(build), (build.sharedOnly or build.perksPending) and Perks.IsShared or nil)
 end
 
 -- What applying a build wants: its own perks plus the shared ones.
@@ -264,6 +264,8 @@ end
 -- Adds the perk (starting from the character's own options and ability) or removes it. Returns whether it's in.
 function Perks.Toggle(build, id)
 	build.perks = build.perks or {}
+	-- editing perks by hand means the player has chosen them, so nothing fills them in later
+	build.perksPending = nil
 	local entry = Perks.Entry(build, id)
 	if entry then
 		for i, w in ipairs(build.perks) do

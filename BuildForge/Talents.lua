@@ -44,9 +44,10 @@ local function readTrees(group)
 	return trees
 end
 
--- Returns talents by class key, and the classes it couldn't read.
-function Talents.Capture()
-	local group, shown = BF:ActiveGroup(), Talents.SelectedClass()
+-- Returns talents by class key for spec `group` (the active spec by default), and the classes it couldn't read.
+function Talents.Capture(group)
+	local shown = Talents.SelectedClass()
+	group = group or BF:ActiveGroup()
 	local result, missed = {}, {}
 	for _, class in ipairs(BF:PlayerClasses()) do
 		if Talents.Select(class) then

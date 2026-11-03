@@ -16,8 +16,10 @@ local function readSockets(group)
 	return glyphs
 end
 
-function Glyphs.Capture()
-	local group, shown = BF:ActiveGroup(), BF.Talents.SelectedClass()
+-- Each class's socketed glyphs in spec `group` (the active spec by default).
+function Glyphs.Capture(group)
+	local shown = BF.Talents.SelectedClass()
+	group = group or BF:ActiveGroup()
 	local result = {}
 	for _, class in ipairs(BF:PlayerClasses()) do
 		local sockets = BF.Talents.Select(class) and readSockets(group)

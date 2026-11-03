@@ -381,6 +381,10 @@ local function renderBuild(build)
 	else
 		local summary = BF[EDITORS[state.tab]].Render(build)
 		if PER_SPEC[state.tab] and not Window.IsComparing(build) then summary = Window.InactiveNote(build) end
+		local pendingSpec = build.perksPending and BF:LinkedSpecs(build.name)[1]
+		if state.tab == "perks" and pendingSpec then
+			summary = S.Hex(C.warn, ("Perks Fill In When You Switch to Spec %d"):format(pendingSpec))
+		end
 		frame.summary:SetText(state.message or summary or "")
 	end
 end
@@ -423,6 +427,16 @@ local function newBuild()
 		end
 		if BF.db.builds[name] then BF.Dialogs.Confirm("BUILDFORGE_OVERWRITE", name, create) else create() end
 	end)
+end
+
+local SAVE_SPECS_TIP = "Save every spec on this character as a build linked to it, or refresh the ones already "
+	.. "linked. Other specs' perks fill in when you switch to them."
+
+local function saveSpecs()
+	BF:SaveAllSpecs()
+	state.search = ""
+	frame.search:SetText("")
+	Window.Select(BF:Links()[BF:ActiveGroup()])
 end
 
 -- Import offers to bring sections into the selected build as well as making a new one.
@@ -520,14 +534,16 @@ local function createSidebar(f)
 	footer:SetPoint("BOTTOMRIGHT")
 	footer:SetHeight(FOOTER_H)
 	S.Rule(footer, "TOP")
-	local half = (SIDEBAR_W - 2 * PAD - GAP) / 2
-	local new = S.Button(footer, "New Build", "secondary", half, newBuild,
+	local third = (SIDEBAR_W - 2 * PAD - 2 * GAP) / 3
+	local new = S.Button(footer, "New Build", "secondary", third, newBuild,
 		"Make a build from any part of your character, or a blank one for any class.")
 	new:SetPoint("LEFT", PAD, 0)
 	f.newBuild = new
-	local import = S.Button(footer, "Import", "secondary", half, importBuild,
-		"Paste a BuildForge string.")
-	import:SetPoint("LEFT", new, "RIGHT", GAP, 0)
+	f.saveSpecs = S.Button(footer, "Save Specs", "secondary", third, saveSpecs, SAVE_SPECS_TIP)
+	f.saveSpecs:SetPoint("LEFT", new, "RIGHT", GAP, 0)
+	local import = S.Button(footer, "Import", "secondary", third, importBuild,
+		"Paste a BuildForge or SynastriaBuildManager string.")
+	import:SetPoint("LEFT", f.saveSpecs, "RIGHT", GAP, 0)
 end
 
 local function createBuildHeader(main)
@@ -756,11 +772,13 @@ local function createEmpty(f)
 	body:SetPoint("TOP", title, "BOTTOM", 0, -10)
 	body:SetWidth(360)
 	body:SetJustifyH("CENTER")
-	body:SetText("Save your character's perks, talents, glyphs and gear as a build, start a blank one for any class, or import one someone shared with you.")
-	local new = S.Button(empty, "New Build", "primary", 110, newBuild)
-	new:SetPoint("TOPRIGHT", body, "BOTTOM", -4, -16)
+	body:SetText("Save every spec on this character as builds, make one from any part of your character or blank for any class, or import one someone shared with you.")
+	f.emptySaveSpecs = S.Button(empty, "Save My Specs", "primary", 110, saveSpecs, SAVE_SPECS_TIP)
+	f.emptySaveSpecs:SetPoint("TOP", body, "BOTTOM", 0, -16)
+	local new = S.Button(empty, "New Build", "secondary", 110, newBuild)
+	new:SetPoint("RIGHT", f.emptySaveSpecs, "LEFT", -8, 0)
 	local import = S.Button(empty, "Import", "secondary", 110, importBuild)
-	import:SetPoint("TOPLEFT", body, "BOTTOM", 4, -16)
+	import:SetPoint("LEFT", f.emptySaveSpecs, "RIGHT", 8, 0)
 	f.empty = empty
 end
 
