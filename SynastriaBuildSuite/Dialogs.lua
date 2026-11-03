@@ -93,6 +93,7 @@ local function create()
 	local includeY = PAD + 16 + 4 + 12 + GAP + CONTROL_H / 2
 	local wellTop = includeY + CONTROL_H / 2 + GAP
 	local footerH = PAD + CONTROL_H + PAD
+	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteTextFrame", UIParent)
 	f.pad = PAD
 	f.wellBottom = { export = footerH, import = footerH + CONTROL_H + PAD }
@@ -347,6 +348,7 @@ local function createSheet()
 	local classesY = PAD + 16 + 4 + 12 + PAD + CONTROL_H / 2
 	local copyY = classesY + CONTROL_H + GAP
 	local nameY = copyY + CONTROL_H + GAP
+	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteNewFrame", UIParent)
 	f:SetSize(NEW_W, nameY + CONTROL_H / 2 + PAD + CONTROL_H + PAD)
 	f:SetPoint("CENTER")

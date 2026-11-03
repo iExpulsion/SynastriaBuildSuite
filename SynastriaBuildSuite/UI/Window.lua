@@ -781,6 +781,7 @@ local function createEmpty(f)
 end
 
 local function create()
+	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteFrame", UIParent)
 	frame = f
 	f:SetSize(W, H)
