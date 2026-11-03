@@ -129,16 +129,6 @@ function BF:Import(text, onDone, sections, into, name)
 	else
 		local has = BF.Codec.Has(decoded)
 		local build = BF.Codec.Pick(decoded, sections)
-		local own, misc = BF.Perks.Split(build.perks)
-		if build.perks then build.perks = own end
-		local function offerShared()
-			if #misc > 0 then
-				BF.Dialogs.Confirm("BUILDFORGE_SHARED", BF.Style.Count(#misc, "Misc perk"), function()
-					self:Print("Added %s to Shared Perks.", BF.Style.Count(BF.Perks.AddShared(misc), "perk"))
-					self:Changed()
-				end)
-			end
-		end
 		if into then
 			-- only sections the string has replace the build's, so a talents-only string leaves the rest alone
 			local replaced = {}
@@ -153,7 +143,6 @@ function BF:Import(text, onDone, sections, into, name)
 			self:Print("Imported %s into %s.", sectionNames(replaced), into.name)
 			self:Changed()
 			if onDone then onDone(into) end
-			offerShared()
 		else
 			build.name = name or build.name or ("Imported " .. date("%Y-%m-%d %H:%M"))
 			if not build.classes or #build.classes == 0 then build.classes = BF.Build.InferClasses(build) end
@@ -163,7 +152,6 @@ function BF:Import(text, onDone, sections, into, name)
 				self:Print("Imported %s.", build.name)
 				self:Changed()
 				if onDone then onDone(build) end
-				offerShared()
 			end
 			if self.db.builds[build.name] then
 				BF.Dialogs.Confirm("BUILDFORGE_OVERWRITE", build.name, store)

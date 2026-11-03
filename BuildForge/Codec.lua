@@ -144,9 +144,9 @@ function Codec.Encode(build)
 		f[#f + 1] = "s=" .. (build.spec == build.name and "" or esc(build.spec))
 	end
 
-	if build.perks and #build.perks > 0 then
-		local perks = {}
-		for i, p in ipairs(build.perks) do perks[i] = p end
+	-- Misc perks are the player's own business, never shared
+	local perks = (BF.Perks.Split(build.perks))
+	if #perks > 0 then
 		table.sort(perks, function(a, b) return a.id < b.id end)
 		local parts, prev = {}, 0
 		for _, p in ipairs(perks) do
@@ -278,6 +278,8 @@ function Codec.Decode(text)
 				if key and readers[key] then readers[key](result, value) end
 			end
 			if result.spec == true then result.spec = result.name end
+			-- Misc perks in a string are dropped: Shared Perks are only ever set by the player
+			if result.perks then result.perks = (BF.Perks.Split(result.perks)) end
 		end
 	else
 		err = "not a BuildForge or SynastriaBuildManager string"
