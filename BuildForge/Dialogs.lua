@@ -408,12 +408,12 @@ local function createSheet()
 	f.note = S.Text(f, "small", C.muted)
 	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, PAD + CONTROL_H / 2)
 	f.note:SetPoint("RIGHT", cancel, "LEFT", -PAD, 0)
-	-- kept apart from the Copy row and its note, beside the title like the export box's Close
+	-- kept apart from the Copy row and its note, in the top corner with the sheet's padding on both sides
 	f.saveSpecs = S.Button(f, "Add Current Specs", "secondary", 120, function()
 		f:Hide()
 		sheet.onSaveSpecs()
 	end, Dialogs.SAVE_SPECS_TIP)
-	f.saveSpecs:SetPoint("TOPRIGHT", -PAD, -(PAD - 4))
+	f.saveSpecs:SetPoint("TOPRIGHT", -PAD, -PAD)
 	return f
 end
 
