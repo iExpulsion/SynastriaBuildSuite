@@ -288,11 +288,12 @@ function S.Dropdown(parent, width, onSelect)
 	b.label:SetPoint("RIGHT", -24, 0)
 	b.label:SetJustifyH("LEFT")
 	local arrow = b:CreateTexture(nil, "OVERLAY")
-	-- the arrow fills only the left 9/16 of its texture; Blizzard's sort arrows crop and size it the same way
+	-- the arrow fills only the left 9/16 of its texture, as Blizzard's sort arrows crop and size it, and its point
+	-- sits near the top of that box, so it's dropped 2px to line up with the label's middle
 	arrow:SetTexture("Interface\\Buttons\\Arrow-Down-Up")
 	arrow:SetTexCoord(0, 0.5625, 0, 1)
 	arrow:SetSize(9, 8)
-	arrow:SetPoint("RIGHT", -10, 0)
+	arrow:SetPoint("RIGHT", -10, -2)
 	arrow:SetDesaturated(true)
 	arrow:SetVertexColor(unpack(S.colors.muted))
 

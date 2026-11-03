@@ -69,7 +69,7 @@ local function renderOrder(order, now, comparing)
 		})
 	end
 	if #order == 0 then
-		list:Add({ text = S.Hex(C.muted, "No affixes yet. Pick some on the right, or load a preset.") })
+		list:Add({ text = S.Hex(C.muted, "No affixes yet."), sub = "Pick some on the right, or load a preset." })
 	end
 	list:End()
 	enable(panel.up, order[state.slot] ~= nil and state.slot > 1)
