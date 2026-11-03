@@ -81,7 +81,7 @@ local function has(items, id)
 end
 
 -- Class IDs that can use each item subclass, indexed as GetAuctionItemSubClasses lists them. Weapons follow the
--- client's attune check (IsItemTypeValidForClass in its 08-ITEM_ATTUNE_WEAPONS.lua); armor is 3.3.5's equip rule.
+-- client's attune check (IsItemTypeValidForClass); armor is 3.3.5's equip rule.
 local WEAPON_CLASSES = {
 	[1] = { 1, 2, 3, 4, 6, 7 }, [2] = { 1, 2, 3, 6, 7 }, [3] = { 1, 3, 4 }, [4] = { 1, 3, 4 },
 	[5] = { 1, 2, 4, 5, 6, 7, 11 }, [6] = { 1, 2, 6, 7, 11 }, [7] = { 1, 2, 3, 6, 11 }, [8] = { 1, 2, 3, 4, 6, 8, 9 },

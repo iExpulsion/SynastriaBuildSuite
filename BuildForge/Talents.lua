@@ -8,7 +8,7 @@ local function isMultiClass()
 	return CMCGetClassCount ~= nil and CMCGetClassCount() > 1 and not CMCIsDualSingleClass()
 end
 
--- Shows `class` in the talent API. Returns false if the client didn't switch (see docs/DESIGN.md). The switch
+-- Shows `class` in the talent API. Returns false if the client didn't switch. The switch
 -- refreshes that class's talent info, firing PLAYER_TALENT_UPDATE; `switching` lets the window ignore those.
 function Talents.Select(class)
 	local ok = true

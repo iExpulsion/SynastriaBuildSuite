@@ -130,7 +130,7 @@ end
 
 local GLYPH_SOCKETS, GEAR_SLOTS = 6, 18
 
--- Numbers are base 36 throughout. See docs/DESIGN.md for the layout of each field.
+-- Numbers are base 36 throughout.
 function Codec.Encode(build)
 	local f = {}
 	f[#f + 1] = "n=" .. esc(build.name)

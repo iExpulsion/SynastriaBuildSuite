@@ -1,96 +1,94 @@
 # BuildForge
 
-A build manager for Synastria (WoW 3.3.5a). It saves, shares and applies a whole build: Perks with their
-options and chosen abilities, Talents for every class, Glyphs, Recommended Gear, Hunter pet aspects, the spec
-name and notes.
+A build manager for Synastria (WoW 3.3.5a). Save, share and apply a whole build in one place: perks with
+their options and chosen abilities, talents for every class, glyphs, recommended gear, Hunter pet aspects, the
+spec name and notes.
+
+## Features
+
+- **Save Every Spec at Once:** one click saves each of your specs as its own build, linked to that spec.
+- **Plan Any Class:** start a build for any class or class pair, blank or copied from your character.
+- **Review Before Applying:** Apply Build lists every change first, and nothing happens until you confirm.
+- **Talent Calculator:** for any class, with Synastria's 71 points per class and dual-class builds.
+- **Perk Editor:** every perk your build's classes can use, with options, chosen abilities, set bonuses and
+  category limits.
+- **Glyphs and Gear:** see what's socketed, worn, in your bags or missing, and equip a build's gear in one click.
+- **Share Builds:** export the sections you choose as a single line, and import BuildForge,
+  SynastriaBuildManager (SBM) and SynastriaPerkManager (SPM) strings.
+- **Shared Perks:** your Misc perks live in one list that every build applies, and they're never exported or
+  overwritten by an import.
+
+## Installation
+
+1. Download the latest release.
+2. Extract the `BuildForge` folder into `World of Warcraft\Interface\AddOns`.
+3. Restart the game, or log out to the character screen and back in.
+
+## Getting Started
+
+Open BuildForge with `/bforge`, the minimap button, or the **Open BuildForge** line in an innkeeper's chat
+options. The innkeeper line also opens the Perk Manager, which perk activations need.
+
+On first use, click **Add Current Specs** to save all of your specs as builds. Specs you're not in can't show
+their perks yet, so those builds fill theirs in the first time you switch to them.
+
+To make a single build, click **New Build**. Pick one or two classes, check what to copy from your character
+(Perks, Talents, Glyphs, Gear), name it and click **Create Build**. Leave everything unchecked to start blank.
 
 ## The Window
 
-`/bforge` or the minimap button opens the build window. Drag its title bar to move it (it remembers where); Esc closes it. At an innkeeper, the Open
-BuildForge line under "Manage perks" opens the Perk Manager and BuildForge together, ready to apply perks.
-
-The minimap button's left-click opens or closes the window; right-click opens the build linked to your active
-spec. Drag it around the minimap's edge to move it, and `/bforge minimap` hides or shows it. With a
-LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appears there as a launcher.
-
-- **Sidebar:** search your builds, grouped by class; click a group to collapse it. Groups for classes you
-  don't have start collapsed. Builds linked to this character's specs sit at the top in Your Specs, one row
-  per spec, numbered in spec order, with the active one in green. Everything else is under Saved Builds. Import
-  pastes a build in. New Build opens a sheet with one or two classes (yours to start with, but any class works)
-  and Perks, Talents, Glyphs and Gear checkboxes for what to copy from your character. Only what applies to the
-  chosen classes is copied, so a class you don't have can only take your gear; uncheck everything to start blank.
-  For classes you don't have, perk values, ranks and category limits still show your character's.
-- **Add Current Specs** (top right of the New Build sheet, and on the empty window): saves every spec on this
-  character as a build linked to it, named after the spec ("Spec N"
-  when it has no name), with that spec's talents and glyphs and your gear. Specs already linked to a build
-  refresh it instead, keeping its name, notes and gear. The game only shows the active spec's perks, so the
-  other specs' new builds wait for theirs: their Perks tab says so, applying one leaves your perks alone, and
-  the first time you switch to that spec BuildForge fills them in. Picking a waiting build's perks yourself
-  stops it from filling in. `/bforge specs` does the same.
-- **Build header:** click the name to rename it and set the spec name (press Enter to keep). Apply Build opens
-  a Review Changes sheet listing everything that would change; nothing happens until you click Apply Changes.
-  Talents can only be added, so if your spec has more points in a talent than the build, the review lists them;
-  unlearn your talents at a class trainer and BuildForge reopens the review, ready to apply.
-  Export gives the share string; Duplicate makes an unlinked copy ("Name Copy") to try changes on; Delete asks
-  first. The title bar shows whether the Perk Manager is open at an
-  innkeeper, which perk activations need.
-- **Export and Import by section:** both boxes have Perks, Talents, Glyphs, Gear and Notes checkboxes. Export
-  rebuilds the string as you check and uncheck them, and remembers the choice; Select All selects the string so
-  Ctrl+C copies it (WoW gives addons no clipboard access, so the key press is yours). Import shows which sections the
-  pasted string has; Import as New makes a build from the checked ones, named in the Name field (filled with the
-  string's build name, numbered if you already have one by that name), and Into (the selected build) replaces
-  just those sections of it, leaving the rest. Hunter pet aspects go with Perks; the name, classes and spec name
-  always go. Import also reads SynastriaBuildManager strings (SBM3 and SBM2): their perks, talents for each
-  class, chosen abilities and pet aspects. Their Misc perks and SBM's options (all Misc perk options) are left
-  out, so your Shared Perks never change. SynastriaPerkManager perk lists (`1,278:5,...`) import too: perks
-  with their options, the classes worked out from the class perks, and Misc perks left out. They only carry
-  perks, so Into (the selected build) is the handy way to use one.
-- **Specs:** Synastria keeps perks, talents and glyphs per talent spec (up to 8). With more than one spec, the
-  header's Assign to menu ties a saved build to one of this character's specs (it then reads Linked to, with
-  Active Spec when that spec is active), and applying a build links it to the active spec; Review Changes says
-  so, and which build it replaces. A build for a spec that isn't active isn't compared with your character:
-  the Perks, Talents and Glyphs tabs drop their badges and statuses and the footer says to switch, and Apply
-  Build becomes Switch to Spec N. Gear is the same in every spec, so it's always compared.
+- **Sidebar:** builds linked to this character's specs are at the top under Your Specs, with the active spec
+  in green. Everything else is under Saved Builds, grouped by class. Search filters by name or spec name.
+- **Build Header:** click the name to rename it or set the spec name. Assign To links a build to one of your
+  specs. **Apply Build** opens a review of everything that would change; for a spec you're not in, it becomes
+  **Switch to Spec N**. **Export**, **Duplicate** and **Delete** sit beside it.
 - **Tabs:** Perks, Talents, Glyphs, Gear and Notes. A badge on a tab counts what differs from your character.
-- **Talents:** a talent calculator for the build's classes, any class, not just yours. Left-click adds a point,
-  right-click removes one; tier, prerequisite and point limits work like the talent frame, and the tooltip
-  shows your character's rank when it's the class shown in your talent window. Each class gets 71 points for
-  its own trees, so a same-class dual (Warrior x2) gets 142. Builds with two different classes get a button
-  per class. Use Current Talents copies your spec; Reset Class clears the class shown. The Use Current buttons
-  only replace the parts for the build's classes you have, so a dual build keeps its other class's talents,
-  glyphs and class perks. On a build with none of your classes, Use Current Perks, Talents and Glyphs are
-  disabled; Use Current Gear still works.
-- **Perks:** a perk editor for the build's classes, any class, not just yours. In Build lists the build's perks
-  (and any it would turn off); All Perks lists every perk the classes can use, with a search box. Check a perk
-  to add it to the build. Click a perk to see its effect, notes, options and, for perks that grant one, the
-  ability to choose; options and abilities are set on the build's copy of the perk. Category headers count the
-  build's perks against how many your character can have on. Each row shows what applying the build would do
-  (Active, To Activate, To Deactivate, Options Differ). Perks in a set (Blood Death Knight, Overhealed, ...)
-  sit together under the set's name, which counts how many of its perks the build has; a set perk's details
-  list the set bonuses, green once the build has enough of them. Nothing changes on your character until Apply
-  Build.
-- **Shared Perks:** Misc perks aren't part of builds. They're in one Shared Perks list, at the top of the
-  sidebar, that every build applies along with its own perks, so each spec gets them. Select it to edit the list:
-  it shows every Misc perk you can use, checked if it's in the list. Its Apply Perks sets your active spec's Misc
-  perks and leaves the rest alone, and
-  its Use Current Perks takes your active Misc perks. Misc perks are yours alone: exports never include them,
-  and imports never touch Shared Perks.
-- **Glyphs:** the six sockets, Major and Minor, each with a green border when the glyph is socketed in your
-  active spec, yellow when the glyph item is in your bags and red when you don't have it. Click a socket to
-  list that class's glyphs of that kind (with a search box) and click one to choose it; right-click a
-  socket or use Clear Socket to empty it. A glyph can only be in one socket. Each class of a dual-class
-  character has its own glyphs, so those builds get a button per class, like the Talents tab; sockets are only
-  compared for the class shown in the talent window. Glyphs are used up when socketed, so BuildForge leaves
-  that to you: Open Glyph Frame opens the game's glyph window. Use Current Glyphs copies yours, for each of the build's classes you have.
-- **Gear:** a paper doll of the build's Best item per slot, with a green border when you're wearing it, yellow
-  when it's in your bags and red when you don't have it; a badge counts the slot's Alts (stand-ins, in order of
-  preference). Click a slot to list its Best and Alts beside the doll, where Make Best and Remove (or Ctrl-click
-  and right-click) reorder them. Drop an item anywhere on the tab and it goes to its slot; rings, trinkets and
-  one-hand weapons fill an empty slot of the pair first. Items the build's classes can't use are refused: armor
-  and weapon types (a Priest can't take plate), off-hand weapons without a dual-wielding class or the Dual
-  Wielding perk, and items made for other classes. A dual-class build can use what either class can. Equip from
-  Bags puts on the highest-ranked item you're carrying in each slot.
-- **Notes:** free text saved with the build and included in exports.
+- **Use Current:** each tab's Use Current button copies that part of your character into the build, only for
+  the build's classes you have.
+
+### Perks
+
+In Build lists the build's perks; All Perks lists every perk its classes can use. Check a perk to add it, then
+click it to set its options or chosen ability. Category headers count the build's perks against your limits,
+and perks in a set show the set's bonuses. Misc perks are kept in **Shared Perks**, at the top of the sidebar.
+
+Perk activations need the Perk Manager open at an innkeeper; the title bar shows whether it is. Perk options
+and chosen abilities apply anywhere.
+
+### Talents
+
+Left-click adds a point, right-click removes one, with the same tier and prerequisite rules as the talent
+window. Dual-class builds get a button per class. Talents can only be added, so if your spec has points the
+build doesn't, the review lists them; unlearn at a class trainer and BuildForge reopens the review.
+
+### Glyphs
+
+Each socket shows green when that glyph is socketed, yellow when it's in your bags and red when you don't have
+it. Click a socket to pick a glyph; right-click to clear it. Dual-class builds have glyphs per class. Glyphs are
+used up when socketed, so BuildForge leaves socketing to you; **Open Glyph Frame** opens the game's window.
+
+### Gear
+
+A paper doll of the build's Best item per slot, plus Alts in order of preference. Drop an item anywhere on the
+tab to add it to its slot. Items the build's classes can't use are refused. **Equip from Bags** puts on the
+highest-ranked item you're carrying in each slot.
+
+## Sharing Builds
+
+**Export** shows the build as a single line, with checkboxes for the sections to include. Click **Select All**,
+then press Ctrl+C to copy.
+
+**Import** takes a pasted string, shows which sections it has and lets you pick which to bring in. **Import as
+New** makes a new build; **Into** replaces just those sections of the selected build.
+
+Import reads:
+
+- **BuildForge** strings.
+- **SynastriaBuildManager** (SBM3 and SBM2): perks, talents for each class, chosen abilities and pet aspects.
+- **SynastriaPerkManager** (SPM): perks and their options. SPM strings only carry perks, so importing one
+  **Into** an existing build is the handy way to use it.
+
+Misc perks are left out of every import and export, so your Shared Perks only change when you change them.
 
 ## Commands
 
@@ -98,53 +96,18 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
 |---|---|
 | `/bforge` | Opens or closes the window |
 | `/bforge help` | Lists the commands |
-| `/bforge list` | Lists saved builds; builds for other classes are marked |
+| `/bforge list` | Lists saved builds |
 | `/bforge save <name>` | Saves your active spec as a build |
-| `/bforge specs` | Saves every spec as a build linked to it (Add Current Specs) |
+| `/bforge specs` | Saves every spec as a build linked to it |
 | `/bforge apply <name>` | Lists what would change in chat, then asks before applying |
-| `/bforge export <name>` | Shows the build as a one-line string to copy, with section checkboxes |
-| `/bforge import` | Opens a box to paste a BuildForge string and pick its sections |
+| `/bforge export <name>` | Opens the export box for a build |
+| `/bforge import` | Opens the import box |
 | `/bforge gear <name>` | Shows each slot: worn, in bags or missing |
 | `/bforge equip <name>` | Equips the build's gear you're carrying |
 | `/bforge note <name> <text>` | Sets the build's notes |
+| `/bforge delete <name>` | Deletes a build |
 | `/bforge minimap` | Hides or shows the minimap button |
 | `/bforge reset` | Moves the window back to the center of the screen |
-| `/bforge checktalents` | Checks the talent data against your live talents (for the class in your talent window) |
-| `/bforge delete <name>` | Deletes a build |
 
-Perk activations need the Perk Manager open at an innkeeper. Perk options and chosen abilities apply anywhere.
-Glyphs are listed for you to socket, since they're used up.
-
-## Development
-
-The addon lives in `BuildForge/`; the game's `AddOns\BuildForge` is a junction to it.
-
-Run the offline tests (needs Python with `lupa`, and the client data next to this one, or
-`DATA_PATH` pointing at it):
-
-```bash
-py -I -X utf8 test/run.py
-```
-
-`BuildForge/Data/Talents.lua` is generated from client data; after re-running
-the data extractor, regenerate it with:
-
-```bash
-py -I -X utf8 tools/gen_talents.py
-```
-
-`BuildForge/Data/Glyphs.lua` (every class's glyphs and their items) comes from client data
-the client data:
-
-```bash
-py -I -X utf8 tools/gen_glyphs.py
-```
-
-`BuildForge/Data/Abilities.lua` (the abilities perks like Master of Precision can grant) comes from client data
-the client data:
-
-```bash
-py -I -X utf8 tools/gen_abilities.py
-```
-
-`docs/DESIGN.md` covers the client APIs, the export format and what's still untested.
+The minimap button opens the window on left-click and your active spec's build on right-click. Drag it around
+the minimap to move it. With a LibDataBroker display such as Titan Panel, BuildForge appears there too.
