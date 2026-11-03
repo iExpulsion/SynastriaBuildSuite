@@ -260,7 +260,8 @@ readers.g = function(b, v)
 	end
 end
 
--- Returns the build table, or nil and an error message. SynastriaBuildManager strings go to BF.SBM.
+-- Returns the build table, or nil and an error message. SynastriaBuildManager strings go to BF.SBM, and
+-- SynastriaPerkManager perk lists to BF.SPM.
 function Codec.Decode(text)
 	local raw = text
 	text = (text or ""):gsub("%s", "")
@@ -268,6 +269,8 @@ function Codec.Decode(text)
 	local result, err
 	if BF.SBM.Version(raw) then
 		result, err = BF.SBM.Decode(raw)
+	elseif BF.SPM.Is(raw) then
+		result, err = BF.SPM.Decode(raw)
 	elseif fmt then
 		if tonumber(fmt) > FORMAT then
 			err = "this build was exported by a newer BuildForge; update to import it"
@@ -280,7 +283,7 @@ function Codec.Decode(text)
 			if result.spec == true then result.spec = result.name end
 		end
 	else
-		err = "not a BuildForge or SynastriaBuildManager string"
+		err = "not a BuildForge, SynastriaBuildManager or SynastriaPerkManager string"
 	end
 	return result, err
 end

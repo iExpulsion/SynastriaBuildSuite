@@ -43,7 +43,9 @@ LibDataBroker display (Titan Panel, ChocolateBar and so on) BuildForge also appe
   just those sections of it, leaving the rest. Hunter pet aspects go with Perks; the name, classes and spec name
   always go. Import also reads SynastriaBuildManager strings (SBM3 and SBM2): their perks, talents for each
   class, chosen abilities and pet aspects. Their Misc perks and SBM's options (all Misc perk options) are left
-  out, so your Shared Perks never change.
+  out, so your Shared Perks never change. SynastriaPerkManager perk lists (`1,278:5,...`) import too: perks
+  with their options, the classes worked out from the class perks, and Misc perks left out. They only carry
+  perks, so Into (the selected build) is the handy way to use one.
 - **Specs:** Synastria keeps perks, talents and glyphs per talent spec (up to 8). With more than one spec, the
   header's Assign to menu ties a saved build to one of this character's specs (it then reads Linked to, with
   Active Spec when that spec is active), and applying a build links it to the active spec; Review Changes says

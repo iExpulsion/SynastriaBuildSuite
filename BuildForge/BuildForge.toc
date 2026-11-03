@@ -12,6 +12,7 @@ Data\Glyphs.lua
 Core.lua
 Codec.lua
 SBM.lua
+SPM.lua
 Perks.lua
 Talents.lua
 TalentCalc.lua

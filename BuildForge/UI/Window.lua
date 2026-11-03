@@ -537,7 +537,7 @@ local function createSidebar(f)
 	new:SetPoint("LEFT", PAD, 0)
 	f.newBuild = new
 	local import = S.Button(footer, "Import", "secondary", half, importBuild,
-		"Paste a BuildForge or SynastriaBuildManager string.")
+		"Paste a BuildForge, SynastriaBuildManager or SynastriaPerkManager string.")
 	import:SetPoint("LEFT", new, "RIGHT", GAP, 0)
 end
 
