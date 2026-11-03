@@ -43,7 +43,8 @@ local function className(key)
 end
 
 -- Synastria's name and color for a two-class pair: the name from BF:ComboName, or else from the client (as its
--- Character window does, with the pair packed as first class ID << 8 | second), and the client's color.
+-- Character window does, with the pair packed as first class ID << 8 | second), and the client's color, or the
+-- first class's color when the client has none.
 local function comboName(classes)
 	local a, b = BF.CLASS_IDS[classes[1]], BF.CLASS_IDS[classes[2]]
 	local name, r, g, bl
@@ -51,6 +52,8 @@ local function comboName(classes)
 		local pack = a * 256 + b
 		name = BF:ComboName(classes[1], classes[2]) or (CMCGetClassNameFromPack and CMCGetClassNameFromPack(pack))
 		if CMCGetClassNameColor then r, g, bl = CMCGetClassNameColor(pack) end
+		local first = RAID_CLASS_COLORS[classes[1]]
+		if not (r and g and bl) and first then r, g, bl = first.r, first.g, first.b end
 	end
 	return name ~= "" and name or nil, r, g, bl
 end
@@ -235,7 +238,7 @@ local function renderSidebar()
 	end
 	for _, group in ipairs(groups) do
 		local collapsed = isCollapsed(group)
-		local label = group.key == "" and "No Class" or Window.ClassText(group.classes, not group.fits)
+		local label = group.key == "" and "No Class" or Window.ClassText(group.classes)
 		list:Add({
 			text = label,
 			status = S.Hex(C.muted, #group.builds),
