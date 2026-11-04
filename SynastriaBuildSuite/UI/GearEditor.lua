@@ -218,8 +218,8 @@ local function renderDetail(rowsBySlot)
 	list:End()
 	if #items > 0 and state.rank > 1 then d.best:Enable() else d.best:Disable() end
 	if #items > 0 then d.remove:Enable() else d.remove:Disable() end
-	d.hunt.check:SetChecked(current.huntGear)
-	d.hunt.check:SetEnabled(SBS.LootFilter.Available())
+	panel.hunt.check:SetChecked(current.huntGear)
+	panel.hunt.check:SetEnabled(SBS.LootFilter.Available())
 end
 
 local function summary(rows)
@@ -287,8 +287,6 @@ local function createDetail(width, height)
 	d:SetScript("OnMouseUp", function() acceptDrop(state.slot) end)
 	d.title = S.Text(d, "large")
 	d.title:SetPoint("TOPLEFT", PAD, -PAD)
-	d.hunt = createHunt(d)
-	d.hunt:SetPoint("TOPRIGHT", -PAD, -(PAD - 5))
 	d.sub = S.Text(d, "small", C.muted)
 	d.sub:SetPoint("TOPLEFT", d.title, "BOTTOMLEFT", 0, -4)
 	d.sub:SetWidth(width - 2 * PAD)
@@ -345,6 +343,9 @@ function Editor.Create(parent, width, height)
 		b:SetPoint("TOPLEFT", startX + (i - 1) * (ICON + spacing), -bottomY)
 		panel.slots[slot] = b
 	end
+	-- Hunt Gear covers the whole build, so it sits beside the weapons, apart from any one slot
+	panel.hunt = createHunt(panel)
+	panel.hunt:SetPoint("TOPLEFT", 0, -(bottomY + (ICON - CONTROL_H) / 2))
 
 	panel.detail = createDetail(width - DOLL_W - PAD, height)
 	panel.detail:SetPoint("TOPLEFT", DOLL_W + PAD, 0)
