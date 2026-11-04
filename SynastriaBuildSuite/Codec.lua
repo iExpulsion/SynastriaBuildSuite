@@ -6,15 +6,18 @@ SBS.Codec = Codec
 
 local FORMAT = 1
 local DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
--- Whitespace is escaped too, because Decode drops raw whitespace that chat line wrapping adds.
-local RESERVED = "[%%;,:!/=|%s]"
+-- Whitespace is escaped too, because Decode drops raw whitespace that chat line wrapping adds. A space is
+-- written as "_", so "_" itself is escaped.
+local RESERVED = "[%%;,:!/=|_%s]"
 
 local function esc(s)
-	return (tostring(s or ""):gsub(RESERVED, function(c) return ("%%%02X"):format(c:byte()) end))
+	return (tostring(s or ""):gsub(RESERVED, function(c)
+		return c == " " and "_" or ("%%%02X"):format(c:byte())
+	end))
 end
 
 local function unesc(s)
-	return (s:gsub("%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end))
+	return ((s:gsub("_", " ")):gsub("%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end))
 end
 
 local function split(s, sep)
