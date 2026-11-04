@@ -309,6 +309,9 @@ end
 
 local function renderActions(build)
 	local actions = SBS.Tabs.actions[state.tab] or {}
+	-- the summary runs up to the last button shown, so a tab with fewer buttons gives it more room
+	local last = frame.actions[math.max(1, math.min(#actions, #frame.actions))]
+	frame.summary:SetPoint("RIGHT", last, "LEFT", -PAD, 0)
 	for i, b in ipairs(frame.actions) do
 		local action = actions[i]
 		if action then
@@ -758,7 +761,7 @@ local function createMain(f)
 	footer:SetHeight(FOOTER_H)
 	S.Rule(footer, "TOP")
 	f.actions = {}
-	for i = 1, 2 do
+	for i = 1, 3 do
 		-- the first slot fits the longest Use Current label, so the button beside it never moves
 		local b = S.Button(footer, "", "secondary", i == 1 and 140 or 90)
 		if i == 1 then b:SetPoint("RIGHT", -PAD, 0) else b:SetPoint("RIGHT", f.actions[i - 1], "LEFT", -GAP, 0) end
@@ -766,7 +769,6 @@ local function createMain(f)
 	end
 	f.summary = S.Text(footer, "small", C.muted)
 	f.summary:SetPoint("LEFT", PAD, 0)
-	f.summary:SetPoint("RIGHT", f.actions[2], "LEFT", -PAD, 0)
 end
 
 local function createEmpty(f)

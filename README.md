@@ -15,6 +15,7 @@ Hunter pet aspects, the spec name and notes.
 - **Perk Editor:** every perk your build's classes can use, with options, chosen abilities, set bonuses and
   category limits.
 - **Glyphs and Gear:** see what's socketed, worn, in your bags or missing, and equip a build's gear in one click.
+- **Hunt Gear:** have the loot filter pick up the gear your chosen builds are still missing.
 - **Affix Priority:** a suggested order for the Item Affix Manager, set along with the rest of the build.
 - **Share Builds:** export the sections you choose as a single line, and import Synastria Build Suite,
   SynastriaBuildManager (SBM), SynastriaPerkManager (SPM) and Item Affix Manager strings.
@@ -87,6 +88,12 @@ A paper doll of the build's Best item per slot, plus Alts in order of preference
 tab to add it to its slot. Items the build's classes can't use are refused. **Equip from Bags** puts on the
 highest-ranked item you're carrying in each slot.
 
+Check **Hunt Gear** on a build to have Synastria's loot filter pick up its gear you don't own yet (not worn, in
+your bags or in your bank). The addon keeps its own **SBS Gear** rules at the top of your loot filter, ahead of
+rules that would sell those items, and never changes your other rules. Only builds with Hunt Gear checked are
+hunted. **Sync Loot Filter** updates the rules, and once a hunted item is yours it's dropped from them. Before each
+change the addon keeps a copy of your filter; `/sbs lootfilter restore` puts it back.
+
 ![The Gear tab: the paper doll with every slot worn, and the Trinket 2 slot's Best and Alt items beside it](docs/images/gear.png)
 
 ### Affixes
@@ -137,6 +144,8 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 | `/sbs equip <name>` | Equips the build's gear you're carrying |
 | `/sbs note <name> <text>` | Sets the build's notes |
 | `/sbs delete <name>` | Deletes a build |
+| `/sbs lootfilter sync` | Updates the loot filter's SBS Gear rules from the builds marked Hunt Gear |
+| `/sbs lootfilter restore` | Puts back the loot filter from before the last sync that changed it |
 | `/sbs minimap` | Hides or shows the minimap button |
 | `/sbs reset` | Moves the window back to the center of the screen |
 

@@ -112,6 +112,10 @@ Tabs.actions.gear = {
 		SBS:Changed()
 	end },
 	{ label = "Equip from Bags", tooltip = "Put on the highest-ranked item you're carrying for each slot.", run = function(build) SBS:EquipGear(build) end },
+	{ label = "Sync Loot Filter", tooltip = "Update the loot filter's SBS Gear rules with the missing gear of every build marked Hunt Gear. Your own rules aren't changed.", usable = function() return SBS.LootFilter.Available() end, unusableTip = "The loot filter isn't enabled by the server.", run = function()
+		SBS.LootFilter.SyncAndReport()
+		SBS:Changed()
+	end },
 }
 
 -- Affixes (the tab itself is the priority list in UI/AffixEditor.lua)

@@ -218,6 +218,8 @@ local function renderDetail(rowsBySlot)
 	list:End()
 	if #items > 0 and state.rank > 1 then d.best:Enable() else d.best:Disable() end
 	if #items > 0 then d.remove:Enable() else d.remove:Disable() end
+	d.hunt.check:SetChecked(current.huntGear)
+	d.hunt.check:SetEnabled(SBS.LootFilter.Available())
 end
 
 local function summary(rows)
@@ -248,6 +250,34 @@ end
 
 -- Construction ----------------------------------------------------------------------------------------------
 
+-- The Hunt Gear toggle: the build's missing gear goes into the loot filter's SBS Gear rules (see LootFilter.lua).
+local HUNT_TIP = "Have Synastria's loot filter pick up this build's gear you don't own yet, ahead of your other rules. Only builds with this checked are hunted."
+local NO_FILTER_TIP = "The loot filter isn't enabled by the server."
+
+local function createHunt(parent)
+	local row = CreateFrame("Button", nil, parent)
+	row:SetSize(84, CONTROL_H)
+	row.check = S.Check(row, 14, function() row:Click() end)
+	row.check:SetPoint("LEFT", 0, 0)
+	row.label = S.Text(row, "small")
+	row.label:SetPoint("LEFT", row.check, "RIGHT", GAP, 0)
+	row.label:SetText("Hunt Gear")
+	row:SetScript("OnClick", function()
+		if SBS.LootFilter.Available() then
+			current.huntGear = not current.huntGear or nil
+			SBS.LootFilter.SyncAndReport()
+			SBS:Changed()
+		end
+	end)
+	row:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_TOP")
+		GameTooltip:SetText(SBS.LootFilter.Available() and HUNT_TIP or NO_FILTER_TIP, nil, nil, nil, nil, true)
+		GameTooltip:Show()
+	end)
+	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	return row
+end
+
 local function createDetail(width, height)
 	local d = CreateFrame("Frame", nil, panel)
 	d:SetSize(width, height)
@@ -257,6 +287,8 @@ local function createDetail(width, height)
 	d:SetScript("OnMouseUp", function() acceptDrop(state.slot) end)
 	d.title = S.Text(d, "large")
 	d.title:SetPoint("TOPLEFT", PAD, -PAD)
+	d.hunt = createHunt(d)
+	d.hunt:SetPoint("TOPRIGHT", -PAD, -(PAD - 5))
 	d.sub = S.Text(d, "small", C.muted)
 	d.sub:SetPoint("TOPLEFT", d.title, "BOTTOMLEFT", 0, -4)
 	d.sub:SetWidth(width - 2 * PAD)

@@ -19,6 +19,7 @@ TalentCalc.lua
 Glyphs.lua
 Gear.lua
 Affixes.lua
+LootFilter.lua
 Build.lua
 Dialogs.lua
 Commands.lua

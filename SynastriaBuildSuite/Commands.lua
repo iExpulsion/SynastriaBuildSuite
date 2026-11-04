@@ -292,6 +292,7 @@ local function help()
 	SBS:Print("v%s commands (/sbs alone opens the window):", SBS.version)
 	SBS:Print("  /sbs list | save <name> | specs | apply <name> | export <name> | import")
 	SBS:Print("  /sbs gear <name> | equip <name> | delete <name> | note <name> <text> | minimap | reset")
+	SBS:Print("  /sbs lootfilter sync | restore")
 end
 
 local handlers = {}
@@ -335,6 +336,19 @@ handlers.checktalents = function()
 		SBS:Print("|cffff6060%d talent data mismatch(es) for %s:|r", #problems, tostring(class))
 		for i = 1, math.min(#problems, 10) do SBS:Print("  %s", problems[i]) end
 	end
+end
+
+handlers.lootfilter = function(arg)
+	if arg == "sync" then
+		SBS.LootFilter.SyncAndReport()
+	elseif arg == "restore" and SBS.LootFilter.Restore() then
+		SBS:Print("Loot filter restored to how it was before the last sync that changed it.")
+	elseif arg == "restore" then
+		SBS:Print("|cffff6060Nothing to restore: no sync has changed the loot filter on this character yet.|r")
+	else
+		SBS:Print("Usage: /sbs lootfilter sync | restore")
+	end
+	SBS:Changed()
 end
 
 handlers.minimap = function() SBS.MinimapButton.Toggle() end
