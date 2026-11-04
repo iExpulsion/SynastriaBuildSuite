@@ -343,9 +343,13 @@ function Editor.Create(parent, width, height)
 		b:SetPoint("TOPLEFT", startX + (i - 1) * (ICON + spacing), -bottomY)
 		panel.slots[slot] = b
 	end
-	-- Hunt Gear covers the whole build, so it sits beside the weapons, apart from any one slot
+	-- Hunt Gear and Sources cover the whole build, so they sit either side of the weapons, apart from any one slot
+	local rowY = -(bottomY + (ICON - CONTROL_H) / 2)
 	panel.hunt = createHunt(panel)
-	panel.hunt:SetPoint("TOPLEFT", 0, -(bottomY + (ICON - CONTROL_H) / 2))
+	panel.hunt:SetPoint("TOPLEFT", 0, rowY)
+	panel.sources = S.Button(panel, "Sources", "secondary", 76, function() SBS.Sources.Open(current) end,
+		"List where to find this build's gear you don't own yet, grouped by zone.")
+	panel.sources:SetPoint("TOPRIGHT", panel, "TOPLEFT", DOLL_W, rowY)
 
 	panel.detail = createDetail(width - DOLL_W - PAD, height)
 	panel.detail:SetPoint("TOPLEFT", DOLL_W + PAD, 0)

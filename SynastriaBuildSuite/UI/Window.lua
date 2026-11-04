@@ -120,7 +120,10 @@ function Window.Select(name)
 	S.Dismiss()
 	state.selected = name
 	state.message = nil
-	if frame then frame.review:Hide() end
+	if frame then
+		frame.review:Hide()
+		frame.sources:Hide()
+	end
 	Window.Render()
 end
 
@@ -406,6 +409,7 @@ function Window.Render()
 		setShown(frame.empty, build == nil and next(SBS.db.builds) == nil)
 		if build then renderBuild(build) end
 		if frame.review:IsShown() then SBS.Review.Render() end
+		if frame.sources:IsShown() then SBS.Sources.Render() end
 	end
 end
 
@@ -814,6 +818,7 @@ local function create()
 	createMain(f)
 	createEmpty(f)
 	f.review = SBS.Review.Create(f.main, W - SIDEBAR_W, H - TITLE_H)
+	f.sources = SBS.Sources.Create(f.main, W - SIDEBAR_W, H - TITLE_H)
 
 	f:SetScript("OnShow", function()
 		PlaySound("igCharacterInfoOpen")
@@ -822,6 +827,7 @@ local function create()
 	f:SetScript("OnHide", function()
 		PlaySound("igCharacterInfoClose")
 		f.review:Hide()
+		f.sources:Hide()
 		S.Dismiss()
 	end)
 	f:SetScript("OnUpdate", function(self)

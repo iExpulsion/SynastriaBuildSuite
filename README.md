@@ -94,6 +94,10 @@ rules that would sell those items, and never changes your other rules. Only buil
 hunted. **Sync Loot Filter** updates the rules, and once a hunted item is yours it's dropped from them. Before each
 change the addon keeps a copy of your filter; `/sbs lootfilter restore` puts it back.
 
+**Sources** lists the build's gear you don't own yet, grouped by zone and then by boss, quest or vendor, with drop
+chances from Synastria's loot database, so you can see which runs cover the most. Click an item to open it in the
+Loot Database.
+
 ![The Gear tab: the paper doll with every slot worn, and the Trinket 2 slot's Best and Alt items beside it](docs/images/gear.png)
 
 ### Affixes

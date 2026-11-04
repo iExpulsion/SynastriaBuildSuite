@@ -26,6 +26,7 @@ Commands.lua
 UI\Style.lua
 UI\List.lua
 UI\Review.lua
+UI\Sources.lua
 UI\TalentEditor.lua
 UI\PerkEditor.lua
 UI\GearEditor.lua

@@ -63,13 +63,15 @@ local function write(rules)
 	return refused == nil, refused
 end
 
-local function owned(id)
+-- Whether you have the item worn, in your bags or in your bank.
+function LootFilter.Owned(id)
 	local have = GetItemCount(id, true) > 0
 	for slot = 1, 19 do
 		if GetInventoryItemID("player", slot) == id then have = true end
 	end
 	return have
 end
+local owned = LootFilter.Owned
 
 -- The gear of every hunted build that you don't have worn, in your bags or in your bank, by build name and then
 -- slot and rank, each item once.
