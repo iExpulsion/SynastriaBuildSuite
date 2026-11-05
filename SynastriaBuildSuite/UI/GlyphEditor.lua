@@ -132,10 +132,24 @@ local function hideSocketButtons()
 	end
 end
 
+-- Whether a replace on the socket was armed for this glyph within the last few seconds.
+local function isArmedFor(socket, spell)
+	local a = armed[socket]
+	return a ~= nil and a.spell == spell and GetTime() - a.at < ARM_FOR
+end
+
 local function newSocketButton(socket)
 	local b = S.Button(UIParent, "Socket", "primary", SOCKET_W, nil, nil, "SecureActionButtonTemplate")
 	b:SetFrameStrata("HIGH")
 	b:Hide()
+	-- an armed replace that ran out while nothing redrew the button still has its macro set, so the click is
+	-- checked before the secure action runs; it then only arms again
+	b:SetScript("PreClick", function(self)
+		if self.replacing and not isArmedFor(socket, self.spell) and not InCombatLockdown() then
+			self.armed = false
+			self:SetAttribute("type", nil)
+		end
+	end)
 	-- a replace takes two clicks: the first only arms it, since the glyph in the socket is destroyed
 	b:HookScript("OnClick", function(self)
 		if self.replacing and not self.armed then
@@ -155,8 +169,7 @@ local function placeSocketButton(row, socketFrame, canSocket)
 	if not InCombatLockdown() then
 		if bag then
 			local replacing = row.have ~= nil
-			local a = armed[row.socket]
-			local isArmed = replacing and a ~= nil and a.spell == row.spell and GetTime() - a.at < ARM_FOR
+			local isArmed = replacing and isArmedFor(row.socket, row.spell)
 			b.spell, b.replacing, b.armed = row.spell, replacing, isArmed
 			b:SetAttribute("type", (not replacing or isArmed) and "macro" or nil)
 			b:SetAttribute("macrotext", Glyphs.SocketMacro(bag, slot, row.socket))
@@ -187,6 +200,15 @@ socketWatch:SetScript("OnEvent", function(_, event)
 		for _, b in pairs(socketButtons) do b:Hide() end
 	else
 		SBS:Changed()
+	end
+end)
+-- puts an armed button back to Replace once its time runs out
+socketWatch:SetScript("OnUpdate", function()
+	for socket, a in pairs(armed) do
+		if GetTime() - a.at >= ARM_FOR then
+			armed[socket] = nil
+			SBS:Changed()
+		end
 	end
 end)
 S.OnDismiss(hideSocketButtons)
