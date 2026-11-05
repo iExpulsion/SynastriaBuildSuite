@@ -187,24 +187,41 @@ function LootFilter.SyncAndReport()
 	return r
 end
 
+local function hunting()
+	local any = false
+	for _, build in pairs(SBS.db and SBS.db.builds or {}) do
+		if build.huntGear then any = true end
+	end
+	return any
+end
+
 -- An item you were hunting that you now have would keep being looted, so the rules are synced again soon after.
-local resyncAt
+-- Bag events come in bursts, and checking reads the whole filter, so a burst asks for one check a moment later;
+-- a sync the server refuses waits a while before trying again.
+local CHECK_AFTER, RETRY_AFTER = 1, 60
+local checkAt, resyncAt, quietUntil
 local watch = CreateFrame("Frame")
 watch:RegisterEvent("BAG_UPDATE")
 watch:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 watch:SetScript("OnEvent", function()
-	if not resyncAt and LootFilter.Available() then
-		local found = false
-		for _, id in ipairs(LootFilter.Hunted()) do
-			if owned(id) then found = true end
-		end
-		if found then resyncAt = GetTime() + RESYNC_AFTER end
-	end
+	if not checkAt and not resyncAt then checkAt = GetTime() + CHECK_AFTER end
 end)
 watch:SetScript("OnUpdate", function()
-	if resyncAt and GetTime() >= resyncAt and not InCombatLockdown() then
+	local now = GetTime()
+	if checkAt and now >= checkAt then
+		checkAt = nil
+		if (not quietUntil or now >= quietUntil) and hunting() and LootFilter.Available() then
+			local found = false
+			for _, id in ipairs(LootFilter.Hunted()) do
+				if owned(id) then found = true end
+			end
+			if found then resyncAt = now + RESYNC_AFTER end
+		end
+	end
+	if resyncAt and now >= resyncAt and not InCombatLockdown() then
 		resyncAt = nil
-		LootFilter.Sync()
+		local r = LootFilter.Sync()
+		if r.error then quietUntil = now + RETRY_AFTER end
 		SBS:Changed()
 	end
 end)
