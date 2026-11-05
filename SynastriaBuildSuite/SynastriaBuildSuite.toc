@@ -24,6 +24,7 @@ Build.lua
 Dialogs.lua
 Commands.lua
 UI\Style.lua
+UI\StyleSetup.lua
 UI\List.lua
 UI\Review.lua
 UI\Sources.lua
