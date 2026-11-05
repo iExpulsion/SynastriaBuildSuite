@@ -15,35 +15,57 @@ function Gear.Capture()
 	return gear
 end
 
+-- Where each item sits in the bags: found[id] = { { bag, slot }, ... }, one entry per copy.
 local function bagItems()
 	local found = {}
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
 			local link = GetContainerItemLink(bag, slot)
 			local id = link and tonumber(link:match("item:(%d+)"))
-			if id then found[id] = true end
+			if id then
+				found[id] = found[id] or {}
+				table.insert(found[id], { bag = bag, slot = slot })
+			end
 		end
 	end
 	return found
 end
 
--- One row per slot: the build's choices, what's equipped, and which choice to equip from bags.
+-- One row per slot: the build's choices, what's equipped, and which choice to equip from bags (row.equip, with
+-- its bag position in row.from). Each copy in the bags goes to one slot only, so the same ring or trinket in both
+-- slots needs two copies.
 function Gear.Status(wanted)
 	local rows, inBags = {}, bagItems()
 	for slot, items in pairs(wanted or {}) do
 		local equipped = GetInventoryItemID("player", slot)
 		local row = { slot = slot, items = {}, equipped = equipped }
 		for rank, id in ipairs(items) do
-			row.items[rank] = { id = id, equipped = id == equipped, inBags = inBags[id] or false }
+			row.items[rank] = { id = id, equipped = id == equipped, inBags = inBags[id] ~= nil }
 			if id == equipped then row.wearing = rank end
-		end
-		for rank, item in ipairs(row.items) do
-			if not row.equip and item.inBags and (not row.wearing or rank < row.wearing) then row.equip = item.id end
 		end
 		rows[#rows + 1] = row
 	end
 	table.sort(rows, function(a, b) return a.slot < b.slot end)
+	local used = {}
+	for _, row in ipairs(rows) do
+		for rank, item in ipairs(row.items) do
+			local copies, taken = inBags[item.id], used[item.id] or 0
+			if not row.equip and copies and taken < #copies and (not row.wearing or rank < row.wearing) then
+				row.equip, row.from = item.id, copies[taken + 1]
+				used[item.id] = taken + 1
+			end
+		end
+	end
 	return rows
+end
+
+-- The slots where the build wants something but none of its choices is worn or left in the bags.
+function Gear.Missing(wanted)
+	local missing = {}
+	for _, row in ipairs(Gear.Status(wanted)) do
+		if not row.wearing and not row.equip then missing[#missing + 1] = row end
+	end
+	return missing
 end
 
 -- Editing a build's gear ------------------------------------------------------------------------------------
@@ -202,16 +224,88 @@ function Gear.MakeBest(build, slot, rank)
 	if items and items[rank] and rank > 1 then table.insert(items, 1, table.remove(items, rank)) end
 end
 
--- Equips the best owned choice per slot. Returns how many items were equipped.
+-- Equips the best owned choice per slot, from its exact bag position so a second copy of a worn ring or trinket
+-- isn't taken off the other slot. Returns how many items were equipped.
 function Gear.EquipFromBags(wanted)
 	local count = 0
-	if not InCombatLockdown() then
+	if not InCombatLockdown() and not CursorHasItem() then
 		for _, row in ipairs(Gear.Status(wanted)) do
 			if row.equip then
-				EquipItemByName(row.equip, row.slot)
+				PickupContainerItem(row.from.bag, row.from.slot)
+				EquipCursorItem(row.slot)
 				count = count + 1
 			end
 		end
 	end
 	return count
 end
+
+-- Equip on Spec Change ---------------------------------------------------------------------------------------
+
+-- A swap puts the old item where the new one was, so a second pass a moment later catches an item that was worn
+-- in the wrong slot of a pair.
+local AUTO_DELAY, AUTO_PASSES = 1, 2
+local auto = CreateFrame("Frame")
+Gear.autoFrame = auto
+
+-- The build linked to the active spec, when it has Equip on Spec Change on.
+function Gear.AutoBuild()
+	local build = SBS.db.builds[SBS:Links()[SBS:ActiveGroup()] or ""]
+	return build and build.equipOnSpec and build or nil
+end
+
+local function itemText(id)
+	return select(2, GetItemInfo(id)) or ("item " .. id)
+end
+
+local function finish()
+	local build = auto.build
+	auto.build = nil
+	if auto.count > 0 then SBS:Print("Equipped %s for %s.", SBS.Style.Count(auto.count, "item"), build.name) end
+	local missing = Gear.Missing(build.gear)
+	if #missing > 0 then
+		local parts = {}
+		for _, row in ipairs(missing) do
+			parts[#parts + 1] = ("%s (%s)"):format(itemText(row.items[1].id), SBS.SLOT_NAMES[row.slot])
+		end
+		SBS:Print("|cffffd060Not in your bags for %s:|r %s", build.name, table.concat(parts, ", "))
+	end
+end
+
+local function step()
+	if not InCombatLockdown() then
+		local equipped = Gear.EquipFromBags(auto.build.gear)
+		auto.count, auto.pass = auto.count + equipped, auto.pass + 1
+		if equipped > 0 and auto.pass < AUTO_PASSES then auto.wait = AUTO_DELAY else finish() end
+	end
+end
+
+-- Puts on a build's gear now, or once combat ends. A newer request replaces a waiting one.
+function Gear.AutoEquip(build)
+	auto.build, auto.count, auto.pass, auto.wait = build, 0, 0, nil
+	if InCombatLockdown() then SBS:Print("Equipping %s's gear after combat.", build.name) end
+	step()
+end
+
+auto:RegisterEvent("PLAYER_ENTERING_WORLD")
+auto:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+auto:RegisterEvent("PLAYER_REGEN_ENABLED")
+auto:SetScript("OnEvent", function(self, event)
+	if event == "PLAYER_REGEN_ENABLED" and self.build and not self.wait then
+		step()
+	elseif event == "ACTIVE_TALENT_GROUP_CHANGED" and self.group and self.group ~= SBS:ActiveGroup() then
+		local build = Gear.AutoBuild()
+		self.build, self.wait = nil, nil
+		if build then Gear.AutoEquip(build) end
+	end
+	if event ~= "PLAYER_REGEN_ENABLED" then self.group = SBS:ActiveGroup() end
+end)
+auto:SetScript("OnUpdate", function(self, elapsed)
+	if self.wait then
+		self.wait = self.wait - elapsed
+		if self.wait <= 0 then
+			self.wait = nil
+			step()
+		end
+	end
+end)

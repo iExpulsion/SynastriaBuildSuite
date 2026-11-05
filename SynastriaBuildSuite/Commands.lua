@@ -218,6 +218,7 @@ function SBS:ConfirmApply(build)
 		local result = SBS.Build.Apply(SBS.Build.Plan(build))
 		for _, r in ipairs(result.refused) do self:Print("|cffff6060Couldn't add %s (%s).|r", r.name, r.class) end
 		self:Print("Applied %s.", build.name)
+		if build.equipOnSpec then SBS.Gear.AutoEquip(build) end
 		self:Changed()
 	end)
 end

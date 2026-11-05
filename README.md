@@ -14,7 +14,8 @@ Hunter pet aspects, the spec name and notes.
 - **Talent Calculator:** for any class, with Synastria's 71 points per class and dual-class builds.
 - **Perk Editor:** every perk your build's classes can use, with options, chosen abilities, set bonuses and
   category limits.
-- **Glyphs and Gear:** see what's socketed, worn, in your bags or missing, and equip a build's gear in one click.
+- **Glyphs and Gear:** see what's socketed, worn, in your bags or missing, and equip a build's gear in one click,
+  or every time you switch to its spec.
 - **Hunt Gear:** have the loot filter pick up the gear your chosen builds are still missing.
 - **Affix Priority:** a suggested order for the Item Affix Manager, set along with the rest of the build.
 - **Share Builds:** export the sections you choose as a single line, and import Synastria Build Suite,
@@ -87,6 +88,11 @@ Frame** opens the game's window for anything else, such as removing a glyph.
 A paper doll of the build's Best item per slot, plus Alts in order of preference. Drop an item anywhere on the
 tab to add it to its slot. Items the build's classes can't use are refused. **Equip from Bags** puts on the
 highest-ranked item you're carrying in each slot.
+
+Check **Equip on Spec Change** on a build to have its gear put on from your bags whenever you switch to the spec
+it's linked to, and when you apply it. In combat it waits until combat ends. Afterward it lists any slot where you
+have none of the build's items, so you know what's missing. To wear the same ring or trinket in both slots you
+need two copies. It's off for every build until you check it.
 
 Check **Hunt Gear** on a build to have Synastria's loot filter pick up its gear you don't own yet (not worn, in
 your bags or in your bank). The addon keeps its own **SBS Gear** rules at the top of your loot filter, ahead of

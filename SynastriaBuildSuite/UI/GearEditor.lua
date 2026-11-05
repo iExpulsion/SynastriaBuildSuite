@@ -220,6 +220,7 @@ local function renderDetail(rowsBySlot)
 	if #items > 0 then d.remove:Enable() else d.remove:Disable() end
 	panel.hunt.check:SetChecked(current.huntGear)
 	panel.hunt.check:SetEnabled(SBS.LootFilter.Available())
+	panel.equipOnSpec.check:SetChecked(current.equipOnSpec)
 end
 
 local function summary(rows)
@@ -254,28 +255,43 @@ end
 local HUNT_TIP = "Have Synastria's loot filter pick up this build's gear you don't own yet, ahead of your other rules. Only builds with this checked are hunted."
 local NO_FILTER_TIP = "The loot filter isn't enabled by the server."
 
-local function createHunt(parent)
+local EQUIP_TIP = "When a spec linked to this build becomes active, or you apply the build, put on its best gear from your bags. Waits for combat to end, and lists what isn't in your bags."
+
+local function createToggle(parent, width, label, tip, onClick)
 	local row = CreateFrame("Button", nil, parent)
-	row:SetSize(84, CONTROL_H)
+	row:SetSize(width, CONTROL_H)
 	row.check = S.Check(row, 14, function() row:Click() end)
 	row.check:SetPoint("LEFT", 0, 0)
 	row.label = S.Text(row, "small")
 	row.label:SetPoint("LEFT", row.check, "RIGHT", GAP, 0)
-	row.label:SetText("Hunt Gear")
-	row:SetScript("OnClick", function()
+	row.label:SetText(label)
+	row:SetScript("OnClick", onClick)
+	row:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_TOP")
+		GameTooltip:SetText(tip(), nil, nil, nil, nil, true)
+		GameTooltip:Show()
+	end)
+	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	return row
+end
+
+local function createHunt(parent)
+	return createToggle(parent, 84, "Hunt Gear", function()
+		return SBS.LootFilter.Available() and HUNT_TIP or NO_FILTER_TIP
+	end, function()
 		if SBS.LootFilter.Available() then
 			current.huntGear = not current.huntGear or nil
 			SBS.LootFilter.SyncAndReport()
 			SBS:Changed()
 		end
 	end)
-	row:SetScript("OnEnter", function(self)
-		GameTooltip:SetOwner(self, "ANCHOR_TOP")
-		GameTooltip:SetText(SBS.LootFilter.Available() and HUNT_TIP or NO_FILTER_TIP, nil, nil, nil, nil, true)
-		GameTooltip:Show()
+end
+
+local function createEquipOnSpec(parent)
+	return createToggle(parent, 150, "Equip on Spec Change", function() return EQUIP_TIP end, function()
+		current.equipOnSpec = not current.equipOnSpec or nil
+		SBS:Changed()
 	end)
-	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
-	return row
 end
 
 local function createDetail(width, height)
@@ -347,6 +363,8 @@ function Editor.Create(parent, width, height)
 	local rowY = -(bottomY + (ICON - CONTROL_H) / 2)
 	panel.hunt = createHunt(panel)
 	panel.hunt:SetPoint("TOPLEFT", 0, rowY)
+	panel.equipOnSpec = createEquipOnSpec(panel)
+	panel.equipOnSpec:SetPoint("TOPLEFT", 0, rowY - CONTROL_H - GAP)
 	panel.sources = S.Button(panel, "Sources", "secondary", 76, function() SBS.Sources.Open(current) end,
 		"List where to find this build's gear you don't own yet, grouped by zone.")
 	panel.sources:SetPoint("TOPRIGHT", panel, "TOPLEFT", DOLL_W, rowY)
