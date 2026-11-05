@@ -38,7 +38,7 @@ local function itemName(id)
 end
 
 local function where(item)
-	return item.equipped and S.Hex(C.good, "Worn") or item.inBags and S.Hex(C.warn, "In Bags") or S.Hex(C.muted, "Missing")
+	return item.equipped and S.Hex(C.good, "Worn") or item.inBags and S.Hex(C.warn, "In Bags") or S.Hex(C.bad, "Missing")
 end
 
 local function lookFor(row)
