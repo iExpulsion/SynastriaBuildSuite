@@ -161,7 +161,8 @@ watch:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 watch:RegisterEvent("UNIT_SPELLCAST_FAILED")
 watch:SetScript("OnEvent", function(_, event, unitOrMsg, spell)
 	local watching = GetTime() < watchUntil
-	local ours = unitOrMsg == "player" and (spell or ""):lower():find(CAST, 1, true) ~= nil
+	-- the player's casts fire this all the time, so the name is only read while watching
+	local ours = watching and unitOrMsg == "player" and (spell or ""):lower():find(CAST, 1, true) ~= nil
 	if watching and event == "CHAT_MSG_SYSTEM" and (unitOrMsg or ""):lower():find(REFUSED, 1, true) then
 		finish("Affix Order Not Changed: Apply Again Near an Innkeeper", "warn")
 	elseif watching and ours and event == "UNIT_SPELLCAST_SUCCEEDED" then

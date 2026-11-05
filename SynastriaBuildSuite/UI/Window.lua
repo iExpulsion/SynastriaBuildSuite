@@ -401,7 +401,7 @@ end
 
 function Window.Render()
 	if frame and frame:IsShown() then
-		frame.dirty = false
+		frame.dirty, frame.eventDirty = false, false
 		renderSidebar()
 		renderInnkeeper()
 		local build = selectedBuild()
@@ -413,9 +413,16 @@ function Window.Render()
 	end
 end
 
--- Coalesces bursts of events (bag updates) into one render per frame.
+-- Coalesces changes into one render on the next frame.
 function Window.Refresh()
 	if frame and not SBS.Talents.switching then frame.dirty = true end
+end
+
+-- Game events (bag updates come in bursts while looting or vendoring) render at most a few times a second, since
+-- a render rebuilds every tab's comparison.
+local EVENT_RENDER_EVERY = 0.25
+local function eventRefresh()
+	if frame and not SBS.Talents.switching then frame.eventDirty = true end
 end
 
 -- Shows a one-off status message in the footer until the next tab or build change.
@@ -831,13 +838,18 @@ local function create()
 		S.Dismiss()
 	end)
 	f:SetScript("OnUpdate", function(self)
-		if self.dirty then Window.Render() end
+		local now = GetTime()
+		local eventDue = self.eventDirty and now >= (self.nextEventRender or 0)
+		if self.dirty or eventDue then
+			if eventDue then self.nextEventRender = now + EVENT_RENDER_EVERY end
+			Window.Render()
+		end
 	end)
 	for _, event in ipairs({ "PLAYER_EQUIPMENT_CHANGED", "BAG_UPDATE", "CHARACTER_POINTS_CHANGED", "PLAYER_TALENT_UPDATE",
 		"GLYPH_ADDED", "GLYPH_REMOVED", "GLYPH_UPDATED", "ACTIVE_TALENT_GROUP_CHANGED" }) do
 		f:RegisterEvent(event)
 	end
-	f:SetScript("OnEvent", Window.Refresh)
+	f:SetScript("OnEvent", eventRefresh)
 	return f
 end
 
