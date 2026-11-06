@@ -292,7 +292,7 @@ end
 local function help()
 	SBS:Print("v%s commands (/sbs alone opens the window):", SBS.version)
 	SBS:Print("  /sbs list | save <name> | specs | apply <name> | export <name> | import")
-	SBS:Print("  /sbs gear <name> | equip <name> | delete <name> | note <name> <text> | minimap | reset")
+	SBS:Print("  /sbs gear <name> | equip <name> | delete <name> | note <name> <text> | minimap [reset] | reset")
 	SBS:Print("  /sbs lootfilter sync | restore")
 end
 
@@ -352,7 +352,9 @@ handlers.lootfilter = function(arg)
 	SBS:Changed()
 end
 
-handlers.minimap = function() SBS.MinimapButton.Toggle() end
+handlers.minimap = function(arg)
+	if arg:lower() == "reset" then SBS.MinimapButton.ResetPosition() else SBS.MinimapButton.Toggle() end
+end
 handlers.reset = function()
 	SBS.Window.ResetPosition()
 	SBS:Print("Window moved back to the center of the screen.")

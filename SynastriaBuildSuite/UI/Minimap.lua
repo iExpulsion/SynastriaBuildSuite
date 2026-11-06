@@ -2,7 +2,7 @@ local _, NS = ...
 local SBS = NS.SBS
 
 -- Minimap button: left-click opens the window, right-click opens the build linked to the active spec, drag moves
--- it around the minimap. Position and visibility are saved in SynastriaBuildSuiteDB.minimap. When a LibDataBroker display
+-- it around the minimap and Shift-drag anywhere on screen. Position and visibility are saved in SynastriaBuildSuiteDB.minimap. When a LibDataBroker display
 -- is installed, a launcher is registered there too.
 local MinimapButton = {}
 SBS.MinimapButton = MinimapButton
@@ -29,21 +29,34 @@ local SHAPES = {
 	["TRICORNER-BOTTOMRIGHT"] = { true, true, true, false },
 }
 
+-- Shift-drag frees the button: it moves to UIParent at a saved spot (db.minimap.free), so it stays up even when
+-- the minimap is hidden. A plain drag puts it back on the minimap's edge.
 local function place()
-	local angle = math.rad(SBS.db.minimap.angle or DEFAULT_ANGLE)
-	local x, y = math.cos(angle), math.sin(angle)
-	local quadrant = 1 + (x < 0 and 1 or 0) + (y > 0 and 2 or 0)
-	local shape = GetMinimapShape and GetMinimapShape() or "ROUND"
-	local radius = Minimap:GetWidth() / 2 + 5
-	if (SHAPES[shape] or SHAPES.ROUND)[quadrant] then
-		x, y = x * radius, y * radius
-	else
-		local diagonal = math.sqrt(2 * radius * radius) - 10
-		x = math.max(-radius, math.min(x * diagonal, radius))
-		y = math.max(-radius, math.min(y * diagonal, radius))
+	local free = SBS.db.minimap.free
+	local parent = free and UIParent or Minimap
+	if button:GetParent() ~= parent then
+		button:SetParent(parent)
+		button:SetFrameStrata("MEDIUM")
+		button:SetFrameLevel(8)
 	end
 	button:ClearAllPoints()
-	button:SetPoint("CENTER", Minimap, "CENTER", x, y)
+	if free then
+		button:SetPoint("CENTER", UIParent, "BOTTOMLEFT", free.x, free.y)
+	else
+		local angle = math.rad(SBS.db.minimap.angle or DEFAULT_ANGLE)
+		local x, y = math.cos(angle), math.sin(angle)
+		local quadrant = 1 + (x < 0 and 1 or 0) + (y > 0 and 2 or 0)
+		local shape = GetMinimapShape and GetMinimapShape() or "ROUND"
+		local radius = Minimap:GetWidth() / 2 + 5
+		if (SHAPES[shape] or SHAPES.ROUND)[quadrant] then
+			x, y = x * radius, y * radius
+		else
+			local diagonal = math.sqrt(2 * radius * radius) - 10
+			x = math.max(-radius, math.min(x * diagonal, radius))
+			y = math.max(-radius, math.min(y * diagonal, radius))
+		end
+		button:SetPoint("CENTER", Minimap, "CENTER", x, y)
+	end
 end
 
 local function linkedBuild()
@@ -70,22 +83,32 @@ local function fillTooltip(tt)
 	tt:AddLine(SBS:SpecName(SBS:ActiveGroup()) .. ": " .. (name or "no linked build"), 1, 1, 1)
 	tt:AddLine("Left-click to open or close the build window.", 0.8, 0.8, 0.8)
 	tt:AddLine("Right-click to open the build linked to this spec.", 0.8, 0.8, 0.8)
-	tt:AddLine("Drag to move. /sbs minimap hides it.", 0.6, 0.6, 0.66)
+	tt:AddLine("Drag to move it around the minimap, Shift-drag to place it anywhere.", 0.6, 0.6, 0.66)
+	tt:AddLine("/sbs minimap hides it; /sbs minimap reset puts it back.", 0.6, 0.6, 0.66)
 end
 
-local function onDragUpdate()
-	local mx, my = Minimap:GetCenter()
-	local px, py = GetCursorPosition()
-	local scale = Minimap:GetEffectiveScale()
-	SBS.db.minimap.angle = math.deg(math.atan2(py / scale - my, px / scale - mx)) % 360
-	place()
+-- Ends on the mouse release itself: a reparent mid-drag can cost the OnDragStop.
+local function onDragUpdate(self)
+	if IsMouseButtonDown("LeftButton") then
+		local px, py = GetCursorPosition()
+		if SBS.db.minimap.free then
+			local scale = UIParent:GetEffectiveScale()
+			SBS.db.minimap.free.x, SBS.db.minimap.free.y = px / scale, py / scale
+		else
+			local mx, my = Minimap:GetCenter()
+			local scale = Minimap:GetEffectiveScale()
+			SBS.db.minimap.angle = math.deg(math.atan2(py / scale - my, px / scale - mx)) % 360
+		end
+		place()
+	else
+		self:SetScript("OnUpdate", nil)
+	end
 end
 
 local function create()
 	button = CreateFrame("Button", "SynastriaBuildSuiteMinimapButton", Minimap)
 	button:SetSize(31, 31)
-	button:SetFrameStrata("MEDIUM")
-	button:SetFrameLevel(8)
+	button:SetClampedToScreen(true)
 	button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	button:RegisterForDrag("LeftButton")
 	button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
@@ -112,6 +135,7 @@ local function create()
 	button:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	button:SetScript("OnDragStart", function(self)
 		GameTooltip:Hide()
+		SBS.db.minimap.free = IsShiftKeyDown() and (SBS.db.minimap.free or {}) or nil
 		self:SetScript("OnUpdate", onDragUpdate)
 	end)
 	button:SetScript("OnDragStop", function(self) self:SetScript("OnUpdate", nil) end)
@@ -139,6 +163,12 @@ function MinimapButton.Toggle()
 	SBS.db.minimap.hide = not SBS.db.minimap.hide
 	MinimapButton.Refresh()
 	SBS:Print(SBS.db.minimap.hide and "Minimap button hidden. /sbs minimap shows it again." or "Minimap button shown.")
+end
+
+function MinimapButton.ResetPosition()
+	SBS.db.minimap.free, SBS.db.minimap.angle = nil, nil
+	place()
+	SBS:Print("Minimap button moved back to the minimap.")
 end
 
 function MinimapButton.Frame()
