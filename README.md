@@ -162,6 +162,12 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 The minimap button opens the window on left-click and your active spec's build on right-click. Drag it around
 the minimap to move it. With a LibDataBroker display such as Titan Panel, Synastria Build Suite appears there too.
 
+## Synastria Companion
+
+[Synastria Companion](https://github.com/iExpulsion/SynastriaCompanion) replaces Synastria's other windows in the
+same style: Attuned Stats, Attunable Items, Auto Loot, the Resource Bank, the Item Database and Leaderboards. Its
+Auto Loot screen also shows and edits the SBS Gear rules that Hunt Gear syncs.
+
 ## License
 
 Synastria Build Suite is released under the [MIT License](LICENSE). The game data in `SynastriaBuildSuite/Data` comes from the
