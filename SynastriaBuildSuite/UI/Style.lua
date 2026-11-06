@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI f7e30f3. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI 032c420. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -23,7 +23,7 @@ end
 -- Material 3 dark scheme for the brand seed #ffc400 (material-color-utilities): surfaces from the Neutral scheme,
 -- primary from the Fidelity scheme (which keeps the seed as primaryContainer), error from the baseline, and
 -- success and warning as un-harmonized custom colors, since harmonizing pulls warning onto the brand yellow.
-local M3 = {
+local DEFAULT_SCHEME = {
 	surfaceLowest = rgb("0f0e0c"),
 	surface = rgb("151311"),
 	surfaceLow = rgb("1d1b19"),
@@ -41,27 +41,72 @@ local M3 = {
 	warning = rgb("ffb870"),
 }
 
-S.colors = {
-	window = { M3.surface[1], M3.surface[2], M3.surface[3], 0.97 },
-	sidebar = M3.surfaceLow,
-	panel = M3.surfaceContainer,
-	well = M3.surfaceLowest,
-	border = M3.outlineVariant,
-	outline = M3.outline,
-	hover = { M3.onSurface[1], M3.onSurface[2], M3.onSurface[3], 0.08 },
-	selected = { M3.primary[1], M3.primary[2], M3.primary[3], 0.12 },
-	accent = M3.primary,
-	accentHover = blend(M3.primary, M3.onPrimary, 0.08),
-	onAccent = M3.onPrimary,
-	text = M3.onSurface,
-	heading = M3.primary,
-	muted = M3.onSurfaceVariant,
-	disabled = { M3.onSurface[1], M3.onSurface[2], M3.onSurface[3], 0.38 },
-	good = M3.success,
-	warn = M3.warning,
-	bad = M3.error,
-	badDim = M3.errorContainer,
-}
+local M3 = {}
+S.colors = {}
+local BUTTONS, DISABLED = {}, {}
+local qualityColors = {}
+
+local function withAlpha(c, a)
+	return { c[1], c[2], c[3], a }
+end
+
+-- Text on an accent the scheme didn't give one for: a dark shade of a light accent, a light tint of a dark one.
+local function onColor(c)
+	local light = 0.2126 * c[1] + 0.7152 * c[2] + 0.0722 * c[3] > 0.5
+	return light and blend(c, { 0, 0, 0 }, 0.75) or blend(c, { 1, 1, 1 }, 0.9)
+end
+
+-- Fills S.colors and the button kinds from M3. S.colors is filled in place, so tables addons hold on to stay live
+-- and colors they added stay put.
+local function build()
+	local c = S.colors
+	c.window = withAlpha(M3.surface, 0.97)
+	c.sidebar = M3.surfaceLow
+	c.panel = M3.surfaceContainer
+	c.well = M3.surfaceLowest
+	c.border = M3.outlineVariant
+	c.outline = M3.outline
+	c.hover = withAlpha(M3.onSurface, 0.08)
+	c.selected = withAlpha(M3.primary, 0.12)
+	c.accent = M3.primary
+	c.accentHover = blend(M3.primary, M3.onPrimary, 0.08)
+	c.onAccent = M3.onPrimary
+	c.text = M3.onSurface
+	c.heading = M3.primary
+	c.muted = M3.onSurfaceVariant
+	c.disabled = withAlpha(M3.onSurface, 0.38)
+	c.good = M3.success
+	c.warn = M3.warning
+	c.bad = M3.error
+	c.badDim = M3.errorContainer
+
+	-- Filled (primary, one per view), tonal (secondary), text (ghost), and the selected side of a segmented button
+	-- (selected: a primary tint with primary text); hover is an 8% layer of the label color.
+	local selectedBg = blend(M3.surfaceHigh, M3.primary, 0.16)
+	BUTTONS.primary = { bg = M3.primary, hover = c.accentHover, border = M3.primary, text = M3.onPrimary }
+	BUTTONS.secondary = { bg = M3.surfaceHigh, hover = blend(M3.surfaceHigh, M3.onSurface, 0.08), border = M3.outlineVariant, text = M3.onSurface }
+	BUTTONS.selected = { bg = selectedBg, hover = blend(selectedBg, M3.primary, 0.08), border = blend(M3.outlineVariant, M3.primary, 0.4), text = M3.primary }
+	BUTTONS.danger = { bg = M3.surfaceHigh, hover = blend(M3.surfaceHigh, M3.error, 0.08), border = M3.outlineVariant, text = M3.error }
+	BUTTONS.ghost = { bg = { 0, 0, 0, 0 }, hover = c.hover, border = { 0, 0, 0, 0 }, text = M3.onSurfaceVariant }
+	-- Disabled buttons of every kind look the same, as Material has it: a 12% onSurface fill with 38% onSurface
+	-- text, so faded text never sits on a bright fill.
+	DISABLED = { bg = blend(M3.surface, M3.onSurface, 0.12), border = M3.outlineVariant, text = c.disabled }
+	for q in pairs(qualityColors) do qualityColors[q] = nil end
+end
+
+-- Sets the Material 3 roles the kit is drawn from, by name, as "rrggbb" hex or { r, g, b }; roles left out keep
+-- the default scheme, and S.SetTheme() goes back to it. A primary given without an onPrimary gets one worked out.
+-- Call it before building any frames: frames take their colors as they're made.
+function S.SetTheme(roles)
+	for role, color in pairs(DEFAULT_SCHEME) do M3[role] = color end
+	for role, color in pairs(roles or {}) do
+		if not DEFAULT_SCHEME[role] then error("MaterialCraftUI: unknown theme role " .. tostring(role), 2) end
+		M3[role] = type(color) == "string" and rgb((color:gsub("^#", ""))) or { color[1], color[2], color[3], color[4] or 1 }
+	end
+	if roles and roles.primary and not roles.onPrimary then M3.onPrimary = onColor(M3.primary) end
+	build()
+end
+S.SetTheme()
 
 -- One spacing scale for every panel: PAD inside a panel's edges (the same on all sides), GAP between neighboring
 -- controls, and one height for every button, input and dropdown so rows line up.
@@ -73,7 +118,6 @@ function S.Count(n, singular, plural)
 end
 
 -- An item quality's color as { r, g, b, a }, made once per quality since tables ask for it on every redraw.
-local qualityColors = {}
 function S.QualityColor(q)
 	local color = qualityColors[q or -1]
 	if not color then
@@ -185,21 +229,6 @@ function S.Text(parent, size, color, layer)
 	fs:SetJustifyH("LEFT")
 	return fs
 end
-
--- Filled (primary, one per view), tonal (secondary), text (ghost), and the selected side of a segmented button
--- (selected: a primary tint with primary text); hover is an 8% layer of the label color.
-local SELECTED_BG = blend(M3.surfaceHigh, M3.primary, 0.16)
-local BUTTONS = {
-	primary = { bg = M3.primary, hover = S.colors.accentHover, border = M3.primary, text = M3.onPrimary },
-	secondary = { bg = M3.surfaceHigh, hover = blend(M3.surfaceHigh, M3.onSurface, 0.08), border = M3.outlineVariant, text = M3.onSurface },
-	selected = { bg = SELECTED_BG, hover = blend(SELECTED_BG, M3.primary, 0.08), border = blend(M3.outlineVariant, M3.primary, 0.4), text = M3.primary },
-	danger = { bg = M3.surfaceHigh, hover = blend(M3.surfaceHigh, M3.error, 0.08), border = M3.outlineVariant, text = M3.error },
-	ghost = { bg = { 0, 0, 0, 0 }, hover = S.colors.hover, border = { 0, 0, 0, 0 }, text = M3.onSurfaceVariant },
-}
-
--- Disabled buttons of every kind look the same, as Material has it: a 12% onSurface fill with 38% onSurface text,
--- so faded text never sits on a bright fill.
-local DISABLED = { bg = blend(M3.surface, M3.onSurface, 0.12), border = M3.outlineVariant, text = S.colors.disabled }
 
 local function paint(b)
 	local enabled = b:IsEnabled() == 1 or b:IsEnabled() == true
