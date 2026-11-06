@@ -1,6 +1,6 @@
 local _, NS = ...
 
--- The style kit (UI/Style.lua, vendored from LuaMaterialUI) puts itself on the addon table.
+-- The style kit (UI/Style.lua, vendored from MaterialCraftUI) puts itself on the addon table.
 local S = NS.Style
 NS.SBS.Style = S
 
