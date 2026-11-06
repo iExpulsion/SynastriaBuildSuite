@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI b4a438f. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI c7e595e. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -116,12 +116,15 @@ function S.Count(n, singular, plural)
 	return ("%d %s"):format(n, n == 1 and singular or (plural or singular .. "s"))
 end
 
+-- The 3.3.5 client's ITEM_QUALITY_COLORS stops at Artifact (6), though heirloom links are colored e6cc80.
+local MISSING_QUALITY = { [7] = rgb("e6cc80") }
+
 -- An item quality's color as { r, g, b, a }, made once per quality since tables ask for it on every redraw.
 function S.QualityColor(q)
 	local color = qualityColors[q or -1]
 	if not color then
 		local c = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q]
-		color = c and { c.r, c.g, c.b, 1 } or S.colors.text
+		color = c and { c.r, c.g, c.b, 1 } or MISSING_QUALITY[q] or S.colors.text
 		qualityColors[q or -1] = color
 	end
 	return color
