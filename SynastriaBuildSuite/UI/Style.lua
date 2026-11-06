@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI 032c420. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI b4a438f. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -20,23 +20,22 @@ local function blend(base, over, alpha)
 	return out
 end
 
--- Material 3 dark scheme for the brand seed #ffc400 (material-color-utilities): surfaces from the Neutral scheme,
--- primary from the Fidelity scheme (which keeps the seed as primaryContainer), error from the baseline, and
--- success and warning as un-harmonized custom colors, since harmonizing pulls warning onto the brand yellow.
+-- Material 3's baseline dark scheme (seed #6750a4). It has no success or warning roles, so those are custom
+-- colors.
 local DEFAULT_SCHEME = {
-	surfaceLowest = rgb("0f0e0c"),
-	surface = rgb("151311"),
-	surfaceLow = rgb("1d1b19"),
-	surfaceContainer = rgb("211f1d"),
-	surfaceHigh = rgb("2c2a27"),
-	onSurface = rgb("e7e1dd"),
-	onSurfaceVariant = rgb("cbc6c1"),
-	outline = rgb("94908c"),
-	outlineVariant = rgb("494643"),
-	primary = rgb("ffc400"),
-	onPrimary = rgb("3f2e00"),
-	error = rgb("ffb4ab"),
-	errorContainer = rgb("93000a"),
+	surfaceLowest = rgb("0f0d13"),
+	surface = rgb("141218"),
+	surfaceLow = rgb("1d1b20"),
+	surfaceContainer = rgb("211f26"),
+	surfaceHigh = rgb("2b2930"),
+	onSurface = rgb("e6e0e9"),
+	onSurfaceVariant = rgb("cac4d0"),
+	outline = rgb("938f99"),
+	outlineVariant = rgb("49454f"),
+	primary = rgb("d0bcff"),
+	onPrimary = rgb("381e72"),
+	error = rgb("f2b8b5"),
+	errorContainer = rgb("8c1d18"),
 	success = rgb("78dc77"),
 	warning = rgb("ffb870"),
 }
