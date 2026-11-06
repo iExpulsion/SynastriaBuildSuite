@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI 0ab3b31. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI f7e30f3. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -323,7 +323,7 @@ end
 
 -- Closes every dropdown menu and takes keyboard focus from every edit box. Neither goes away when its view is
 -- covered or replaced (a menu only hides with its dropdown, and a hidden edit box keeps the keyboard), so views
--- that do that (another tab, another build, the review sheet, a dialog, closing the window) call this.
+-- that do that (switching tabs, opening a dialog, closing the window) call this.
 function S.Dismiss()
 	S.CloseMenus()
 	for _, e in ipairs(inputs) do
