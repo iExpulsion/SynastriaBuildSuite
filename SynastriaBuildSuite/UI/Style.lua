@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.1.0-2-g8a4b52f. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.1.0-3-g3590d97. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -822,6 +822,27 @@ function S.Tab(b, text)
 	end
 	b:SetSelected(false)
 	return b
+end
+
+-- A grip: two columns of three dots, the usual sign that something drags. It's a frame 6 wide and 12 tall, in the
+-- muted color unless given one; SetColor recolors it.
+local GRIP_DOT, GRIP_STEP_X, GRIP_STEP_Y = 2, 4, 5
+function S.Grip(parent, color)
+	local grip = CreateFrame("Frame", nil, parent)
+	grip:SetSize(GRIP_DOT + GRIP_STEP_X, GRIP_DOT + 2 * GRIP_STEP_Y)
+	grip.dots = {}
+	for col = 0, 1 do
+		for line = 0, 2 do
+			local dot = S.Solid(grip, "ARTWORK", color or S.colors.muted)
+			dot:SetSize(GRIP_DOT, GRIP_DOT)
+			dot:SetPoint("TOPLEFT", col * GRIP_STEP_X, -line * GRIP_STEP_Y)
+			grip.dots[#grip.dots + 1] = dot
+		end
+	end
+	function grip:SetColor(c)
+		for _, dot in ipairs(self.dots) do dot:SetVertexColor(unpack(c)) end
+	end
+	return grip
 end
 
 -- Drag to reorder: rows of a list dragged into a new order. A row is any frame with moveIndex set (its item's
