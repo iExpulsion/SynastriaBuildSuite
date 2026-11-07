@@ -289,10 +289,8 @@ local function renderTabs(build)
 	local comparing = Window.IsComparing(build)
 	for i, tab in ipairs(TABS) do
 		local b = frame.tabs[i]
-		local selected = tab.key == state.tab
 		setShown(b, not build.sharedOnly or tab.key == "perks")
-		b.label:SetTextColor(unpack(selected and C.text or C.muted))
-		setShown(b.underline, selected)
+		b:SetSelected(tab.key == state.tab)
 		local diff = (comparing or not PER_SPEC[tab.key]) and SBS.Tabs.diff[tab.key] and SBS.Tabs.diff[tab.key](build)
 		if diff and diff > 0 then
 			b.badge:SetText(diff)
@@ -714,19 +712,12 @@ local function createTabBar(main)
 		b:SetHeight(TABS_H)
 		-- the first tab's label starts at PAD, in line with the header text above
 		if i == 1 then b:SetPoint("BOTTOMLEFT", 0, 0) else b:SetPoint("LEFT", f.tabs[i - 1], "RIGHT", 0, 0) end
-		b.label = S.Text(b, "normal", C.muted)
-		b.label:SetPoint("LEFT", PAD, 0)
-		b.label:SetText(tab.label)
+		S.Tab(b, tab.label)
 		b.badgeBg = S.Solid(b, "ARTWORK", { C.accent[1], C.accent[2], C.accent[3], 0.25 })
 		b.badgeBg:SetHeight(14)
 		b.badgeBg:SetPoint("LEFT", b.label, "RIGHT", GAP, 0)
 		b.badge = S.Text(b, "small", C.accentHover, "OVERLAY")
 		b.badge:SetPoint("CENTER", b.badgeBg, "CENTER", 0, 0)
-		b.underline = S.Solid(b, "OVERLAY", C.accent)
-		b.underline:SetHeight(2)
-		b.underline:SetPoint("BOTTOMLEFT", 6, 0)
-		b.underline:SetPoint("BOTTOMRIGHT", -6, 0)
-		S.Highlight(b)
 		b:SetScript("OnClick", function()
 			PlaySound("igCharacterInfoTab")
 			S.Dismiss()

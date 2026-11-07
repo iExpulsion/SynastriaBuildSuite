@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-52-gb3b20cf. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-54-g3a55602. Change it there, then run tools/sync_style.py.
 -- Cognac: gold-framed painted controls on dark glass. Load it after Style.lua and Atlas.lua;
 -- S.UseSkin("cognac") switches to it.
 local _, NS = ...
@@ -280,6 +280,21 @@ S.RegisterSkin("cognac", {
 			b.tick:SetWidth(gw * k)
 			b.tick:SetHeight(gh * k)
 		end)
+	end,
+	-- the hover glow and, on the selected tab, the teal chip, both at a control's height in the middle of the tab
+	tab = function(b)
+		b.plate = S.NineSlice(b, "BORDER", ATLAS, "chip_selected", PLATE_CUT)
+		b.glow = S.NineSlice(b, "HIGHLIGHT", ATLAS, "button_hover", PLATE_CUT)
+		b.glow:SetBlendMode("ADD")
+		follow(b, function(w, h)
+			local ch = math.min(S.CONTROL_H, h)
+			local y = math.floor((h - ch) / 2)
+			b.plate:Layout(w, ch, 0, y)
+			b.glow:Layout(w, ch, 0, y)
+		end)
+	end,
+	paintTab = function(b, on)
+		if on then b.plate:Show() else b.plate:Hide() end
 	end,
 	paintCheck = function(b)
 		if b.on then b.tick:Show() else b.tick:Hide() end

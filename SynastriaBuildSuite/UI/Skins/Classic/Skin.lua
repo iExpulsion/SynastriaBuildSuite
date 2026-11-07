@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-52-gb3b20cf. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-54-g3a55602. Change it there, then run tools/sync_style.py.
 -- Classic: the default UI's own look, drawn entirely from textures the 3.3.5 client ships, so there's no art in
 -- this folder. Dialog-box windows, red panel buttons, gold text, tooltip-bordered menus and lists, and the quest
 -- log's row highlight. Load it after Style.lua; S.UseSkin("classic") switches to it.
@@ -14,6 +14,10 @@ local INPUT = "Interface\\Common\\Common-Input-Border"
 -- the quest log's title row highlight, made for list rows (the quest greeting's highlight glows past a short row)
 local ROW_HIGHLIGHT = "Interface\\QuestFrame\\UI-QuestLogTitleHighlight"
 local CHECK = "Interface\\Buttons\\UI-CheckBox-"
+-- the Interface Options tabs, as their template crops them: 20 pixel caps, 0.15625 of the art each side, 24 tall
+local TAB = "Interface\\OptionsFrame\\UI-OptionsFrame-"
+local TAB_CAP, TAB_U, TAB_H = 20, 0.15625, 24
+local TAB_HIGHLIGHT = "Interface\\PaperDollInfoFrame\\UI-Character-Tab-Highlight"
 -- how much larger than the checkbox its art is drawn: the stock box fills about the middle 60% of its texture
 local CHECK_ART = 1.7
 
@@ -34,18 +38,26 @@ local function tooltipPanel(f, alpha)
 	f:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
 end
 
--- Three slices of a texture across a frame: fixed caps of `cap` pixels, the middle stretching.
-local function threeSlice(frame, layer, texture, cap, u0, u1, u2, u3, v1)
+-- Three slices of a texture across a frame: fixed caps of `cap` pixels, the middle stretching. With `height`, they
+-- run along the frame's bottom at that height instead of filling it.
+local function threeSlice(frame, layer, texture, cap, u0, u1, u2, u3, v1, height)
 	local parts = {}
 	for i = 1, 3 do parts[i] = frame:CreateTexture(nil, layer) end
 	parts[1]:SetTexCoord(u0, u1, 0, v1)
 	parts[2]:SetTexCoord(u1, u2, 0, v1)
 	parts[3]:SetTexCoord(u2, u3, 0, v1)
-	parts[1]:SetPoint("TOPLEFT")
-	parts[1]:SetPoint("BOTTOMLEFT")
+	if height then
+		parts[1]:SetPoint("BOTTOMLEFT")
+		parts[1]:SetHeight(height)
+		parts[3]:SetPoint("BOTTOMRIGHT")
+		parts[3]:SetHeight(height)
+	else
+		parts[1]:SetPoint("TOPLEFT")
+		parts[1]:SetPoint("BOTTOMLEFT")
+		parts[3]:SetPoint("TOPRIGHT")
+		parts[3]:SetPoint("BOTTOMRIGHT")
+	end
 	parts[1]:SetWidth(cap)
-	parts[3]:SetPoint("TOPRIGHT")
-	parts[3]:SetPoint("BOTTOMRIGHT")
 	parts[3]:SetWidth(cap)
 	parts[2]:SetPoint("TOPLEFT", parts[1], "TOPRIGHT")
 	parts[2]:SetPoint("BOTTOMRIGHT", parts[3], "BOTTOMLEFT")
@@ -144,6 +156,25 @@ S.RegisterSkin("classic", {
 	end,
 	paintNav = function(b, on)
 		if on then b.selectedTex:Show() else b.selectedTex:Hide() end
+	end,
+	-- the Interface Options tabs along the bar's bottom: the open-bottomed active tab while selected, the inactive one
+	-- otherwise, with the character frame's tab glow on hover and the label centered on the art
+	tab = function(b)
+		local function art(name)
+			return threeSlice(b, "BORDER", TAB .. name, TAB_CAP, 0, TAB_U, 1 - TAB_U, 1, 1, TAB_H)
+		end
+		b.active, b.inactive = art("ActiveTab"), art("InActiveTab")
+		local glow = b:CreateTexture(nil, "HIGHLIGHT")
+		glow:SetTexture(TAB_HIGHLIGHT)
+		glow:SetBlendMode("ADD")
+		glow:SetPoint("BOTTOMLEFT", TAB_CAP / 2, 0)
+		glow:SetPoint("BOTTOMRIGHT", -TAB_CAP / 2, 0)
+		glow:SetHeight(TAB_H)
+		b.label:SetPoint("LEFT", S.PAD, -math.floor(((b:GetHeight() or TAB_H) - TAB_H) / 2))
+	end,
+	paintTab = function(b, on)
+		for _, t in ipairs(b.active.parts) do if on then t:Show() else t:Hide() end end
+		for _, t in ipairs(b.inactive.parts) do if on then t:Hide() else t:Show() end end
 	end,
 	-- the stock checkbox, its art drawn larger than the box, since the box fills only the middle of it
 	check = function(b)
