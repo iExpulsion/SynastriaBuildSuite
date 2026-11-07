@@ -77,12 +77,16 @@ local function onClick(_, mouse)
 	end
 end
 
-local function fillTooltip(tt)
+local function fillBrokerTooltip(tt)
 	tt:AddLine("Synastria Build Suite", 1, 0.77, 0)
 	local name = linkedBuild()
 	tt:AddLine(SBS:SpecName(SBS:ActiveGroup()) .. ": " .. (name or "no linked build"), 1, 1, 1)
 	tt:AddLine("Left-click to open or close the build window.", 0.8, 0.8, 0.8)
 	tt:AddLine("Right-click to open the build linked to this spec.", 0.8, 0.8, 0.8)
+end
+
+local function fillTooltip(tt)
+	fillBrokerTooltip(tt)
 	tt:AddLine("Drag to move it around the minimap, Shift-drag to place it anywhere.", 0.6, 0.6, 0.66)
 	tt:AddLine("/sbs minimap hides it; /sbs minimap reset puts it back.", 0.6, 0.6, 0.66)
 end
@@ -142,18 +146,16 @@ local function create()
 	place()
 end
 
-local function registerBroker()
-	local ldb = LibStub and LibStub("LibDataBroker-1.1", true)
-	if ldb then
-		ldb:NewDataObject("SynastriaBuildSuite", {
-			type = "launcher",
-			icon = ICON,
-			label = "Synastria Build Suite",
-			OnClick = onClick,
-			OnTooltipShow = fillTooltip,
-		})
-	end
-end
+-- Registered while the addon loads, not at login: displays like ElvUI fill their panels on PLAYER_LOGIN before
+-- our handler runs, and a launcher created after that never lands in the panel set to it.
+LibStub("LibDataBroker-1.1"):NewDataObject("SynastriaBuildSuite", {
+	type = "launcher",
+	icon = ICON,
+	label = "Synastria Build Suite",
+	text = "Build Suite",
+	OnClick = onClick,
+	OnTooltipShow = fillBrokerTooltip,
+})
 
 function MinimapButton.Refresh()
 	if SBS.db.minimap.hide then button:Hide() else button:Show() end
@@ -180,7 +182,6 @@ loader:RegisterEvent("PLAYER_LOGIN")
 loader:SetScript("OnEvent", function(self)
 	SBS.db.minimap = SBS.db.minimap or {}
 	create()
-	registerBroker()
 	MinimapButton.Refresh()
 	self:UnregisterEvent("PLAYER_LOGIN")
 end)

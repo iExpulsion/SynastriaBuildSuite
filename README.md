@@ -168,7 +168,7 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 | `/sbs pixel` | Turns pixel snapping off or back on (see below) |
 
 The minimap button opens the window on left-click and your active spec's build on right-click. Drag it around
-the minimap to move it, or Shift-drag it to place it anywhere on screen. With a LibDataBroker display such as Titan Panel, Synastria Build Suite appears there too.
+the minimap to move it, or Shift-drag it to place it anywhere on screen. With a LibDataBroker display such as Titan Panel or ElvUI's data texts, Synastria Build Suite appears there too.
 
 The window snaps to whole screen pixels, so its borders stay crisp. At most UI scales that makes it a little
 larger or smaller than the rest of your UI; `/sbs pixel` turns it off if you'd rather it matched exactly.
@@ -183,4 +183,5 @@ Auto Loot screen also shows and edits the SBS Gear rules that Hunt Gear syncs.
 
 Synastria Build Suite is released under the [MIT License](LICENSE). The game data in `SynastriaBuildSuite/Data` comes from the
 Synastria client and isn't covered by it, and neither is the Cognac art in `SynastriaBuildSuite/UI/Skins/Cognac`, which is from
-[AttuneNext](https://github.com/speedyrulz/AttuneNext).
+[AttuneNext](https://github.com/speedyrulz/AttuneNext). `SynastriaBuildSuite/Libs` holds LibStub and LibDataBroker-1.1
+(public domain) and CallbackHandler-1.0 (from Ace3, under its own BSD-style license).

@@ -6,6 +6,9 @@
 ## SavedVariables: SynastriaBuildSuiteDB
 ## SavedVariablesPerCharacter: SynastriaBuildSuiteCharDB
 
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Data\Talents.lua
 Data\Abilities.lua
 Data\Glyphs.lua
