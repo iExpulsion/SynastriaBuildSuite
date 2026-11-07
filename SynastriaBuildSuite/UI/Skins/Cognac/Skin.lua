@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-50-g8b4caca. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-52-gb3b20cf. Change it there, then run tools/sync_style.py.
 -- Cognac: gold-framed painted controls on dark glass. Load it after Style.lua and Atlas.lua;
 -- S.UseSkin("cognac") switches to it.
 local _, NS = ...
@@ -20,6 +20,9 @@ local NE = { right = 40, top = 25, crop = { 56, 225, 17, 200 }, along = { 170, 2
 -- The top diamond, from the top edge piece, laid over the middle of the bar: the edge piece's bar rows, the rows to
 -- sample, and the diamond's columns.
 local HBAR, HBAND, DIAMOND = { 103, 160 }, { 93, 163 }, { 96, 160 }
+-- the divider's spear: a tip at each end and a diamond in the middle keep their shape; the shafts between stretch
+local SPEAR_W, SPEAR_COLS = 12, { 102, 153 }
+local SPEAR = { { 16, 60, false }, { 60, 100, true }, { 100, 156, false }, { 156, 196, true }, { 196, 240, false } }
 -- The menu frame, the 141x103 box of the tooltip art: its corners (MENU_CUT art pixels each way, drawn at
 -- MENU_SCALE), and the columns its edges and middle are sampled from, left of the pointer on its bottom edge.
 local MENU_W, MENU_H, MENU_CUT, MENU_SCALE, MENU_MID = 141, 104, 14, 0.35, { 14, 53 }
@@ -156,6 +159,25 @@ local function card(f)
 	return slices
 end
 
+-- The spear between two panes: its tips and diamond keep their shape, its shafts stretch.
+local function spear(holder)
+	local parts = {}
+	for i = 1, #SPEAR do parts[i] = holder:CreateTexture(nil, "ARTWORK") end
+	follow(holder, function(w, h)
+		local k = w / (SPEAR_COLS[2] - SPEAR_COLS[1])
+		local fixed, stretch = 0, 0
+		for _, seg in ipairs(SPEAR) do
+			if seg[3] then stretch = stretch + 1 else fixed = fixed + (seg[2] - seg[1]) * k end
+		end
+		local y = 0
+		for i, seg in ipairs(SPEAR) do
+			local len = seg[3] and math.max((h - fixed) / stretch, 1) or (seg[2] - seg[1]) * k
+			S.ArtPart(parts[i], holder, ATLAS, "divider_v", SPEAR_COLS[1], SPEAR_COLS[2], seg[1], seg[2], 0, y, w, len)
+			y = y + len
+		end
+	end)
+end
+
 -- A one-line field: three slices of the search plate, so its corners stay square as it widens. The art has no
 -- right cap, so the left one is mirrored.
 local function searchField(e)
@@ -268,6 +290,11 @@ S.RegisterSkin("cognac", {
 	-- the card behind the entries, whose own frame sets it apart from the page
 	sidebar = function(side)
 		card(side)
+	end,
+	-- the gold spear between two panes
+	split = function(holder)
+		spear(holder)
+		return SPEAR_W
 	end,
 	highlight = function(f)
 		plate(f)
