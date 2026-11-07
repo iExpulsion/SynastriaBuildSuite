@@ -6,15 +6,63 @@ local Launchers = {}
 SBS.Launchers = Launchers
 
 local CHECK_EVERY, GIVE_UP_AFTER = 1, 600
+-- how long after the gossip line is clicked the Perk Manager it asks for may still arrive
+local PARK_WAIT = 10
 local watching = false
+
+-- The Perk Manager the gossip line opens has to stay shown for perk activations, but the window covers it, so it's
+-- moved off screen and made invisible until it closes. Closing the window closes it too. A Perk Manager that
+-- arrives already invisible (Synastria Companion parks it the same way) is left alone.
+local park = { wantedUntil = nil, saved = nil }
+
+local function parkPerkManager(f)
+	local wanted = park.wantedUntil and GetTime() <= park.wantedUntil
+	park.wantedUntil = nil
+	if wanted and not park.saved and f:GetAlpha() > 0 then
+		local point, rel, relPoint, x, y = f:GetPoint()
+		park.saved = { point = point, rel = rel, relPoint = relPoint, x = x, y = y, alpha = f:GetAlpha() }
+		f:SetAlpha(0)
+		f:ClearAllPoints()
+		f:SetPoint("TOPRIGHT", UIParent, "BOTTOMLEFT", -200, -200)
+	end
+end
+
+local function unparkPerkManager(f)
+	local saved = park.saved
+	if saved then
+		park.saved = nil
+		f:ClearAllPoints()
+		if saved.point then
+			f:SetPoint(saved.point, saved.rel or UIParent, saved.relPoint, saved.x, saved.y)
+		else
+			f:SetPoint("CENTER", 0, 0)
+		end
+		f:SetAlpha(saved.alpha or 1)
+	end
+end
+
+function Launchers.PerkManagerParked()
+	return park.saved ~= nil
+end
+
+function Launchers.WindowClosed()
+	local f = PerkMgrFrame
+	if f and park.saved and f:IsShown() then f:Hide() end
+end
 
 -- The server sends the Perk Manager's Lua after login, so this checks until it exists. The window redraws when it
 -- opens or closes, since the server opens it after Synastria Build Suite when both come from the gossip line.
 function Launchers.Check()
 	local perkMgr = PerkMgrFrame
 	if perkMgr and not watching then
-		perkMgr:HookScript("OnShow", function() SBS.Window.Render() end)
-		perkMgr:HookScript("OnHide", function() SBS.Window.Render() end)
+		perkMgr:HookScript("OnShow", function(f)
+			parkPerkManager(f)
+			SBS.Window.Render()
+		end)
+		perkMgr:HookScript("OnHide", function(f)
+			unparkPerkManager(f)
+			SBS.Window.Render()
+		end)
 		watching = true
 	end
 	return watching
@@ -36,6 +84,7 @@ local function createGossip()
 	b:SetText("Open Synastria Build Suite")
 	SynastriaBuildSuiteGossipButtonGossipIcon:SetTexture("Interface\\GossipFrame\\GossipGossipIcon")
 	b:SetScript("OnClick", function(self)
+		park.wantedUntil = GetTime() + PARK_WAIT
 		SelectGossipOption(self.option)
 		SBS.Window.Open()
 	end)

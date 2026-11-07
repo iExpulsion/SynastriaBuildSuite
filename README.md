@@ -34,7 +34,8 @@ Hunter pet aspects, the spec name and notes.
 ## Getting Started
 
 Open Synastria Build Suite with `/sbs`, the minimap button, or the **Open Synastria Build Suite** line in an innkeeper's chat
-options. The innkeeper line also opens the Perk Manager, which perk activations need.
+options. The innkeeper line also opens the Perk Manager, which perk activations need, out of sight behind the
+window; closing Synastria Build Suite closes it too.
 
 ![An innkeeper's chat options with Open Synastria Build Suite under Manage perks](docs/images/innkeeper.png)
 
