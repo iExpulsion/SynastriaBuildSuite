@@ -14,11 +14,12 @@ local TIERS, COLUMNS = 11, 4
 local GAP = S.GAP
 -- the class buttons only take a row when the build has more than one class
 local HEADER_H, CLASSBAR_H = 26, S.CONTROL_H + S.GAP
+-- each look's border, by color role, looked up when drawn since the theme is applied after this file loads
 local BORDER = {
-	locked = C.border,
-	open = C.good,
-	partial = C.good,
-	maxed = C.accent,
+	locked = "border",
+	open = "good",
+	partial = "good",
+	maxed = "accent",
 }
 
 local panel, current
@@ -92,7 +93,7 @@ local function newButton(column, size)
 	local b = CreateFrame("Button", nil, column)
 	b:SetSize(size, size)
 	b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-	S.Panel(b, { 0, 0, 0, 1 }, BORDER.locked)
+	S.Panel(b, { 0, 0, 0, 1 }, C[BORDER.locked])
 	b.icon = b:CreateTexture(nil, "ARTWORK")
 	b.icon:SetPoint("TOPLEFT", 1, -1)
 	b.icon:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -111,7 +112,7 @@ local function newButton(column, size)
 end
 
 local function line(column, layer)
-	local t = S.Solid(column, layer or "BORDER", BORDER.locked)
+	local t = S.Solid(column, layer or "BORDER", C[BORDER.locked])
 	return t
 end
 
@@ -190,7 +191,7 @@ local function paintTree(col, class, tab, trees, cap)
 		elseif Calc.CanAdd(class, trees, tab, i, cap) then look = "open"
 		else look = "locked" end
 		b.look = look
-		b:SetBackdropBorderColor(unpack(BORDER[look]))
+		b:SetBackdropBorderColor(unpack(C[BORDER[look]]))
 		b.icon:SetDesaturated(look == "locked")
 		b.icon:SetAlpha(look == "locked" and 0.55 or 1)
 		local show = rank > 0 or look ~= "locked"
@@ -201,7 +202,7 @@ local function paintTree(col, class, tab, trees, cap)
 	for _, a in ipairs(col.arrows) do
 		if a.target then
 			local met = (ranks[a.source] or 0) >= a.need
-			local c = met and C.accent or BORDER.locked
+			local c = met and C.accent or C[BORDER.locked]
 			a.v:SetVertexColor(unpack(c))
 			a.h:SetVertexColor(unpack(c))
 		end

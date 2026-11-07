@@ -467,15 +467,15 @@ local function importBuild()
 end
 
 local function savePosition(f)
+	SBS.SnapPosition(f)
 	local point, _, relPoint, x, y = f:GetPoint()
 	SBS.db.window = { point = point, relPoint = relPoint, x = x, y = y }
 end
 
--- The default spot: centered across the screen, its top 128 units below the screen's top, as Companion's and
--- Rotation Assist's windows are, so their tops line up whatever their heights.
+-- The default spot is the style kit's, top middle of the screen, shared with Companion and Rotation Assist.
 local function placeDefault(f)
-	f:ClearAllPoints()
-	f:SetPoint("TOP", UIParent, "TOP", 0, -128)
+	S.PlaceWindow(f)
+	SBS.SnapPosition(f)
 end
 
 function Window.ResetPosition()
@@ -486,10 +486,32 @@ function Window.ResetPosition()
 	end
 end
 
-local function createTitleBar(f)
+-- The theme picker: every skin the kit has, with who made it on hover. A change applies after a reload.
+local function createThemePicker(bar, anchor)
+	local label = S.Text(bar, "small", C.muted)
+	label:SetPoint("LEFT", anchor, "RIGHT", 2 * GAP, 0)
+	label:SetText("Theme")
+	local options, inUse = {}, nil
+	for _, skin in ipairs(S.Skins()) do
+		options[#options + 1] = { value = skin.key, text = skin.label, tooltip = skin.credit }
+		if skin.key == S.Skin() then inUse = skin.label end
+	end
+	local picker
+	picker = S.Dropdown(bar, 96, function(key)
+		SBS.SetSkin(key)
+		for _, opt in ipairs(options) do
+			if opt.value == key then picker:SetText(opt.text) end
+		end
+	end)
+	picker:SetOptions(options)
+	picker:SetText(inUse or "")
+	picker:SetPoint("LEFT", label, "RIGHT", GAP, 0)
+end
+
+local function createTitleBar(f, edge)
 	local bar = CreateFrame("Frame", nil, f)
-	bar:SetPoint("TOPLEFT")
-	bar:SetPoint("TOPRIGHT")
+	bar:SetPoint("TOPLEFT", edge, -edge)
+	bar:SetPoint("TOPRIGHT", -edge, -edge)
 	bar:SetHeight(TITLE_H)
 	bar:EnableMouse(true)
 	bar:RegisterForDrag("LeftButton")
@@ -511,6 +533,7 @@ local function createTitleBar(f)
 	local version = S.Text(bar, "small", C.muted)
 	version:SetPoint("LEFT", title, "RIGHT", GAP, 0)
 	version:SetText("v" .. SBS.version)
+	createThemePicker(bar, version)
 
 	-- the close button's box sits as far from the right edge as from the top and bottom
 	local inset = (TITLE_H - CONTROL_H) / 2
@@ -524,19 +547,15 @@ local function createTitleBar(f)
 	f.innDot:SetPoint("RIGHT", f.innText, "LEFT", -GAP, 0)
 end
 
-local function createSidebar(f)
+local function createSidebar(f, edge)
 	local side = CreateFrame("Frame", nil, f)
-	side:SetPoint("TOPLEFT", 0, -TITLE_H)
-	side:SetPoint("BOTTOMLEFT")
+	side:SetPoint("TOPLEFT", edge, -edge - TITLE_H)
+	side:SetPoint("BOTTOMLEFT", edge, edge)
 	side:SetWidth(SIDEBAR_W)
-	-- the fill stops 1px short of the window's left and bottom edges, which keep the window border
-	local fill = S.Solid(side, "BACKGROUND", C.sidebar)
-	fill:SetPoint("TOPLEFT", 1, 0)
-	fill:SetPoint("BOTTOMRIGHT", 0, 1)
-	local edge = S.Solid(side, "BORDER", C.border)
-	edge:SetWidth(1)
-	edge:SetPoint("TOPRIGHT")
-	edge:SetPoint("BOTTOMRIGHT")
+	side:SetHeight(H - TITLE_H)
+	S.Sidebar(side)
+	-- the list rows sit in from the sidebar's sides by the skin's frame around it
+	local inset = S.metrics.navInset
 
 	f.search = S.Input(side, "SynastriaBuildSuiteSearch", SIDEBAR_W - 2 * PAD, "Search Builds", 40)
 	f.search:SetPoint("TOPLEFT", PAD, -PAD)
@@ -547,8 +566,9 @@ local function createSidebar(f)
 
 	-- the list runs from below the search box to the footer, which lines up with the build pane's footer
 	local listTop = PAD + CONTROL_H + GAP
-	f.list = SBS.List.New(side, "SynastriaBuildSuiteListScroll", SIDEBAR_W - 14, H - TITLE_H - listTop - FOOTER_H, "sidebar")
-	f.list.scroll:SetPoint("TOPLEFT", 0, -listTop)
+	f.list = SBS.List.New(side, "SynastriaBuildSuiteListScroll", SIDEBAR_W - 14 - 2 * inset,
+		H - TITLE_H - listTop - FOOTER_H, "sidebar")
+	f.list.scroll:SetPoint("TOPLEFT", inset, -listTop)
 
 	f.noMatches = S.Text(side, "small", C.muted)
 	f.noMatches:SetPoint("TOP", 0, -(listTop + PAD))
@@ -706,8 +726,7 @@ local function createTabBar(main)
 		b.underline:SetHeight(2)
 		b.underline:SetPoint("BOTTOMLEFT", 6, 0)
 		b.underline:SetPoint("BOTTOMRIGHT", -6, 0)
-		local hover = S.Solid(b, "HIGHLIGHT", C.hover)
-		hover:SetAllPoints()
+		S.Highlight(b)
 		b:SetScript("OnClick", function()
 			PlaySound("igCharacterInfoTab")
 			S.Dismiss()
@@ -722,15 +741,17 @@ end
 local function createNotes(main, width, height)
 	local box = CreateFrame("Frame", nil, main)
 	box:SetSize(width, height)
-	S.Panel(box, C.well, C.border)
+	S.Well(box)
+	-- the text sits inside the well's frame, however thick the theme draws it
+	local pad = PAD + S.metrics.wellInset
 	local scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuiteNotesScroll", box, "UIPanelScrollFrameTemplate")
-	scroll:SetPoint("TOPLEFT", PAD, -PAD)
-	scroll:SetPoint("BOTTOMRIGHT", -PAD - 10, PAD)
+	scroll:SetPoint("TOPLEFT", pad, -pad)
+	scroll:SetPoint("BOTTOMRIGHT", -pad - 10, pad)
 	local edit = CreateFrame("EditBox", nil, scroll)
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
 	S.SetFont(edit, "normal")
-	edit:SetWidth(width - 2 * PAD - 10)
+	edit:SetWidth(width - 2 * pad - 10)
 	edit:SetScript("OnEscapePressed", edit.ClearFocus)
 	edit:SetScript("OnEditFocusGained", function(self) self.focused = true end)
 	edit:SetScript("OnEditFocusLost", function(self) self.focused = false end)
@@ -747,10 +768,10 @@ local function createNotes(main, width, height)
 	return box
 end
 
-local function createMain(f)
+local function createMain(f, edge)
 	local main = CreateFrame("Frame", nil, f)
-	main:SetPoint("TOPLEFT", SIDEBAR_W, -TITLE_H)
-	main:SetPoint("BOTTOMRIGHT")
+	main:SetPoint("TOPLEFT", edge + SIDEBAR_W, -edge - TITLE_H)
+	main:SetPoint("BOTTOMRIGHT", -edge, edge)
 	f.main = main
 
 	createBuildHeader(main)
@@ -784,10 +805,10 @@ local function createMain(f)
 	f.summary:SetPoint("LEFT", PAD, 0)
 end
 
-local function createEmpty(f)
+local function createEmpty(f, edge)
 	local empty = CreateFrame("Frame", nil, f)
-	empty:SetPoint("TOPLEFT", SIDEBAR_W, -TITLE_H)
-	empty:SetPoint("BOTTOMRIGHT")
+	empty:SetPoint("TOPLEFT", edge + SIDEBAR_W, -edge - TITLE_H)
+	empty:SetPoint("BOTTOMRIGHT", -edge, edge)
 	local title = S.Text(empty, "large")
 	title:SetPoint("CENTER", 0, 50)
 	title:SetJustifyH("CENTER")
@@ -810,22 +831,30 @@ local function create()
 	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteFrame", UIParent)
 	frame = f
-	f:SetSize(W, H)
+	-- the theme's border (S.metrics.edge) goes around the same content area, so every screen keeps its size
+	local edge = S.metrics.edge
+	f:SetSize(W + 2 * edge, H + 2 * edge)
 	f:SetFrameStrata("HIGH")
 	f:SetToplevel(true)
 	f:EnableMouse(true)
 	f:SetMovable(true)
 	f:SetClampedToScreen(true)
+	SBS.PixelScale(f)
 	local pos = SBS.db.window
-	if pos then f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y) else placeDefault(f) end
-	S.Panel(f, C.window, C.border)
+	if pos then
+		f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
+		SBS.SnapPosition(f)
+	else
+		placeDefault(f)
+	end
+	S.Frame(f, "window")
 	tinsert(UISpecialFrames, "SynastriaBuildSuiteFrame")
 	f:Hide()
 
-	createTitleBar(f)
-	createSidebar(f)
-	createMain(f)
-	createEmpty(f)
+	createTitleBar(f, edge)
+	createSidebar(f, edge)
+	createMain(f, edge)
+	createEmpty(f, edge)
 	f.review = SBS.Review.Create(f.main, W - SIDEBAR_W, H - TITLE_H)
 	f.sources = SBS.Sources.Create(f.main, W - SIDEBAR_W, H - TITLE_H)
 

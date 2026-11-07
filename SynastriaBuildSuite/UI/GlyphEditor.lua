@@ -17,7 +17,8 @@ local SOCKETS_W, ICON, ROW, SEARCH_H, CLASSBAR_H = 300, 40, 60, S.CONTROL_H + S.
 local COLUMNS = { { title = "Major Glyphs", sockets = { 1, 4, 6 } }, { title = "Minor Glyphs", sockets = { 2, 3, 5 } } }
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 local EMPTY = "Interface\\Icons\\INV_Misc_Rune_01"
-local LOOK = { socketed = C.good, bags = C.warn, missing = C.badDim, empty = C.border, chosen = C.muted }
+-- each look's border, by color role, looked up when drawn since the theme is applied after this file loads
+local LOOK = { socketed = "good", bags = "warn", missing = "badDim", empty = "border", chosen = "muted" }
 
 local panel, current
 local state = { socket = 1, search = "" }
@@ -84,9 +85,9 @@ local function newSocket(parent, socket, width)
 	b:SetSize(width, ICON + 8)
 	b.socket = socket
 	b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-	local hover = S.Solid(b, "HIGHLIGHT", C.hover)
+	local hover = S.Solid(b, "HIGHLIGHT", C.rowHover)
 	hover:SetAllPoints()
-	b.selectedBg = S.Solid(b, "BACKGROUND", C.selected)
+	b.selectedBg = S.Solid(b, "BACKGROUND", C.rowSelected)
 	b.selectedBg:SetAllPoints()
 	b.frame = CreateFrame("Frame", nil, b)
 	b.frame:SetSize(ICON, ICON)
@@ -223,7 +224,7 @@ local function renderSockets(rows, comparable)
 		b.icon:SetTexture(row.glyph and (GetItemIcon(row.glyph.item) or QUESTION) or row.spell and QUESTION or EMPTY)
 		b.icon:SetDesaturated(not row.spell)
 		b.icon:SetAlpha(row.spell and 1 or 0.4)
-		b.frame:SetBackdropBorderColor(unpack(LOOK[look]))
+		b.frame:SetBackdropBorderColor(unpack(C[LOOK[look]]))
 		b.name:SetText(glyphName(row) or S.Hex(C.muted, ("Level %d Socket"):format(Glyphs.SOCKETS[socket].level)))
 		b.status:SetText(STATUS[look])
 		if socket == state.socket then b.selectedBg:Show() else b.selectedBg:Hide() end
@@ -385,7 +386,9 @@ function Editor.Create(parent, width, height)
 	local pick = CreateFrame("Frame", nil, panel)
 	pick:SetSize(pickW, height)
 	pick:SetPoint("TOPLEFT", SOCKETS_W + PAD, 0)
-	S.Panel(pick, C.well, C.border)
+	S.Well(pick)
+	-- the list sits inside the well's frame, however thick the theme draws it
+	local wi = 1 + S.metrics.wellInset
 	panel.pickTitle = S.Text(pick, "normal")
 	panel.pickTitle:SetPoint("TOPLEFT", PAD, -PAD)
 	panel.search = S.Input(pick, "SynastriaBuildSuiteGlyphSearch", pickW - 2 * PAD, "Search Glyphs", 40)
@@ -395,8 +398,9 @@ function Editor.Create(parent, width, height)
 		SBS.Window.Render()
 	end)
 	local listTop = PAD + TITLE_LINE + SEARCH_H
-	panel.picker = SBS.List.New(pick, "SynastriaBuildSuiteGlyphPicker", pickW - 22, height - listTop - (PAD + CONTROL_H + GAP))
-	panel.picker.scroll:SetPoint("TOPLEFT", 1, -listTop)
+	panel.picker = SBS.List.New(pick, "SynastriaBuildSuiteGlyphPicker", pickW - 20 - 2 * wi,
+		height - listTop - (PAD + CONTROL_H + GAP))
+	panel.picker.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	panel.clear = S.Button(pick, "Clear Socket", "secondary", 100, function()
 		Glyphs.Clear(current, state.class, state.socket)
 		SBS:Changed()

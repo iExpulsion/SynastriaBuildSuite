@@ -289,11 +289,18 @@ local function list()
 	end
 end
 
+local function themeNames()
+	local names = {}
+	for _, skin in ipairs(SBS.Style.Skins()) do names[#names + 1] = skin.key end
+	return table.concat(names, ", ")
+end
+
 local function help()
 	SBS:Print("v%s commands (/sbs alone opens the window):", SBS.version)
 	SBS:Print("  /sbs list | save <name> | specs | apply <name> | export <name> | import")
 	SBS:Print("  /sbs gear <name> | equip <name> | delete <name> | note <name> <text> | minimap [reset] | reset")
 	SBS:Print("  /sbs lootfilter sync | restore")
+	SBS:Print("  /sbs theme <name> (after a reload: %s) | pixel (snap the window to whole screen pixels)", themeNames())
 end
 
 local handlers = {}
@@ -358,6 +365,21 @@ end
 handlers.reset = function()
 	SBS.Window.ResetPosition()
 	SBS:Print("Window moved back to the top middle of the screen.")
+end
+handlers.theme = function(arg)
+	local key = arg:lower()
+	if key == "" then
+		SBS:Print("Theme: %s. Themes: %s.", SBS.Style.Skin(), themeNames())
+	elseif not SBS.SetSkin(key) then
+		SBS:Print("No theme called %s. Themes: %s.", key, themeNames())
+	else
+		SBS:Print("Theme: %s. /reload if it hasn't switched yet.", key)
+	end
+end
+handlers.pixel = function()
+	SBS.SetPixelScale(not SBS.db.pixelScale)
+	SBS:Print(SBS.db.pixelScale and "The window snaps to whole screen pixels." or
+		"The window follows the UI scale exactly; borders may blur at some scales.")
 end
 
 handlers.note = function(arg)

@@ -289,9 +289,8 @@ end
 local function newOption(parent, width)
 	local row = CreateFrame("Button", nil, parent)
 	row:SetSize(width, 22)
-	local hover = S.Solid(row, "HIGHLIGHT", C.hover)
-	hover:SetAllPoints()
-	row.check = S.Check(row, 14, function() row:Click() end)
+	S.Highlight(row)
+	row.check = S.Check(row, nil, function() row:Click() end)
 	row.check:SetPoint("LEFT", 4, 0)
 	row.label = S.Text(row, "small")
 	row.label:SetPoint("LEFT", row.check, "RIGHT", 8, 0)
@@ -521,14 +520,16 @@ end
 local function createDetail(width, height)
 	local d = CreateFrame("Frame", nil, panel)
 	d:SetSize(width, height)
-	S.Panel(d, C.well, C.border)
+	S.Well(d)
+	-- the scrolling detail sits inside the well's frame, however thick the theme draws it
+	local wi = 1 + S.metrics.wellInset
 	d.scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuitePerkDetail", d, "UIPanelScrollFrameTemplate")
-	d.scroll:SetPoint("TOPLEFT", 1, -1)
-	d.scroll:SetPoint("BOTTOMRIGHT", -12, 1)
+	d.scroll:SetPoint("TOPLEFT", wi, -wi)
+	d.scroll:SetPoint("BOTTOMRIGHT", -11 - wi, wi)
 	local child = CreateFrame("Frame", nil, d.scroll)
-	child:SetSize(width - 14, height)
+	child:SetSize(width - 12 - 2 * wi, height)
 	d.scroll:SetScrollChild(child)
-	d.child, d.innerW = child, width - 14 - 2 * PAD
+	d.child, d.innerW = child, width - 12 - 2 * wi - 2 * PAD
 	d.updateBar = SBS.List.AutoHideBar(d.scroll, "SynastriaBuildSuitePerkDetail")
 
 	d.none = S.Text(d, "small", C.muted)

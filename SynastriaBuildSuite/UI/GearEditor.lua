@@ -21,7 +21,8 @@ local SLOT_KEYS = {
 	"MainHandSlot", "SecondaryHandSlot", "RangedSlot",
 }
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
-local LOOK = { worn = C.good, bags = C.warn, missing = C.badDim, empty = C.border }
+-- each look's border, by color role, looked up when drawn since the theme is applied after this file loads
+local LOOK = { worn = "good", bags = "warn", missing = "badDim", empty = "border" }
 
 local panel, current
 local state = { slot = 1, rank = 1 }
@@ -153,7 +154,7 @@ local function renderDoll(rowsBySlot)
 		b.icon:SetTexture(row and (GetItemIcon(row.items[1].id) or QUESTION) or emptyTexture(slot))
 		b.icon:SetDesaturated(row == nil)
 		b.icon:SetAlpha(row and 1 or 0.5)
-		b:SetBackdropBorderColor(unpack(LOOK[lookFor(row)]))
+		b:SetBackdropBorderColor(unpack(C[LOOK[lookFor(row)]]))
 		if slot == state.slot then b.selected:Show() else b.selected:Hide() end
 		local alts = row and #row.items - 1 or 0
 		if alts > 0 then
@@ -260,7 +261,7 @@ local EQUIP_TIP = "When a spec linked to this build becomes active, or you apply
 local function createToggle(parent, width, label, tip, onClick)
 	local row = CreateFrame("Button", nil, parent)
 	row:SetSize(width, CONTROL_H)
-	row.check = S.Check(row, 14, function() row:Click() end)
+	row.check = S.Check(row, nil, function() row:Click() end)
 	row.check:SetPoint("LEFT", 0, 0)
 	row.label = S.Text(row, "small")
 	row.label:SetPoint("LEFT", row.check, "RIGHT", GAP, 0)
@@ -297,7 +298,7 @@ end
 local function createDetail(width, height)
 	local d = CreateFrame("Frame", nil, panel)
 	d:SetSize(width, height)
-	S.Panel(d, C.well, C.border)
+	S.Well(d)
 	d:EnableMouse(true)
 	d:SetScript("OnReceiveDrag", function() acceptDrop(state.slot) end)
 	d:SetScript("OnMouseUp", function() acceptDrop(state.slot) end)

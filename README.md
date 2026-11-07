@@ -22,6 +22,8 @@ Hunter pet aspects, the spec name and notes.
   SynastriaBuildManager (SBM), SynastriaPerkManager (SPM) and Item Affix Manager strings.
 - **Shared Perks:** your Misc perks live in one list that every build applies, and they're never exported or
   overwritten by an import.
+- **Themes:** the flat Material look, Classic for the game's own frames and buttons, or Cognac's painted gold
+  frames on dark glass.
 
 ## Installation
 
@@ -45,6 +47,8 @@ blank.
 
 ## The Window
 
+- **Title Bar:** **Theme** switches between Material, Classic and Cognac, after a reload; Build Suite offers to
+  reload for you.
 - **Sidebar:** builds linked to this character's specs are at the top under Your Specs, with the active spec
   in green. Everything else is under Saved Builds, grouped by class. Search filters by name or spec name.
 - **Build Header:** click the name to rename it or set the spec name. Assign To links a build to one of your
@@ -159,9 +163,14 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 | `/sbs minimap` | Hides or shows the minimap button |
 | `/sbs minimap reset` | Puts the minimap button back on the minimap |
 | `/sbs reset` | Moves the window back to the top middle of the screen |
+| `/sbs theme <name>` | Switches the theme after a reload: `material`, `classic` or `cognac` |
+| `/sbs pixel` | Turns pixel snapping off or back on (see below) |
 
 The minimap button opens the window on left-click and your active spec's build on right-click. Drag it around
 the minimap to move it, or Shift-drag it to place it anywhere on screen. With a LibDataBroker display such as Titan Panel, Synastria Build Suite appears there too.
+
+The window snaps to whole screen pixels, so its borders stay crisp. At most UI scales that makes it a little
+larger or smaller than the rest of your UI; `/sbs pixel` turns it off if you'd rather it matched exactly.
 
 ## Synastria Companion
 
@@ -172,4 +181,4 @@ Auto Loot screen also shows and edits the SBS Gear rules that Hunt Gear syncs.
 ## License
 
 Synastria Build Suite is released under the [MIT License](LICENSE). The game data in `SynastriaBuildSuite/Data` comes from the
-Synastria client and isn't covered by it.
+Synastria client and isn't covered by it, and neither is the Cognac art in `SynastriaBuildSuite/UI/Skins/Cognac`.

@@ -68,7 +68,7 @@ local function newToggle(parent, section)
 	local row = CreateFrame("Button", nil, parent)
 	row:SetSize(TOGGLE_W, S.CONTROL_H)
 	row.key = section.key
-	row.check = S.Check(row, 14, function() row:Click() end)
+	row.check = S.Check(row, nil, function() row:Click() end)
 	row.check:SetPoint("LEFT", 0, 0)
 	row.label = S.Text(row, "small")
 	row.label:SetPoint("LEFT", row.check, "RIGHT", S.GAP, 0)
@@ -88,7 +88,11 @@ end
 
 local function create()
 	local S, C = SBS.Style, SBS.Style.colors
-	local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
+	-- the theme's dialog padding; the dialog grows by the difference from the kit's, so its contents keep their size
+	local PAD, GAP, CONTROL_H = S.metrics.inset, S.GAP, S.CONTROL_H
+	local grow = 2 * (PAD - S.PAD)
+	-- the string's text sits inside the well's frame, however thick the theme draws it
+	local wellPad = S.PAD + S.metrics.wellInset
 	-- rows top to bottom: title and sub line, the Include row, the string, (import: the Name row), the buttons
 	local includeY = PAD + 16 + 4 + 12 + GAP + CONTROL_H / 2
 	local wellTop = includeY + CONTROL_H / 2 + GAP
@@ -97,7 +101,7 @@ local function create()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteTextFrame", UIParent)
 	f.pad = PAD
 	f.wellBottom = { export = footerH, import = footerH + CONTROL_H + PAD }
-	f:SetSize(W, H)
+	f:SetSize(W + grow, H + grow)
 	f:SetPoint("CENTER")
 	f:SetFrameStrata("DIALOG")
 	f:EnableMouse(true)
@@ -105,7 +109,8 @@ local function create()
 	f:RegisterForDrag("LeftButton")
 	f:SetScript("OnDragStart", f.StartMoving)
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
-	S.Panel(f, { C.window[1], C.window[2], C.window[3], 1 }, C.border)
+	SBS.PixelScale(f)
+	S.Frame(f, "popup")
 	tinsert(UISpecialFrames, "SynastriaBuildSuiteTextFrame")
 	f:HookScript("OnHide", S.Dismiss)
 
@@ -144,17 +149,18 @@ local function create()
 	f.nameHint = S.Text(f, "small", C.muted)
 	f.nameHint:SetPoint("LEFT", f.name, "RIGHT", GAP, 0)
 	f.nameHint:SetText("For Import as New.")
-	S.Panel(well, C.well, C.border)
+	well:SetSize(W - 2 * S.PAD, H - wellTop - f.wellBottom.export)
+	S.Well(well)
 	well:EnableMouse(true)
 	local scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuiteTextScroll", well, "UIPanelScrollFrameTemplate")
-	scroll:SetPoint("TOPLEFT", PAD, -PAD)
-	scroll:SetPoint("BOTTOMRIGHT", -PAD - 10, PAD)
+	scroll:SetPoint("TOPLEFT", wellPad, -wellPad)
+	scroll:SetPoint("BOTTOMRIGHT", -wellPad - 10, wellPad)
 	SBS.List.AutoHideBar(scroll, "SynastriaBuildSuiteTextScroll")
 	local edit = CreateFrame("EditBox", nil, scroll)
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
 	S.SetFont(edit, "edit")
-	edit:SetWidth(W - 4 * PAD - 10)
+	edit:SetWidth(W - 2 * S.PAD - 2 * wellPad - 10)
 	edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 	edit:SetScript("OnTextChanged", function(self, userInput)
 		if box.mode == "import" then
@@ -311,7 +317,7 @@ local function newCopyToggle(parent, c)
 	local row = CreateFrame("Button", nil, parent)
 	row:SetSize(TOGGLE_W, S.CONTROL_H)
 	row.key, row.text = c.key, c.label
-	row.check = S.Check(row, 14, function() row:Click() end)
+	row.check = S.Check(row, nil, function() row:Click() end)
 	row.check:SetPoint("LEFT", 0, 0)
 	row.label = S.Text(row, "small")
 	row.label:SetPoint("LEFT", row.check, "RIGHT", S.GAP, 0)
@@ -347,14 +353,16 @@ end
 
 local function createSheet()
 	local S, C = SBS.Style, SBS.Style.colors
-	local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
+	-- the theme's dialog padding; the dialog grows by the difference from the kit's, so its contents keep their size
+	local PAD, GAP, CONTROL_H = S.metrics.inset, S.GAP, S.CONTROL_H
+	local grow = 2 * (PAD - S.PAD)
 	-- rows top to bottom: title and sub line, Classes, Copy, Name, the buttons
 	local classesY = PAD + 16 + 4 + 12 + PAD + CONTROL_H / 2
 	local copyY = classesY + CONTROL_H + GAP
 	local nameY = copyY + CONTROL_H + GAP
 	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteNewFrame", UIParent)
-	f:SetSize(NEW_W, nameY + CONTROL_H / 2 + PAD + CONTROL_H + PAD)
+	f:SetSize(NEW_W + grow, nameY + CONTROL_H / 2 + PAD + CONTROL_H + PAD)
 	f:SetPoint("CENTER")
 	f:SetFrameStrata("DIALOG")
 	f:EnableMouse(true)
@@ -362,7 +370,8 @@ local function createSheet()
 	f:RegisterForDrag("LeftButton")
 	f:SetScript("OnDragStart", f.StartMoving)
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
-	S.Panel(f, { C.window[1], C.window[2], C.window[3], 1 }, C.border)
+	SBS.PixelScale(f)
+	S.Frame(f, "popup")
 	tinsert(UISpecialFrames, "SynastriaBuildSuiteNewFrame")
 	f:HookScript("OnHide", S.Dismiss)
 
