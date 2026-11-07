@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-58-g075715b. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-61-g5cf2f2e. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -696,29 +696,35 @@ end
 
 -- Input with a placeholder shown while it's empty and unfocused. Never takes focus on its own. With lines above 1
 -- it's a taller box whose text wraps; Enter still finishes, and GetText turns any line break into a space.
--- A multi-line edit box sizes its own height to its text, so a tall one's box is drawn on e.box, a frame kept at the
--- height asked for and following the edit box's top left, and GetHeight reports that height.
+-- A multi-line edit box sizes its own height to its text, so a tall one is pinned by both corners inside e.box, a
+-- frame at the height asked for, which its box is drawn on. Placing or sizing the input places or sizes e.box, so
+-- the edit box, and anything anchored to it, keeps that height.
 function S.Input(parent, name, width, placeholder, maxLetters, lines)
 	local e = CreateFrame("EditBox", name, parent)
 	local tall = (lines or 1) > 1
 	local wi = tall and S.metrics.wellInset or 0
 	local height = tall and (lines * 13 + 12 + 2 * wi) or S.CONTROL_H
 	S.SetFont(e, "small")
-	e:SetSize(width, height)
 	e:SetAutoFocus(false)
 	e:SetMaxLetters(maxLetters or 40)
 	if tall then
 		local box = CreateFrame("Frame", nil, parent)
-		box:SetPoint("TOPLEFT", e, "TOPLEFT")
 		box:SetSize(width, height)
 		box:EnableMouse(true)
 		box:SetScript("OnMouseDown", function() e:SetFocus() end)
 		e:SetFrameLevel(box:GetFrameLevel() + 1)
+		e:SetPoint("TOPLEFT", box, "TOPLEFT")
+		e:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT")
 		local show, hide = e.Show, e.Hide
 		function e:Show() show(self) box:Show() end
 		function e:Hide() hide(self) box:Hide() end
+		for _, method in ipairs({ "SetPoint", "ClearAllPoints", "SetAllPoints", "GetPoint", "SetSize", "SetWidth",
+			"SetHeight", "GetWidth", "GetHeight" }) do
+			e[method] = function(_, ...) return box[method](box, ...) end
+		end
 		e.box = box
-		e.GetHeight = function() return height end
+	else
+		e:SetSize(width, height)
 	end
 	skin.input(e, tall)
 	e.placeholder = S.Text(e, "small", S.colors.muted)
