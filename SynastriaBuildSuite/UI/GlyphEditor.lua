@@ -141,7 +141,7 @@ end
 
 local function newSocketButton(socket)
 	local b = S.Button(UIParent, "Socket", "primary", SOCKET_W, nil, nil, "SecureActionButtonTemplate")
-	b:SetFrameStrata("HIGH")
+	b:SetFrameStrata("MEDIUM")
 	b:Hide()
 	-- an armed replace that ran out while nothing redrew the button still has its macro set, so the click is
 	-- checked before the secure action runs; it then only arms again
@@ -160,6 +160,19 @@ local function newSocketButton(socket)
 	end)
 	socketButtons[socket] = b
 	return b
+end
+
+-- The socket buttons sit on UIParent (secure buttons can't be the window's children), so they follow the window's
+-- layer: clicking the window, or a bag or panel over it, changes its frame level. Runs every frame and only
+-- changes what differs. buttons defaults to the socket buttons.
+function Editor.KeepButtonsAbove(window, buttons)
+	if window and not InCombatLockdown() then
+		local strata, level = window:GetFrameStrata(), window:GetFrameLevel() + 10
+		for _, b in pairs(buttons or socketButtons) do
+			if b:GetFrameStrata() ~= strata then b:SetFrameStrata(strata) end
+			if b:GetFrameLevel() ~= level then b:SetFrameLevel(level) end
+		end
+	end
 end
 
 -- Shows the socket's button when its glyph can be socketed from bags right now, else hides it.
@@ -183,7 +196,7 @@ local function placeSocketButton(row, socketFrame, canSocket)
 			local _, y = socketFrame:GetCenter()
 			b:ClearAllPoints()
 			b:SetPoint("RIGHT", UIParent, "BOTTOMLEFT", (socketFrame:GetRight() - GAP) * scale, y * scale)
-			b:SetFrameLevel(SBS.Window.Frame():GetFrameLevel() + 50)
+			Editor.KeepButtonsAbove(SBS.Window.Frame())
 			b:Show()
 		else
 			b:Hide()

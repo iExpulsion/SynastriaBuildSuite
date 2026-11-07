@@ -825,7 +825,8 @@ local function create()
 	-- the theme's border (S.metrics.edge) goes around the same content area, so every screen keeps its size
 	local edge = S.metrics.edge
 	f:SetSize(W + 2 * edge, H + 2 * edge)
-	f:SetFrameStrata("HIGH")
+	-- the game's panel layer, with the bags and the auction house: whichever was clicked or opened last is on top
+	f:SetFrameStrata("MEDIUM")
 	f:SetToplevel(true)
 	f:EnableMouse(true)
 	f:SetMovable(true)
@@ -861,6 +862,7 @@ local function create()
 		SBS.Launchers.WindowClosed()
 	end)
 	f:SetScript("OnUpdate", function(self)
+		SBS.GlyphEditor.KeepButtonsAbove(self)
 		local now = GetTime()
 		local eventDue = self.eventDirty and now >= (self.nextEventRender or 0)
 		if self.dirty or eventDue then
@@ -880,6 +882,7 @@ function Window.Open(name)
 	frame = frame or create()
 	if name then state.selected = name end
 	frame:Show()
+	frame:Raise()
 	Window.Render()
 end
 
