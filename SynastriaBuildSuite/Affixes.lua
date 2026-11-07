@@ -198,14 +198,14 @@ function Affixes.Remove(build, slot)
 	if build.affixes and build.affixes[slot] then table.remove(build.affixes, slot) end
 end
 
--- Swaps the slot with its neighbor `step` away (-1 up, 1 down). Returns the slot it moved to.
-function Affixes.Move(build, slot, step)
-	local list, to = build.affixes or {}, slot + step
-	if list[slot] and list[to] then
-		list[slot], list[to] = list[to], list[slot]
-		slot = to
+-- Moves the affix in slot `from` to slot `to`, shifting the ones between. Returns the slot it ends up in.
+function Affixes.Move(build, from, to)
+	local list = build.affixes or {}
+	if list[from] and list[to] then
+		table.insert(list, to, table.remove(list, from))
+		from = to
 	end
-	return slot
+	return from
 end
 
 function Affixes.LoadPreset(build, preset)

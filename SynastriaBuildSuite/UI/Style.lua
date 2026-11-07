@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.1.0. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.1.0-2-g8a4b52f. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -824,6 +824,138 @@ function S.Tab(b, text)
 	return b
 end
 
+-- Drag to reorder: rows of a list dragged into a new order. A row is any frame with moveIndex set (its item's
+-- index, 1 to n; nil for a row that doesn't move, like a header), so pooled and scrolling lists work as long as they
+-- keep moveIndex current. While a row is dragged it dims, an accent line marks the gap it would land in, its name
+-- follows the cursor, and holding it at the top or bottom edge of the list's area scrolls. Letting go anywhere
+-- drops it. opts: rows (an array of the row frames; rows added to it later count too), lineParent (the frame the
+-- line draws in, the rows' parent, so a scroll frame clips it), area (the frame whose edges scroll), scroll(step)
+-- (-1 up, 1 down), onMove(from, to) (to is the index after the move; the caller moves the item).
+local Reorder = {}
+S.Reorder = Reorder
+
+local REORDER_SCROLL_EVERY, REORDER_EDGE, DRAGGED_ALPHA = 0.08, 12, 0.4
+
+-- The gap under the cursor: the number of items above it, from 0 to the last index.
+local function reorderSlot(self, y)
+	local slot, last = nil, 0
+	for _, row in ipairs(self.rows) do
+		local i, top, bottom = row.moveIndex, row:GetTop(), row:GetBottom()
+		if i and top and bottom and row:IsShown() then
+			if i > last then last = i end
+			if y / row:GetEffectiveScale() > (top + bottom) / 2 and (not slot or i - 1 < slot) then slot = i - 1 end
+		end
+	end
+	return slot or last
+end
+
+local function rowAt(self, index)
+	for _, row in ipairs(self.rows) do
+		if row.moveIndex == index and row:IsShown() then return row end
+	end
+	return nil
+end
+
+local function placeLine(self)
+	local mark, slot, from = self.line, self.slot, self.from
+	local below = rowAt(self, slot + 1)
+	local above = not below and rowAt(self, slot)
+	mark:ClearAllPoints()
+	if slot ~= from and slot ~= from - 1 and (below or above) then
+		local edge = below and "TOP" or "BOTTOM"
+		mark:SetPoint("LEFT", below or above, edge .. "LEFT", 0, 0)
+		mark:SetPoint("RIGHT", below or above, edge .. "RIGHT", 0, 0)
+		mark:Show()
+	else
+		mark:Hide()
+	end
+end
+
+local function updateReorder(self)
+	if self.from and IsMouseButtonDown("LeftButton") then
+		local x, y = GetCursorPosition()
+		local area, now = self.area, GetTime()
+		local scale = area and area:GetEffectiveScale() or 1
+		local top, bottom = area and area:GetTop(), area and area:GetBottom()
+		local step = (top and y / scale > top - REORDER_EDGE and -1) or (bottom and y / scale < bottom + REORDER_EDGE and 1) or 0
+		if step ~= 0 and self.scroll and now >= self.scrollAt then
+			self.scrollAt = now + REORDER_SCROLL_EVERY
+			self.scroll(step)
+		end
+		self.slot = reorderSlot(self, y)
+		placeLine(self)
+		for _, row in ipairs(self.rows) do row:SetAlpha(row.moveIndex == self.from and DRAGGED_ALPHA or 1) end
+		local ui = UIParent:GetEffectiveScale()
+		self.ghost:ClearAllPoints()
+		self.ghost:SetPoint("LEFT", UIParent, "BOTTOMLEFT", x / ui + 14, y / ui)
+	else
+		self:Stop(true)
+	end
+end
+
+function Reorder.New(opts)
+	local C = S.colors
+	local self = setmetatable({ rows = opts.rows, area = opts.area, scroll = opts.scroll, onMove = opts.onMove },
+		{ __index = Reorder })
+	local layer = CreateFrame("Frame", nil, opts.lineParent)
+	layer:SetAllPoints(opts.lineParent)
+	layer:SetFrameLevel(opts.lineParent:GetFrameLevel() + 6)
+	layer:Hide()
+	layer:SetScript("OnUpdate", function() updateReorder(self) end)
+	layer:SetScript("OnHide", function() self:Stop(false) end)
+	self.layer = layer
+	self.line = S.Solid(layer, "OVERLAY", C.accent)
+	self.line:SetHeight(2)
+	self.line:Hide()
+	local ghost = CreateFrame("Frame", nil, UIParent)
+	ghost:SetFrameStrata("TOOLTIP")
+	S.Solid(ghost, "BACKGROUND", C.panel):SetAllPoints()
+	S.Solid(ghost, "BORDER", C.rowSelected):SetAllPoints()
+	ghost.text = S.Text(ghost, "small")
+	ghost.text:SetPoint("LEFT", 8, 0)
+	ghost:Hide()
+	self.ghost = ghost
+	return self
+end
+
+-- Makes button start a drag of row (the button itself unless given), with label(row) as the text by the cursor.
+function Reorder:Attach(button, label, row)
+	row = row or button
+	button:RegisterForDrag("LeftButton")
+	button:SetScript("OnDragStart", function() self:Start(row, label and label(row) or "") end)
+	button:SetScript("OnDragStop", function() self:Stop(true) end)
+end
+
+function Reorder:Start(row, text)
+	if row.moveIndex then
+		GameTooltip:Hide()
+		self.from, self.slot, self.scrollAt = row.moveIndex, row.moveIndex, 0
+		self.ghost.text:SetText(text or "")
+		self.ghost:SetSize(math.ceil(self.ghost.text:GetStringWidth()) + 16, 20)
+		row:SetAlpha(DRAGGED_ALPHA)
+		self.layer:Show()
+		self.ghost:Show()
+	end
+end
+
+function Reorder:Stop(drop)
+	local from, slot = self.from, self.slot
+	self.from = nil
+	self.layer:Hide()
+	self.ghost:Hide()
+	if from then
+		self.endedAt = GetTime()
+		for _, row in ipairs(self.rows) do row:SetAlpha(1) end
+		local to = slot < from and slot + 1 or slot
+		if drop and to ~= from then self.onMove(from, to) end
+	end
+end
+
+-- True while a row is dragged and on the frame a drag ended, when the release that ends it isn't a click.
+function Reorder:Busy()
+	return self.from ~= nil or self.endedAt == GetTime()
+end
+
 -- Tables: a virtual table, a fixed pool of rows drawn over any number of items, with sortable column headers, a
 -- thin scroll bar and mouse wheel scrolling, in an S.Well. The first column can carry an icon.
 local Table = {}
@@ -883,8 +1015,12 @@ local function newRow(self, i)
 		GameTooltip:Hide()
 	end)
 	row:SetScript("OnClick", function(r, button)
-		if r.item and self.onClick then self.onClick(r.item, button) end
+		-- the release that ends a drag isn't a click
+		if r.item and self.onClick and not (self.reorder and self.reorder:Busy()) then self.onClick(r.item, button) end
 	end)
+	if self.reorder then
+		self.reorder:Attach(row, function(r) return r.item and self.cell(r.item, self.columns[1].key) end)
+	end
 	return row
 end
 
@@ -963,15 +1099,18 @@ end
 -- opts: columns = { { key, label, width, justify, sortable, defaultDesc, tooltip, stretch } }, rowH, icons (the
 -- first column has an icon), cell(item, key) -> text, color, icon(item) -> texture, tooltip(tt, item),
 -- onClick(item, button), onSort(key, desc), header(item) -> label when the item is a group header row,
--- isSelected(item), plain (a bare list for inside a menu or popup: no well frame and no column headers). The
--- table's frame is .frame; its contents sit inside the well's border.
+-- isSelected(item), plain (a bare list for inside a menu or popup: no well frame and no column headers),
+-- onMove(from, to) (rows can be dragged to reorder; from and to are item indexes, to as it is after the move, and
+-- the table leaves moving the item to the caller). The table's frame is .frame; its contents sit inside the well's
+-- border.
 function Table.New(parent, name, width, height, opts)
 	local C = S.colors
 	-- the well's border, then its own 1px
 	local inset = opts.plain and 0 or 1 + S.metrics.wellInset
 	local self = setmetatable({ columns = opts.columns, rowH = opts.rowH or 20, icons = opts.icons, cell = opts.cell,
 		iconOf = opts.icon, tooltip = opts.tooltip, onClick = opts.onClick, onSort = opts.onSort, header = opts.header,
-		isSelected = opts.isSelected, plain = opts.plain, items = {}, width = width, innerW = width - 2 * inset,
+		isSelected = opts.isSelected, plain = opts.plain, onMove = opts.onMove, items = {}, width = width,
+		innerW = width - 2 * inset,
 		offset = 0, rows = {}, headers = {} }, { __index = Table })
 	local columns = {}
 	for i, def in ipairs(opts.columns) do
@@ -1040,6 +1179,13 @@ function Table.New(parent, name, width, height, opts)
 	end
 
 	self.visible = math.floor((height - 2 * inset - self.bodyTop) / self.rowH)
+	if self.onMove then
+		self.reorder = Reorder.New({ rows = self.rows, lineParent = self.content, area = self.content,
+			scroll = function(step) self:ScrollTo(self.offset + step) end,
+			onMove = function(from, to)
+				if from <= #self.items and to <= #self.items then self.onMove(from, to) end
+			end })
+	end
 	for i = 1, self.visible do self.rows[i] = newRow(self, i) end
 	layout(self)
 
@@ -1130,6 +1276,7 @@ function Table:Redraw()
 		local item = self.items[self.offset + i]
 		row.item = item
 		local header = item and self.header and self.header(item)
+		row.moveIndex = item and not header and self.offset + i or nil
 		if header then
 			for _, fs in ipairs(row.cells) do fs:SetText("") end
 			row.icon:Hide()

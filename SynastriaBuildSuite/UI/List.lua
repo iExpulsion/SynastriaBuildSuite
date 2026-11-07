@@ -28,15 +28,19 @@ local function dropOrClick(row, button)
 		local _, id = GetCursorInfo()
 		ClearCursor()
 		row.onDrop(id)
-	elseif row.onClick then
+	elseif row.onClick and not (row.list.reorder and row.list.reorder:Busy()) then
 		row.onClick(row, button)
 	end
 end
 
+local function dragLabel(row) return row.dragLabel end
+
 local function newRow(self)
 	local style = self.style
 	local row = CreateFrame("Button", nil, self.content)
+	row.list = self
 	row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+	if self.reorder then self.reorder:Attach(row, dragLabel) end
 
 	row.hoverTex = S.Solid(row, "BACKGROUND", S.colors.rowHover)
 	row.hoverTex:SetAllPoints()
@@ -86,6 +90,17 @@ function List.New(parent, name, width, height, style)
 	return self
 end
 
+-- Rows added with a move index can be dragged into a new order; onMove(from, to) gets the drop.
+function List:SetReorder(onMove)
+	local scroll = self.scroll
+	self.reorder = S.Reorder.New({ rows = self.rows, lineParent = self.content, area = scroll, onMove = onMove,
+		scroll = function(step)
+			local y = scroll:GetVerticalScroll() + step * self.style.rowH
+			scroll:SetVerticalScroll(math.max(0, math.min(scroll:GetVerticalScrollRange() or 0, y)))
+		end })
+	for _, row in ipairs(self.rows) do self.reorder:Attach(row, dragLabel) end
+end
+
 -- A flat bar that only shows when there's something to scroll.
 function List.AutoHideBar(scroll, scrollName)
 	local bar = S.ScrollBar(scroll, scrollName)
@@ -104,7 +119,8 @@ end
 
 -- entry: text, sub, status, icon, header, collapsed (true/false shows +/-), indent, selected,
 -- check (true/false shows a checkbox), checkEnabled, checkTooltip, onCheck(row),
--- tooltip(tt), onClick(row, button), onDrop(itemId)
+-- tooltip(tt), onClick(row, button), onDrop(itemId), move (the index it drags from, with SetReorder) and
+-- dragLabel (the text by the cursor while it's dragged)
 function List:Add(entry)
 	local style = self.style
 	self.count = self.count + 1
@@ -177,6 +193,7 @@ function List:Add(entry)
 	end
 
 	row.tooltip, row.onClick, row.onDrop, row.onCheck = entry.tooltip, entry.onClick, entry.onDrop, entry.onCheck
+	row.moveIndex, row.dragLabel = entry.move, entry.dragLabel
 	row:Show()
 	return row
 end

@@ -1,8 +1,8 @@
 local _, NS = ...
 local SBS = NS.SBS
 
--- The Affixes tab: the build's affix priority on the left, most wanted first, with buttons to reorder it and the
--- game's presets, and every affix on the right with its stats; clicking one adds it to the end of the order.
+-- The Affixes tab: the build's affix priority on the left, most wanted first, dragged to reorder, with the game's
+-- presets, and every affix on the right with its stats; clicking one adds it to the end of the order.
 local Editor = {}
 SBS.AffixEditor = Editor
 
@@ -55,6 +55,7 @@ local function renderOrder(order, now, comparing)
 			text = S.Hex(C.muted, i .. ".") .. "  " .. Affixes.Name(id),
 			status = differs and S.Hex(C.warn, "Differs") or nil,
 			selected = i == state.slot,
+			move = i, dragLabel = Affixes.Name(id),
 			onClick = function(_, mouse)
 				if mouse == "RightButton" then
 					Affixes.Remove(current, i)
@@ -71,7 +72,7 @@ local function renderOrder(order, now, comparing)
 					tt:AddLine(("Your spec has %s here."):format(now[i] and Affixes.Name(now[i]) or "nothing"), 0.8, 0.8, 0.8, true)
 				end
 				tt:AddLine(" ")
-				tt:AddLine("Right-click to remove it.", 0.6, 0.6, 0.66)
+				tt:AddLine("Drag to change the order. Right-click to remove it.", 0.6, 0.6, 0.66, true)
 			end,
 		})
 	end
@@ -79,8 +80,6 @@ local function renderOrder(order, now, comparing)
 		list:Add({ text = S.Hex(C.muted, "No affixes yet."), sub = "Pick some on the right, or load a preset." })
 	end
 	list:End()
-	enable(panel.up, order[state.slot] ~= nil and state.slot > 1)
-	enable(panel.down, order[state.slot + 1] ~= nil)
 	enable(panel.remove, order[state.slot] ~= nil)
 end
 
@@ -183,19 +182,15 @@ function Editor.Create(parent, width, height)
 	local footer = PAD + CONTROL_H + GAP
 	panel.order = SBS.List.New(left, "SynastriaBuildSuiteAffixOrder", ORDER_W - 20 - 2 * wi, height - listTop - footer)
 	panel.order.scroll:SetPoint("TOPLEFT", wi, -listTop)
-	local function move(step)
-		state.slot = Affixes.Move(current, state.slot, step)
+	panel.order:SetReorder(function(from, to)
+		state.slot = Affixes.Move(current, from, to)
 		SBS:Changed()
-	end
-	panel.up = S.Button(left, "Move Up", "secondary", 80, function() move(-1) end, "Move the selected affix one place up.")
-	panel.up:SetPoint("BOTTOMLEFT", PAD, PAD)
-	panel.down = S.Button(left, "Move Down", "secondary", 86, function() move(1) end, "Move the selected affix one place down.")
-	panel.down:SetPoint("LEFT", panel.up, "RIGHT", GAP, 0)
+	end)
 	panel.remove = S.Button(left, "Remove", "secondary", 76, function()
 		Affixes.Remove(current, state.slot)
 		SBS:Changed()
 	end, "Take the selected affix out of the order.")
-	panel.remove:SetPoint("LEFT", panel.down, "RIGHT", GAP, 0)
+	panel.remove:SetPoint("BOTTOMLEFT", PAD, PAD)
 
 	-- right: every affix, with a search box
 	local pickW = width - ORDER_W - PAD
