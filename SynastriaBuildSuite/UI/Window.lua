@@ -471,9 +471,11 @@ local function savePosition(f)
 	SBS.db.window = { point = point, relPoint = relPoint, x = x, y = y }
 end
 
+-- The default spot: centered across the screen, its top 60 units below the screen's top, as Companion's and
+-- Rotation Assist's windows are, so their tops line up whatever their heights.
 local function placeDefault(f)
 	f:ClearAllPoints()
-	f:SetPoint("CENTER", 0, 40)
+	f:SetPoint("TOP", UIParent, "TOP", 0, -60)
 end
 
 function Window.ResetPosition()

@@ -357,7 +357,7 @@ handlers.minimap = function(arg)
 end
 handlers.reset = function()
 	SBS.Window.ResetPosition()
-	SBS:Print("Window moved back to the center of the screen.")
+	SBS:Print("Window moved back to the top middle of the screen.")
 end
 
 handlers.note = function(arg)

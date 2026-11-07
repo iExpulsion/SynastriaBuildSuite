@@ -158,7 +158,7 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 | `/sbs lootfilter restore` | Puts back the loot filter from before the last sync that changed it |
 | `/sbs minimap` | Hides or shows the minimap button |
 | `/sbs minimap reset` | Puts the minimap button back on the minimap |
-| `/sbs reset` | Moves the window back to the center of the screen |
+| `/sbs reset` | Moves the window back to the top middle of the screen |
 
 The minimap button opens the window on left-click and your active spec's build on right-click. Drag it around
 the minimap to move it, or Shift-drag it to place it anywhere on screen. With a LibDataBroker display such as Titan Panel, Synastria Build Suite appears there too.
