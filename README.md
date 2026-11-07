@@ -181,4 +181,5 @@ Auto Loot screen also shows and edits the SBS Gear rules that Hunt Gear syncs.
 ## License
 
 Synastria Build Suite is released under the [MIT License](LICENSE). The game data in `SynastriaBuildSuite/Data` comes from the
-Synastria client and isn't covered by it, and neither is the Cognac art in `SynastriaBuildSuite/UI/Skins/Cognac`.
+Synastria client and isn't covered by it, and neither is the Cognac art in `SynastriaBuildSuite/UI/Skins/Cognac`, which is from
+[AttuneNext](https://github.com/speedyrulz/AttuneNext).
