@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-54-g3a55602. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-56-g76cffb4. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -128,8 +128,8 @@ S.CHECK_H = 18
 -- What a skin's frame decoration takes up: edge, the border S.Frame draws around a "window", which its content
 -- stays inside; inset, the padding inside a "popup"; navInset, how far in from a sidebar's sides its entries sit;
 -- wellInset, extra padding inside an S.Well for its frame; menuInset, how far in from a "menu" frame's edges its rows
--- sit, clear of its border.
-local METRICS = { edge = 0, inset = S.PAD, navInset = 0, wellInset = 0, menuInset = 1 }
+-- sit, clear of its border; tabPad, the room either side of a tab's label.
+local METRICS = { edge = 0, inset = S.PAD, navInset = 0, wellInset = 0, menuInset = 1, tabPad = S.PAD }
 S.metrics = {}
 for k, v in pairs(METRICS) do S.metrics[k] = v end
 
@@ -331,10 +331,9 @@ function S.NineSlice(frame, layer, atlas, piece, cut, scale)
 	return ns
 end
 
--- 1px line along the bottom (or top) of a frame.
 -- A divider line in the skin's look, as a texture and its thickness. kind: "rule" under a title bar or a panel's
--- header (a skin whose frames are drawn borders can leave it out), "header" under a table's column headers,
--- "heading" beside a section heading.
+-- header (a skin whose frames are drawn borders can leave it out), "tabs" under a tab bar, "header" under a table's
+-- column headers, "heading" beside a section heading.
 local function line(parent, kind)
 	return (skin.line or skins.material.line)(parent, kind)
 end
@@ -361,8 +360,10 @@ function S.VerticalDivider(parent)
 	return holder, width
 end
 
-function S.Rule(parent, where)
-	local t, h = line(parent, "rule")
+-- A divider along one edge of a frame. kind: "rule" (default) under a title bar or a panel's header, "tabs" under a
+-- tab bar, which a skin with tab art can draw where it leaves out the other rules.
+function S.Rule(parent, where, kind)
+	local t, h = line(parent, kind or "rule")
 	t:SetHeight(h)
 	t:SetPoint(where .. "LEFT")
 	t:SetPoint(where .. "RIGHT")
@@ -798,12 +799,12 @@ function S.NavEntry(b, text)
 	return b
 end
 
--- A tab in a tab bar: its label (b.label, in the "normal" size, S.PAD in from its left) and the skin's hover and
--- selected look, in a button the caller has given its height. b:SetSelected(on) repaints it. The caller sizes and
--- places the tabs, and draws the bar's rule (S.Rule).
+-- A tab in a tab bar: its label (b.label, in the "normal" size, S.metrics.tabPad in from its left) and the skin's
+-- hover and selected look, in a button the caller has given its height. b:SetSelected(on) repaints it. The caller
+-- sizes the tabs (tabPad either side of the label), places them, and draws the bar's S.Rule of kind "tabs".
 function S.Tab(b, text)
 	b.label = S.Text(b, "normal")
-	b.label:SetPoint("LEFT", S.PAD, 0)
+	b.label:SetPoint("LEFT", S.metrics.tabPad, 0)
 	b.label:SetText(text)
 	local paintTab = skin.paintTab or skins.material.paintTab
 	local drawTab = skin.tab or skins.material.tab

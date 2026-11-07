@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-54-g3a55602. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-56-g76cffb4. Change it there, then run tools/sync_style.py.
 -- Classic: the default UI's own look, drawn entirely from textures the 3.3.5 client ships, so there's no art in
 -- this folder. Dialog-box windows, red panel buttons, gold text, tooltip-bordered menus and lists, and the quest
 -- log's row highlight. Load it after Style.lua; S.UseSkin("classic") switches to it.
@@ -23,6 +23,8 @@ local CHECK_ART = 1.7
 
 -- How far a window's content starts in from its edges: inside the dialog border's 11 pixels.
 local EDGE = 12
+-- how much black goes over the dialog background, a window's and a popup's
+local WINDOW_FILL, POPUP_FILL = 0.5, 0.8
 -- The panel button art's caps, as the stock template crops them: 12 of 128 pixels each side, 22 of 32 tall.
 local CAP, CAP_U, MID_U, ART_V = 12, 0.09375, 0.53125, 0.6875
 local BUTTON_RIGHT = 0.625
@@ -98,7 +100,7 @@ S.RegisterSkin("classic", {
 		c.scrollThumbHover = { 0.85, 0.85, 0.85, 1 }
 	end,
 	-- the tooltip border on menus, wells and the sidebar is 4 pixels; rows sit inside it
-	metrics = { edge = EDGE, inset = 16, navInset = 4, wellInset = 4, menuInset = 4 },
+	metrics = { edge = EDGE, inset = 16, navInset = 4, wellInset = 4, menuInset = 4, tabPad = TAB_CAP },
 	-- the red panel button: its normal, pushed and disabled faces in three slices, and the stock additive highlight
 	button = function(b)
 		b.face = threeSlice(b, "BORDER", BUTTON .. "Up", CAP, 0, CAP_U, MID_U, BUTTON_RIGHT, ART_V)
@@ -124,13 +126,21 @@ S.RegisterSkin("classic", {
 				insets = { left = 11, right = 12, top = 12, bottom = 11 } })
 			f:SetBackdropColor(1, 1, 1, 1)
 			f:SetBackdropBorderColor(1, 1, 1, 1)
+			-- the dialog background is see-through in its art; black over it inside the border makes a window
+			-- readable over the world, and a popup over the window behind it
+			local fill = f:CreateTexture(nil, "BACKGROUND")
+			fill:SetTexture("Interface\\Buttons\\WHITE8X8")
+			fill:SetVertexColor(0, 0, 0, role == "popup" and POPUP_FILL or WINDOW_FILL)
+			fill:SetPoint("TOPLEFT", 11, -12)
+			fill:SetPoint("BOTTOMRIGHT", -12, 11)
+			f.fill = fill
 		end
 	end,
 	well = function(f)
 		tooltipPanel(f, 0.75)
 	end,
-	-- no rule under a title bar, which the dialog frame already sets apart; a soft gray line under table headers
-	-- and beside section headings, like the tooltip border's
+	-- no rule under a title bar, which the dialog frame already sets apart; a soft gray line under tab bars, table
+	-- headers and beside section headings, like the tooltip border's
 	line = function(parent, kind)
 		local t = parent:CreateTexture(nil, "BORDER")
 		t:SetTexture("Interface\\Buttons\\WHITE8X8")
@@ -170,7 +180,7 @@ S.RegisterSkin("classic", {
 		glow:SetPoint("BOTTOMLEFT", TAB_CAP / 2, 0)
 		glow:SetPoint("BOTTOMRIGHT", -TAB_CAP / 2, 0)
 		glow:SetHeight(TAB_H)
-		b.label:SetPoint("LEFT", S.PAD, -math.floor(((b:GetHeight() or TAB_H) - TAB_H) / 2))
+		b.label:SetPoint("LEFT", S.metrics.tabPad, -math.floor(((b:GetHeight() or TAB_H) - TAB_H) / 2))
 	end,
 	paintTab = function(b, on)
 		for _, t in ipairs(b.active.parts) do if on then t:Show() else t:Hide() end end

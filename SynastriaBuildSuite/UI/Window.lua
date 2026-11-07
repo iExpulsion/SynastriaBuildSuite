@@ -302,7 +302,7 @@ local function renderTabs(build)
 			b.badge:Hide()
 		end
 		local badgeW = diff and diff > 0 and (GAP + b.badge:GetStringWidth() + 10) or 0
-		b:SetWidth(PAD + b.label:GetStringWidth() + badgeW + PAD)
+		b:SetWidth(b.label:GetStringWidth() + badgeW + 2 * S.metrics.tabPad)
 	end
 	setShown(frame.notes, state.tab == "notes")
 	for key, editor in pairs(frame.editors) do setShown(editor, key == state.tab) end
@@ -705,7 +705,7 @@ local function createTabBar(main)
 	bar:SetPoint("TOPLEFT", 0, -BUILD_H)
 	bar:SetPoint("TOPRIGHT", 0, -BUILD_H)
 	bar:SetHeight(TABS_H)
-	S.Rule(bar, "BOTTOM")
+	S.Rule(bar, "BOTTOM", "tabs")
 	f.tabs = {}
 	for i, tab in ipairs(TABS) do
 		local b = CreateFrame("Button", nil, bar)
