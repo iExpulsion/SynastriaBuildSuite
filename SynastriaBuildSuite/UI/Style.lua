@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-46-gc3e43fd. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-48-gfb3ee07. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -677,20 +677,37 @@ end
 
 -- Input with a placeholder shown while it's empty and unfocused. Never takes focus on its own. With lines above 1
 -- it's a taller box whose text wraps; Enter still finishes, and GetText turns any line break into a space.
+-- A multi-line edit box sizes its own height to its text, so a tall one's box is drawn on e.box, a frame kept at the
+-- height asked for and following the edit box's top left, and GetHeight reports that height.
 function S.Input(parent, name, width, placeholder, maxLetters, lines)
 	local e = CreateFrame("EditBox", name, parent)
 	local tall = (lines or 1) > 1
+	local wi = tall and S.metrics.wellInset or 0
+	local height = tall and (lines * 13 + 12 + 2 * wi) or S.CONTROL_H
 	S.SetFont(e, "small")
-	e:SetSize(width, tall and (lines * 13 + 12) or S.CONTROL_H)
+	e:SetSize(width, height)
 	e:SetAutoFocus(false)
 	e:SetMaxLetters(maxLetters or 40)
+	if tall then
+		local box = CreateFrame("Frame", nil, parent)
+		box:SetPoint("TOPLEFT", e, "TOPLEFT")
+		box:SetSize(width, height)
+		box:EnableMouse(true)
+		box:SetScript("OnMouseDown", function() e:SetFocus() end)
+		e:SetFrameLevel(box:GetFrameLevel() + 1)
+		local show, hide = e.Show, e.Hide
+		function e:Show() show(self) box:Show() end
+		function e:Hide() hide(self) box:Hide() end
+		e.box = box
+		e.GetHeight = function() return height end
+	end
 	skin.input(e, tall)
 	e.placeholder = S.Text(e, "small", S.colors.muted)
 	if tall then
 		e:SetMultiLine(true)
-		e:SetTextInsets(8, 8, 6, 6)
-		e.placeholder:SetPoint("TOPLEFT", 8, -6)
-		e.placeholder:SetPoint("TOPRIGHT", -8, -6)
+		e:SetTextInsets(8 + wi, 8 + wi, 6 + wi, 6 + wi)
+		e.placeholder:SetPoint("TOPLEFT", 8 + wi, -6 - wi)
+		e.placeholder:SetPoint("TOPRIGHT", -8 - wi, -6 - wi)
 		local getText = e.GetText
 		e.GetText = function(self) return ((getText(self) or ""):gsub("[\r\n]", " ")) end
 		e:SetScript("OnEnterPressed", e.ClearFocus)
@@ -710,6 +727,10 @@ function S.Input(parent, name, width, placeholder, maxLetters, lines)
 	e:SetScript("OnEditFocusLost", function(self) self.focused = false update(self) end)
 	e:SetScript("OnEnter", function(self) self.hovered = true update(self) end)
 	e:SetScript("OnLeave", function(self) self.hovered = false update(self) end)
+	if tall then
+		e.box:SetScript("OnEnter", function() e.hovered = true update(e) end)
+		e.box:SetScript("OnLeave", function() e.hovered = false update(e) end)
+	end
 	e:SetScript("OnEscapePressed", e.ClearFocus)
 	e:HookScript("OnTextChanged", update)
 	e.UpdatePlaceholder = update
@@ -1105,7 +1126,8 @@ function Table:Hide() self.frame:Hide() end
 -- label names it in a picker, credit says who made it. The drawing functions: button(b) and
 -- paintButton(b, enabled) (b.kind, b.hovered, b.down), frame(f, role), well(f), line(parent, kind) -> texture,
 -- thickness (kind "rule", "header" or "heading"), sidebar(side), highlight(f), navEntry(b) and
--- paintNav(b, on), input(e, tall) and paintInput(e) (e.focused, e.hovered), and optionally check(b) and
+-- paintNav(b, on), input(e, tall) and paintInput(e) (e.focused, e.hovered; a tall one draws on e.box), and
+-- optionally check(b) and
 -- paintCheck(b) (b.on, b.usable, b.hovered); a skin without them gets Material's checkbox.
 function S.RegisterSkin(key, def)
 	skins[key] = def
@@ -1187,7 +1209,7 @@ S.RegisterSkin("material", {
 		if on then b.bar:Show() b.selectedTex:Show() else b.bar:Hide() b.selectedTex:Hide() end
 	end,
 	input = function(e)
-		S.Panel(e, S.colors.well, S.colors.border)
+		S.Panel(e.box or e, S.colors.well, S.colors.border)
 	end,
 	-- a square well with an accent fill while checked, outlined in the accent on hover
 	check = function(b)
@@ -1206,7 +1228,7 @@ S.RegisterSkin("material", {
 	end,
 	-- the soft border at rest, the stronger outline on hover, the accent while focused
 	paintInput = function(e)
-		e:SetBackdropBorderColor(unpack(e.focused and S.colors.accent or e.hovered and S.colors.outline or S.colors.border))
+		(e.box or e):SetBackdropBorderColor(unpack(e.focused and S.colors.accent or e.hovered and S.colors.outline or S.colors.border))
 	end,
 })
 skin = skins.material

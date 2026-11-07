@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-46-gc3e43fd. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-48-gfb3ee07. Change it there, then run tools/sync_style.py.
 -- Cognac: gold-framed painted controls on dark glass. Load it after Style.lua and Atlas.lua;
 -- S.UseSkin("cognac") switches to it.
 local _, NS = ...
@@ -311,7 +311,7 @@ S.RegisterSkin("cognac", {
 	-- a tall box is the framed card, a one-line field the search plate
 	input = function(e, tall)
 		e.tall = tall
-		if tall then e.card = card(e) else searchField(e) end
+		if tall then e.card = card(e.box) else searchField(e) end
 	end,
 	-- both brighten while hovered and warm while focused
 	paintInput = function(e)

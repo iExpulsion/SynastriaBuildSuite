@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.0.0-46-gc3e43fd. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.0.0-48-gfb3ee07. Change it there, then run tools/sync_style.py.
 -- Classic: the default UI's own look, drawn entirely from textures the 3.3.5 client ships, so there's no art in
 -- this folder. Dialog-box windows, red panel buttons, gold text, tooltip-bordered menus and lists, and the quest
 -- log's row highlight. Load it after Style.lua; S.UseSkin("classic") switches to it.
@@ -171,7 +171,7 @@ S.RegisterSkin("classic", {
 	input = function(e, tall)
 		e.tall = tall
 		if tall then
-			tooltipPanel(e, 0.75)
+			tooltipPanel(e.box, 0.75)
 		else
 			e.border = threeSlice(e, "BACKGROUND", INPUT, 8, 0, 0.0625, 0.9375, 1, 0.625)
 		end
@@ -179,7 +179,7 @@ S.RegisterSkin("classic", {
 	-- a field brightens while hovered or focused; a tall box's border turns gold while focused
 	paintInput = function(e)
 		if e.tall then
-			if e.focused then e:SetBackdropBorderColor(1, 0.82, 0, 1) else e:SetBackdropBorderColor(0.6, 0.6, 0.6, 1) end
+			if e.focused then e.box:SetBackdropBorderColor(1, 0.82, 0, 1) else e.box:SetBackdropBorderColor(0.6, 0.6, 0.6, 1) end
 		else
 			local v = (e.focused or e.hovered) and 1 or 0.8
 			e.border:SetVertexColor(v, v, v)
