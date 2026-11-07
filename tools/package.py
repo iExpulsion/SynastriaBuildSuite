@@ -3,7 +3,7 @@
     python tools/package.py [output folder]
 
 Writes <output>/SynastriaBuildSuite-<version>.zip with a top-level SynastriaBuildSuite/ folder (extract it into
-Interface/AddOns): the .toc, the Lua files the .toc loads, the README and, when there is one, the LICENSE.
+Interface/AddOns): the .toc, the Lua files the .toc loads, and the textures.
 """
 import os, re, sys, zipfile
 
@@ -20,11 +20,11 @@ def toc_info(addon):
     return meta, loaded
 
 
-def lua_files(addon):
+def files_matching(addon, test):
     found = []
     for folder, _, names in os.walk(addon):
         for n in names:
-            if n.endswith(".lua"):
+            if test(n):
                 found.append(os.path.relpath(os.path.join(folder, n), addon).replace("\\", "/"))
     return found
 
@@ -33,15 +33,11 @@ def main():
     addon = os.path.join(ROOT, NAME)
     meta, loaded = toc_info(addon)
     version = meta.get("Version", "0").strip()
-    files = [NAME + ".toc"] + loaded
-    extra = {"README.md": os.path.join(ROOT, "README.md")}
-    if os.path.isfile(os.path.join(ROOT, "LICENSE")):
-        extra["LICENSE"] = os.path.join(ROOT, "LICENSE")
+    files = [NAME + ".toc"] + loaded + files_matching(addon, lambda n: n.lower().endswith((".tga", ".blp")))
     missing = [f for f in files if not os.path.isfile(os.path.join(addon, f))]
-    missing += [f for f, p in extra.items() if not os.path.isfile(p)]
     if missing:
         sys.exit("not packaged, missing:\n  " + "\n  ".join(missing))
-    stray = sorted(set(lua_files(addon)) - set(loaded))
+    stray = sorted(set(files_matching(addon, lambda n: n.endswith(".lua"))) - set(loaded))
     if stray:
         print("not in the .toc, left out: " + ", ".join(stray))
     os.makedirs(DIST, exist_ok=True)
@@ -49,9 +45,7 @@ def main():
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for f in files:
             z.write(os.path.join(addon, f), NAME + "/" + f)
-        for f, p in extra.items():
-            z.write(p, NAME + "/" + f)
-    print("%s  (%d files, %.0f KB)" % (out, len(files) + len(extra), os.path.getsize(out) / 1024))
+    print("%s  (%d files, %.0f KB)" % (out, len(files), os.path.getsize(out) / 1024))
 
 
 if __name__ == "__main__":
