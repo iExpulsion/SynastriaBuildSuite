@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.2.0. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.3.0. Change it there, then run tools/sync_style.py.
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
 -- as NS.Style from its addon table; font objects are named after the addon, so copies never clash.
@@ -546,6 +546,80 @@ function S.Check(parent, size, onClick)
 	return b
 end
 
+-- a skin without its own slider draws Material's
+local function sliderSkin() return skin.slider and skin or skins.material end
+
+local function paintSlider(s)
+	sliderSkin().paintSlider(s)
+end
+
+-- the room a slider's value text takes to its right, past S.GAP
+S.SLIDER_VALUE_W = 40
+
+-- Horizontal slider from min to max in steps of step, `width` wide and S.CONTROL_H tall; click the track or drag
+-- the handle. Its value shows to its right (s.valueText, S.SLIDER_VALUE_W wide, S.GAP away), written by
+-- format(value) or as a number. onChange(value, s) runs for the user's changes only; s:SetValue(v) sets it quietly.
+-- s:SetEnabled(on) greys it out.
+function S.Slider(parent, width, min, max, step, onChange, format)
+	local s = CreateFrame("Slider", nil, parent)
+	s:SetOrientation("HORIZONTAL")
+	s:SetSize(width, S.CONTROL_H)
+	s:SetMinMaxValues(min, max)
+	s:SetValueStep(step)
+	s:EnableMouse(true)
+	s.min, s.max, s.step, s.usable = min, max, step, true
+	s.format = format or function(v) return tostring(v) end
+	s.valueText = S.Text(s, "small")
+	s.valueText:SetPoint("LEFT", s, "RIGHT", S.GAP, 0)
+	s.valueText:SetWidth(S.SLIDER_VALUE_W)
+	sliderSkin().slider(s)
+	-- the client's own value drifts off the steps while dragging: snap it, and drop float noise
+	local function snap(v)
+		local n = math.floor((v - min) / step + 0.5)
+		return tonumber(("%.4f"):format(math.max(min, math.min(max, min + n * step))))
+	end
+	local quiet = false
+	local setValue = s.SetValue
+	function s:SetValue(v)
+		self.value = snap(v)
+		quiet = true
+		setValue(self, self.value)
+		quiet = false
+		self.valueText:SetText(self.format(self.value))
+	end
+	function s:GetValue() return self.value end
+	function s:SetEnabled(on)
+		self.usable = on and true or false
+		self:EnableMouse(self.usable)
+		paintSlider(self)
+	end
+	s:SetScript("OnValueChanged", function(self, v)
+		local value = snap(v)
+		if not quiet and value ~= self.value then
+			self.value = value
+			self.valueText:SetText(self.format(value))
+			if onChange then onChange(value, self) end
+		end
+	end)
+	s:SetScript("OnEnter", function(self)
+		self.hovered = true
+		paintSlider(self)
+		if self.tooltipText then
+			GameTooltip:SetOwner(self, "ANCHOR_TOP")
+			GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
+			GameTooltip:Show()
+		end
+	end)
+	s:SetScript("OnLeave", function(self)
+		self.hovered = false
+		paintSlider(self)
+		GameTooltip:Hide()
+	end)
+	s:SetValue(min)
+	paintSlider(s)
+	return s
+end
+
 local menus, inputs, dismissers = {}, {}, {}
 
 -- Runs fn whenever S.Dismiss does, for other things that shouldn't outlive their view.
@@ -688,7 +762,14 @@ function S.Dropdown(parent, width, onSelect)
 	b:SetScript("OnClick", function()
 		local open = menu:IsShown()
 		S.CloseMenus()
-		if not open then menu:Show() end
+		if not open then
+			-- opened on UIParent at the dropdown's scale: inside a scroll frame the menu would stay in the scroll
+			-- frame's layer, under the controls after it, and be clipped at its edge
+			menu:SetParent(UIParent)
+			menu:SetScale(b:GetEffectiveScale() / UIParent:GetEffectiveScale())
+			menu:SetFrameStrata("FULLSCREEN_DIALOG")
+			menu:Show()
+		end
 	end)
 	b:HookScript("OnHide", function() menu:Hide() end)
 	return b
@@ -1333,6 +1414,118 @@ end
 function Table:Show() self.frame:Show() end
 function Table:Hide() self.frame:Hide() end
 
+-------------------------------------------------------------------------------- picker
+
+-- A searchable, scrolling list that opens under a button, for choices too many for a dropdown: a search box over a
+-- plain S.Table in a menu frame. It closes like a dropdown menu. In multi mode clicking toggles entries and it
+-- stays open.
+local Picker = {}
+S.Picker = Picker
+local PICKER_W, PICKER_H = 300, 360
+local picker, pickerSpec
+
+local function pickerRefresh()
+	local q = picker.search:GetText() or ""
+	local items
+	if pickerSpec.search then
+		items = pickerSpec.search(q)
+	else
+		items = {}
+		local lower = q:lower()
+		for _, item in ipairs(pickerSpec.items or {}) do
+			if lower == "" or item.text:lower():find(lower, 1, true) then items[#items + 1] = item end
+		end
+	end
+	picker.list:SetItems(items, pickerSpec.emptyText or "Nothing Matches", picker.keepScroll)
+	picker.keepScroll = nil
+end
+
+-- The list and search keep their size in every skin; the menu grows around them by its border.
+local function pickerCreate()
+	local C = S.colors
+	local inset, innerW, innerH = S.metrics.menuInset + 4, PICKER_W - 2 * S.PAD, PICKER_H - 2 * S.PAD
+	picker = CreateFrame("Frame", ADDON .. "Picker", UIParent)
+	picker:SetSize(innerW + 2 * inset, innerH + 2 * inset)
+	picker:SetFrameStrata("FULLSCREEN_DIALOG")
+	picker:SetToplevel(true)
+	picker:EnableMouse(true)
+	S.Frame(picker, "menu")
+	tinsert(UISpecialFrames, ADDON .. "Picker")
+
+	picker.search = S.Input(picker, ADDON .. "PickerSearch", innerW, "Search", 60)
+	picker.search:SetPoint("TOPLEFT", inset, -inset)
+	picker.search:HookScript("OnTextChanged", function(_, user)
+		if user then pickerRefresh() end
+	end)
+
+	picker.list = Table.New(picker, nil, innerW, innerH - S.GAP - S.CONTROL_H, {
+		plain = true,
+		columns = { { key = "text", label = "", width = innerW, sortable = false } },
+		cell = function(item)
+			local on = pickerSpec.isSelected and pickerSpec.isSelected(item.value)
+			if pickerSpec.multi then return (on and "|cffffc400+|r  " or "    ") .. item.text, on and C.heading or C.text end
+			return item.text, on and C.heading or C.text
+		end,
+		icon = function(item) return item.icon end,
+		tooltip = function(tt, item)
+			if item.link then
+				tt:SetHyperlink(item.link)
+			elseif item.tooltip then
+				tt:SetText(item.text, 1, 1, 1)
+				tt:AddLine(item.tooltip, nil, nil, nil, true)
+			end
+		end,
+		onClick = function(item)
+			if not pickerSpec.multi then picker:Hide() end
+			if pickerSpec.onPick then pickerSpec.onPick(item.value) end
+			if pickerSpec.multi then
+				picker.keepScroll = true
+				pickerRefresh()
+			end
+		end,
+	})
+	picker.list.frame:SetPoint("TOPLEFT", picker.search, "BOTTOMLEFT", 0, -S.GAP)
+	picker:SetScript("OnHide", function() picker.search:ClearFocus() end)
+	S.TrackPopup(picker)
+end
+
+-- Opens under anchor, at its scale; opening it from the same button again closes it. spec: items = { { value,
+-- text, tooltip, icon, link } } or search(text) -> items, placeholder, multi, isSelected(value), onPick(value),
+-- emptyText.
+function Picker.Open(anchor, spec)
+	if not picker then pickerCreate() end
+	local open = picker:IsShown() and picker.owner == anchor
+	S.CloseMenus()
+	if not open then
+		pickerSpec = spec
+		picker.owner = anchor
+		picker:SetScale(anchor:GetEffectiveScale() / UIParent:GetEffectiveScale())
+		picker:ClearAllPoints()
+		picker:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
+		picker.search:SetText("")
+		picker.search.placeholder:SetText(spec.placeholder or "Search")
+		picker.search:UpdatePlaceholder()
+		pickerRefresh()
+		picker:Show()
+	end
+end
+
+function Picker.Close()
+	if picker then picker:Hide() end
+end
+
+-- A dropdown-looking button that opens the picker: getSpec() returns the spec each time it opens, so the choices
+-- and the selection are current. b:SetText(text) shows the current choice.
+function S.PickerButton(parent, width, getSpec)
+	local b = S.AddArrow(S.Button(parent, "", "secondary", width))
+	function b:SetText(text) self.label:SetText(text) end
+	b:SetScript("OnClick", function(self) Picker.Open(self, getSpec()) end)
+	b:HookScript("OnHide", function(self)
+		if picker and picker.owner == self then picker:Hide() end
+	end)
+	return b
+end
+
 -- Skins: how the controls above are drawn. A skin can carry a scheme of its own (roles, as S.SetTheme takes them),
 -- set colors apart from the scheme (colors(c, M3), run after the scheme fills S.colors), and change S.metrics.
 -- label names it in a picker, credit says who made it. The drawing functions: button(b) and
@@ -1341,7 +1534,8 @@ function Table:Hide() self.frame:Hide() end
 -- sidebar(side), highlight(f), optionally tab(b) and paintTab(b, on) (falling back to Material's), navEntry(b) and
 -- paintNav(b, on), input(e, tall) and paintInput(e) (e.focused, e.hovered; a tall one draws on e.box), and
 -- optionally check(b) and
--- paintCheck(b) (b.on, b.usable, b.hovered); a skin without them gets Material's checkbox.
+-- paintCheck(b) (b.on, b.usable, b.hovered); a skin without them gets Material's checkbox. Likewise optionally
+-- slider(s) and paintSlider(s) (s.usable, s.hovered; the handle is s:GetThumbTexture()), else Material's slider.
 function S.RegisterSkin(key, def)
 	skins[key] = def
 end
@@ -1449,6 +1643,28 @@ S.RegisterSkin("material", {
 		if b.on then b.fill:Show() else b.fill:Hide() end
 		b.fill:SetAlpha(b.usable and 1 or 0.4)
 		b:SetBackdropBorderColor(unpack(b.hovered and b.usable and S.colors.accent or S.colors.outline))
+	end,
+	-- a thin track, the accent up to an accent bar handle, which brightens on hover
+	slider = function(s)
+		local thumb = s:CreateTexture(nil, "OVERLAY")
+		thumb:SetTexture(WHITE)
+		thumb:SetSize(6, 16)
+		s:SetThumbTexture(thumb)
+		s.track = S.Solid(s, "BACKGROUND", S.colors.border)
+		s.track:SetHeight(4)
+		s.track:SetPoint("LEFT")
+		s.track:SetPoint("RIGHT")
+		s.fill = S.Solid(s, "ARTWORK", S.colors.accent)
+		s.fill:SetHeight(4)
+		s.fill:SetPoint("LEFT")
+		s.fill:SetPoint("RIGHT", thumb, "CENTER")
+	end,
+	paintSlider = function(s)
+		local thumb = s:GetThumbTexture()
+		local c = not s.usable and S.colors.disabled or s.hovered and S.colors.accentHover or S.colors.accent
+		thumb:SetVertexColor(unpack(c))
+		s.fill:SetVertexColor(unpack(s.usable and S.colors.accent or S.colors.disabled))
+		s.valueText:SetTextColor(unpack(s.usable and S.colors.text or S.colors.disabled))
 	end,
 	-- the soft border at rest, the stronger outline on hover, the accent while focused
 	paintInput = function(e)

@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.2.0. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.3.0. Change it there, then run tools/sync_style.py.
 -- Classic: the default UI's own look, drawn entirely from textures the 3.3.5 client ships, so there's no art in
 -- this folder. Dialog-box windows, red panel buttons, gold text, tooltip-bordered menus and lists, and the quest
 -- log's row highlight. Load it after Style.lua; S.UseSkin("classic") switches to it.
@@ -14,6 +14,7 @@ local INPUT = "Interface\\Common\\Common-Input-Border"
 -- the quest log's title row highlight, made for list rows (the quest greeting's highlight glows past a short row)
 local ROW_HIGHLIGHT = "Interface\\QuestFrame\\UI-QuestLogTitleHighlight"
 local CHECK = "Interface\\Buttons\\UI-CheckBox-"
+local SLIDER, SLIDER_H = "Interface\\Buttons\\UI-SliderBar-", 17
 -- the Interface Options tabs, as their template crops them: 20 pixel caps, 0.15625 of the art each side, 24 tall
 local TAB = "Interface\\OptionsFrame\\UI-OptionsFrame-"
 local TAB_CAP, TAB_U, TAB_H, TAB_DROP = 20, 0.15625, 24, 3
@@ -210,6 +211,27 @@ S.RegisterSkin("classic", {
 		b.tick:SetTexture(CHECK .. (b.usable and "Check" or "Check-Disabled"))
 		b.box:SetDesaturated(not b.usable)
 		b.glow:SetAlpha(b.usable and 1 or 0)
+	end,
+	-- the Interface Options slider: its bordered groove, 17 tall in the middle of the control, and its knob
+	slider = function(s)
+		s.bar = CreateFrame("Frame", nil, s)
+		s.bar:SetHeight(SLIDER_H)
+		s.bar:SetPoint("LEFT")
+		s.bar:SetPoint("RIGHT")
+		s.bar:SetFrameLevel(s:GetFrameLevel())
+		s.bar:SetBackdrop({ bgFile = SLIDER .. "Background", edgeFile = SLIDER .. "Border", tile = true, tileSize = 8,
+			edgeSize = 8, insets = { left = 3, right = 3, top = 6, bottom = 6 } })
+		local thumb = s:CreateTexture(nil, "OVERLAY")
+		thumb:SetTexture(SLIDER .. "Button-Horizontal")
+		thumb:SetSize(32, 32)
+		s:SetThumbTexture(thumb)
+	end,
+	paintSlider = function(s)
+		local thumb = s:GetThumbTexture()
+		local shade = not s.usable and 0.45 or s.hovered and 1 or 0.85
+		thumb:SetVertexColor(shade, shade, shade)
+		thumb:SetDesaturated(not s.usable)
+		if s.usable then s.valueText:SetTextColor(1, 1, 1) else s.valueText:SetTextColor(0.5, 0.5, 0.5) end
 	end,
 	-- one-line fields are the stock edit box border; tall ones a tooltip-bordered box
 	input = function(e, tall)
