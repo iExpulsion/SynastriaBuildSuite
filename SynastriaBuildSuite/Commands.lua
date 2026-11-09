@@ -403,8 +403,14 @@ SlashCmdList.SBS = function(msg)
 end
 
 -- The server sends a spec's perks after the switch (and after login), so a pending build is filled a moment later,
--- once the perk list is there.
+-- once the perk list is there. PerkMgrPerks exists from the start, so the server's own "data is in" flags decide.
 local PENDING_DELAY = 2
+
+local function PerksArrived()
+	return PerkMgrPerks ~= nil and GetCustomGameData ~= nil
+		and (GetCustomGameData(41, 0) or 0) ~= 0 and (GetCustomGameData(37, 0) or 0) ~= 0
+end
+
 local pendingWatch = CreateFrame("Frame")
 pendingWatch:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
 pendingWatch:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -412,7 +418,7 @@ pendingWatch:SetScript("OnEvent", function(self) self.wait = PENDING_DELAY end)
 pendingWatch:SetScript("OnUpdate", function(self, elapsed)
 	if self.wait then
 		self.wait = self.wait - elapsed
-		if self.wait <= 0 and PerkMgrPerks then
+		if self.wait <= 0 and PerksArrived() then
 			self.wait = nil
 			SBS:FillPendingSpec()
 		elseif self.wait <= 0 then
