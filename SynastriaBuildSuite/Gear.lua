@@ -81,7 +81,7 @@ local SLOT_FOR = {
 
 -- The slots an item can go in; nil while the item isn't cached yet, empty if it can't be equipped.
 function Gear.SlotsFor(id)
-	local equipLoc = select(9, GetItemInfo(id))
+	local equipLoc = select(9, SBS.ItemInfo(id))
 	return equipLoc and (SLOT_FOR[equipLoc] or {})
 end
 
@@ -131,7 +131,7 @@ end
 -- Wielding perk) for an off-hand weapon, and the item's own class list. Uncached items and builds with no classes
 -- pass. Returns ok, and a reason when not.
 function Gear.CanUse(build, id, slot)
-	local _, _, _, _, _, itemType, subType, _, equipLoc = GetItemInfo(id)
+	local _, _, _, _, _, itemType, subType, _, equipLoc = SBS.ItemInfo(id)
 	local ids = {}
 	for _, key in ipairs(build.classes or {}) do ids[#ids + 1] = SBS.CLASS_IDS[key] end
 	local who = #ids > 0 and SBS.Window.ClassText(build.classes, true)
@@ -255,7 +255,7 @@ function Gear.AutoBuild()
 end
 
 local function itemText(id)
-	return select(2, GetItemInfo(id)) or ("item " .. id)
+	return select(2, SBS.ItemInfo(id)) or ("item " .. id)
 end
 
 local function finish()

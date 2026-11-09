@@ -33,7 +33,7 @@ local function emptyTexture(slot)
 end
 
 local function itemName(id)
-	local name, link, quality = GetItemInfo(id)
+	local name, link, quality = SBS.ItemInfo(id)
 	local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
 	return color and (color.hex .. name .. "|r") or name or ("Item " .. id), link
 end
@@ -198,7 +198,7 @@ local function renderDetail(rowsBySlot)
 					Gear.Remove(current, slot, rank)
 					SBS:Changed()
 				elseif IsModifiedClick("CHATLINK") then
-					local link = select(2, GetItemInfo(item.id))
+					local link = select(2, SBS.ItemInfo(item.id))
 					if link then ChatEdit_InsertLink(link) end
 				elseif IsControlKeyDown() then
 					Gear.MakeBest(current, slot, rank)

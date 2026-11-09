@@ -49,6 +49,18 @@ function SBS:Print(fmt, ...)
 	DEFAULT_CHAT_FRAME:AddMessage("|cffffc400Synastria Build Suite|r:" .. msg)
 end
 
+-- Synastria's own functions and data come in after addons load, in a different order on login and on /reload.
+-- SynastriaSafeInvoke calls the named global once both are there; SBS.ready stays nil on clients without it.
+function SynastriaBuildSuite_OnReady()
+	SBS.ready = true
+end
+if SynastriaSafeInvoke then SynastriaSafeInvoke("SynastriaBuildSuite_OnReady") end
+
+-- GetItemInfo's returns, also for items the client hasn't cached yet where Synastria's lookup exists.
+function SBS.ItemInfo(id)
+	return (GetItemInfoCustom or GetItemInfo)(id)
+end
+
 -- The character's classes in pick order, as class keys.
 function SBS:PlayerClasses()
 	local classes = {}

@@ -143,8 +143,11 @@ Build.SHARED = { name = "Shared Perks", sharedOnly = true, perks = {} }
 
 -- Applies everything the plan can change. Returns a summary for the chat report.
 function Build.Apply(plan)
+	local perksSent, optionsChanged, optionsUnchanged = SBS.Perks.Apply(plan.perks)
 	local result = {
-		perksSent = SBS.Perks.Apply(plan.perks),
+		perksSent = perksSent,
+		optionsChanged = optionsChanged,
+		optionsUnchanged = optionsUnchanged,
 		refused = SBS.Talents.Apply(plan.talents),
 		affixesSent = SBS.Affixes.Apply(plan.affixes),
 	}

@@ -159,9 +159,8 @@ local function confirm()
 	Review.pending = nil
 	local result = SBS.Build.Apply(SBS.Build.Plan(build))
 	local problems = #result.refused
-	for _, r in ipairs(result.refused) do SBS:Print("|cffff6060Couldn't add %s (%s).|r", r.name, r.class) end
+	SBS:ReportApplied(build, result)
 	Review.Close()
-	SBS:Print("Applied %s.", build.name)
 	SBS:Changed()
 	SBS.Window.Message(problems > 0 and S.Hex(C.warn, ("Applied, but %s Refused (See Chat)"):format(S.Count(problems, "Talent Was", "Talents Were")))
 		or S.Hex(C.good, "Applied " .. build.name))

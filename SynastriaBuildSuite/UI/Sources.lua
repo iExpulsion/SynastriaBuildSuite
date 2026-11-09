@@ -95,7 +95,7 @@ local function chanceText(chance)
 end
 
 local function itemName(id)
-	local name, _, quality = GetItemInfo(id)
+	local name, _, quality = SBS.ItemInfo(id)
 	local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
 	return color and (color.hex .. name .. "|r") or name or ("Item " .. id)
 end
@@ -120,7 +120,7 @@ function Sources.Render()
 					status = S.Hex(C.muted, slotText(item)) .. "   " .. chanceText(item.chance),
 					onClick = function()
 						if IsModifiedClick("CHATLINK") then
-							local link = select(2, GetItemInfo(id))
+							local link = select(2, SBS.ItemInfo(id))
 							if link then ChatEdit_InsertLink(link) end
 						elseif OpenLootDb then
 							OpenLootDb(id)

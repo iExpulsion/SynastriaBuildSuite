@@ -274,7 +274,7 @@ local function renderPicker(rows)
 				status = status, selected = spell == chosen,
 				onClick = function(_, mouse)
 					if IsModifiedClick("CHATLINK") then
-						local link = select(2, GetItemInfo(item))
+						local link = select(2, SBS.ItemInfo(item))
 						if link then ChatEdit_InsertLink(link) end
 					elseif mouse == "RightButton" and spell == chosen then
 						Glyphs.Clear(current, state.class, socket)

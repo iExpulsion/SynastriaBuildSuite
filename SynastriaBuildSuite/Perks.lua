@@ -178,7 +178,8 @@ function Perks.Plan(wanted, inScope)
 end
 
 -- Options and chosen abilities apply anywhere; activations only with the Perk Manager open at an innkeeper.
--- Returns true when activations were sent.
+-- Returns true when activations were sent, then how many option changes the game made and how many it left as they
+-- were (already set, or not allowed).
 function Perks.Apply(plan)
 	local writable = Perks.Writable()
 	if writable then
@@ -191,14 +192,15 @@ function Perks.Apply(plan)
 			SetCustomGameData(3, id, 1)
 		end
 	end
+	local changed, unchanged = 0, 0
 	for _, o in ipairs(plan.options) do
-		ChangePerkOption(o.id, o.index, o.on)
+		if ChangePerkOption(o.id, o.index, o.on) then changed = changed + 1 else unchanged = unchanged + 1 end
 	end
 	for _, s in ipairs(plan.spells) do
 		ChangeDruidSpec(s.id, s.spell)
 	end
 	if UpdatePerkMgr then UpdatePerkMgr() end
-	return writable
+	return writable, changed, unchanged
 end
 
 function Perks.Name(id)
@@ -435,13 +437,16 @@ function Perks.SetBonuses(set, has)
 	for _, b in ipairs(set.bonus or {}) do
 		if b.desc and b.desc ~= "" then
 			local active = count >= (b.count or 0)
-			local raw = (IsPerkDouble(b.perkid, true) and b.amounts2 or b.amounts) or {}
+			local raw = (IsPerkDouble and IsPerkDouble(b.perkid, true) and b.amounts2 or b.amounts) or {}
 			local amounts = {}
-			for i = 1, 5 do amounts[i] = GetModifiedPerkValue(raw[i] or 0, b.perkid, i) end
+			for i = 1, 5 do
+				amounts[i] = GetModifiedPerkValue and GetModifiedPerkValue(raw[i] or 0, b.perkid, i) or raw[i] or 0
+			end
 			amounts[6] = scale
 			local colors = SET_COLORS[active]
+			local desc = CustomGenerateDescription and CustomGenerateDescription(b.desc, amounts, colors) or b.desc
 			out[#out + 1] = { count = b.count or 0, active = active,
-				text = colors.text .. ("(%d) "):format(b.count or 0) .. CustomGenerateDescription(b.desc, amounts, colors) .. "|r" }
+				text = colors.text .. ("(%d) "):format(b.count or 0) .. desc .. "|r" }
 		end
 	end
 	return out

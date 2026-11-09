@@ -32,7 +32,7 @@ function SBS:Changed()
 end
 
 local function itemText(id)
-	return select(2, GetItemInfo(id)) or ("item " .. id)
+	return select(2, SBS.ItemInfo(id)) or ("item " .. id)
 end
 
 function SBS:Report(plan)
@@ -212,12 +212,20 @@ function SBS:Import(text, onDone, sections, into, name)
 	end
 end
 
+-- The chat lines after applying: refused talents, and perk options the game left as they were.
+function SBS:ReportApplied(build, result)
+	for _, r in ipairs(result.refused) do self:Print("|cffff6060Couldn't add %s (%s).|r", r.name, r.class) end
+	if result.optionsUnchanged > 0 then
+		self:Print("|cffaaaaaaPerk options: %d changed, %d left as they were (already set or not allowed).|r",
+			result.optionsChanged, result.optionsUnchanged)
+	end
+	self:Print("Applied %s.", build.name)
+end
+
 function SBS:ConfirmApply(build)
 	self:Report(SBS.Build.Plan(build))
 	SBS.Dialogs.Confirm("SBS_APPLY", build.name, function()
-		local result = SBS.Build.Apply(SBS.Build.Plan(build))
-		for _, r in ipairs(result.refused) do self:Print("|cffff6060Couldn't add %s (%s).|r", r.name, r.class) end
-		self:Print("Applied %s.", build.name)
+		self:ReportApplied(build, SBS.Build.Apply(SBS.Build.Plan(build)))
 		if build.equipOnSpec then SBS.Gear.AutoEquip(build) end
 		self:Changed()
 	end)
@@ -403,12 +411,17 @@ SlashCmdList.SBS = function(msg)
 end
 
 -- The server sends a spec's perks after the switch (and after login), so a pending build is filled a moment later,
--- once the perk list is there. PerkMgrPerks exists from the start, so the server's own "data is in" flags decide.
+-- once Synastria is ready. Without SynastriaSafeInvoke, the server's own "data is in" flags decide.
 local PENDING_DELAY = 2
 
 local function PerksArrived()
-	return PerkMgrPerks ~= nil and GetCustomGameData ~= nil
-		and (GetCustomGameData(41, 0) or 0) ~= 0 and (GetCustomGameData(37, 0) or 0) ~= 0
+	local ready
+	if SynastriaSafeInvoke then
+		ready = SBS.ready
+	else
+		ready = GetCustomGameData ~= nil and (GetCustomGameData(41, 0) or 0) ~= 0 and (GetCustomGameData(37, 0) or 0) ~= 0
+	end
+	return ready and PerkMgrPerks ~= nil
 end
 
 local pendingWatch = CreateFrame("Frame")
