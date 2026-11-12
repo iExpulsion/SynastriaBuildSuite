@@ -98,15 +98,36 @@ function SBS:SpecName(group)
 	return ("Spec %d"):format(group) .. ((name and name ~= "") and (": " .. name) or "")
 end
 
-local function charKey()
-	return (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "?")
+local function sharesClass(build)
+	local shares = not build or not build.classes or #build.classes == 0
+	for _, class in ipairs(build and build.classes or {}) do
+		if SBS:HasClass(class) then shares = true end
+	end
+	return shares
 end
 
--- This character's spec-to-build links. Kept in the account file so renames and deletes reach every character.
+-- Links saved under the old "Name-Realm" key may belong to a deleted character whose name was reused, so they're
+-- kept only when every linked build shares a class with this one.
+local function adoptNameLinks(db)
+	local key = (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "?")
+	local old, fits = db.links[key], db.links[key] ~= nil
+	for _, name in pairs(old or {}) do
+		if not sharesClass(db.builds[name]) then fits = false end
+	end
+	db.links[key] = nil
+	return fits and old or {}
+end
+
+-- This character's spec-to-build links, keyed by character GUID. Kept in the account file so renames and deletes
+-- reach every character.
 function SBS:Links()
-	local key = charKey()
-	self.db.links[key] = self.db.links[key] or {}
-	return self.db.links[key]
+	local guid = UnitGUID("player")
+	local links = {}
+	if guid then
+		self.db.links[guid] = self.db.links[guid] or adoptNameLinks(self.db)
+		links = self.db.links[guid]
+	end
+	return links
 end
 
 -- The specs on this character linked to a build, lowest first.
@@ -140,8 +161,18 @@ end
 local frame = CreateFrame("Frame")
 SBS.frame = frame
 frame:RegisterEvent("ADDON_LOADED")
+frame:RegisterEvent("PLAYER_LOGIN")
 frame:SetScript("OnEvent", function(self, event, name)
-	if event == "ADDON_LOADED" and name == ADDON then
+	if event == "PLAYER_LOGIN" then
+		-- the per-character file follows the name, so a new character with a deleted one's name would inherit it
+		local guid = UnitGUID("player")
+		if SBS.charDB.guid and SBS.charDB.guid ~= guid then
+			SynastriaBuildSuiteCharDB = {}
+			SBS.charDB = SynastriaBuildSuiteCharDB
+		end
+		SBS.charDB.guid = guid
+		self:UnregisterEvent("PLAYER_LOGIN")
+	elseif event == "ADDON_LOADED" and name == ADDON then
 		SynastriaBuildSuiteDB = SynastriaBuildSuiteDB or {}
 		SynastriaBuildSuiteDB.builds = SynastriaBuildSuiteDB.builds or {}
 		SynastriaBuildSuiteDB.shared = SynastriaBuildSuiteDB.shared or { perks = {} }
