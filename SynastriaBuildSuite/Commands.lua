@@ -309,6 +309,7 @@ local function help()
 	SBS:Print("  /sbs gear <name> | equip <name> | delete <name> | note <name> <text> | minimap [reset] | reset")
 	SBS:Print("  /sbs lootfilter sync | restore")
 	SBS:Print("  /sbs theme <name> (after a reload: %s) | pixel (snap the window to whole screen pixels)", themeNames())
+	SBS:Print("  /sbs scale <percent> (window size, such as /sbs scale 150)")
 end
 
 local handlers = {}
@@ -382,6 +383,14 @@ handlers.theme = function(arg)
 		SBS:Print("No theme called %s. Themes: %s.", key, themeNames())
 	else
 		SBS:Print("Theme: %s. /reload if it hasn't switched yet.", key)
+	end
+end
+handlers.scale = function(arg)
+	local percent = tonumber(arg)
+	if percent and SBS.SetWindowScale(percent / 100) then
+		SBS:Print("Window size: %s.", SBS.ScaleLabel(SBS.db.windowScale))
+	else
+		SBS:Print("Window size: %s. /sbs scale <50-300> sets it, in percent.", SBS.ScaleLabel(SBS.db.windowScale))
 	end
 end
 handlers.pixel = function()

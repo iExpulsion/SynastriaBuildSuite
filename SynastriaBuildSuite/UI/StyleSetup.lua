@@ -34,7 +34,9 @@ loader:SetScript("OnEvent", function(self, _, name)
 	if name == ADDON then
 		if not known(SBS.db.skin) then SBS.db.skin = "material" end
 		if SBS.db.pixelScale == nil then SBS.db.pixelScale = true end
+		if SBS.db.windowScale == nil then SBS.db.windowScale = 1 end
 		S.UseSkin(SBS.db.skin, YELLOW)
+		S.SetWindowScale(SBS.db.windowScale)
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 end)
@@ -84,4 +86,24 @@ function SBS.SetPixelScale(on)
 		S.PixelScale(frame, on)
 		SBS.SnapPosition(frame)
 	end
+	SBS.Window.Rescaled()
+end
+
+-- the sizes offered for the window and dialogs
+SBS.WINDOW_SCALES = { 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2 }
+local MIN_SCALE, MAX_SCALE = 0.5, 3
+
+function SBS.ScaleLabel(scale)
+	return ("%d%%"):format(math.floor(scale * 100 + 0.5))
+end
+
+-- Sets the size of the window and dialogs and keeps the window's saved spot. Returns false when out of range.
+function SBS.SetWindowScale(scale)
+	local ok = type(scale) == "number" and scale >= MIN_SCALE and scale <= MAX_SCALE
+	if ok then
+		SBS.db.windowScale = scale
+		S.SetWindowScale(scale)
+		SBS.Window.Rescaled()
+	end
+	return ok
 end

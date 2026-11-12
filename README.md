@@ -49,7 +49,8 @@ blank.
 ## The Window
 
 - **Title Bar:** **Theme** switches between Material, Classic and Cognac, after a reload; Build Suite offers to
-  reload for you.
+  reload for you. **Size** makes the window and its dialogs bigger or smaller, from 80% to 200%, for large screens
+  or bigger text. **Snap to Pixels** keeps borders crisp; turn it off to match your UI scale exactly.
 - **Sidebar:** builds linked to this character's specs are at the top under Your Specs, with the active spec
   in green. Everything else is under Saved Builds, grouped by class. Search filters by name or spec name.
 - **Build Header:** click the name to rename it or set the spec name. Assign To links a build to one of your
@@ -166,13 +167,15 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 | `/sbs minimap reset` | Puts the minimap button back on the minimap |
 | `/sbs reset` | Moves the window back to the top middle of the screen |
 | `/sbs theme <name>` | Switches the theme after a reload: `material`, `classic` or `cognac` |
+| `/sbs scale <percent>` | Sets the window size, from 50 to 300 (`/sbs scale 150`) |
 | `/sbs pixel` | Turns pixel snapping off or back on (see below) |
 
 The minimap button opens the window on left-click and your active spec's build on right-click. Drag it around
 the minimap to move it, or Shift-drag it to place it anywhere on screen. With a LibDataBroker display such as Titan Panel or ElvUI's data texts, Synastria Build Suite appears there too.
 
 The window snaps to whole screen pixels, so its borders stay crisp. At most UI scales that makes it a little
-larger or smaller than the rest of your UI; `/sbs pixel` turns it off if you'd rather it matched exactly.
+larger or smaller than the rest of your UI; `/sbs pixel` turns it off if you'd rather it matched exactly. Sizes other than 100% snap only when they land on
+whole pixels, so their borders may blur slightly.
 
 ## Synastria Companion
 
