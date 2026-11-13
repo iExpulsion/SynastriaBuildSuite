@@ -89,7 +89,7 @@ local function renderPicker(order)
 	local list = panel.picker
 	list:Begin()
 	for _, info in ipairs(Affixes.Options()) do
-		if state.search == "" or info.name:lower():find(state.search, 1, true) then
+		if Affixes.Matches(info, state.search) then
 			local id = info.id
 			local at = Affixes.Position(order, id)
 			list:Add({
@@ -201,7 +201,7 @@ function Editor.Create(parent, width, height)
 	local title = S.Text(pick, "normal")
 	title:SetPoint("LEFT", pick, "TOPLEFT", PAD, -(PAD + CONTROL_H / 2))
 	title:SetText("All Affixes")
-	panel.search = S.Input(pick, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - 90, "Search Affixes", 40)
+	panel.search = S.Input(pick, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - 90, "Search Affixes or Stats", 40)
 	panel.search:SetPoint("TOPRIGHT", -PAD, -PAD)
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()

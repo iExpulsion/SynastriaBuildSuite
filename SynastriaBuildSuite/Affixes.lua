@@ -54,14 +54,16 @@ local function statNames(...)
 	return names
 end
 
--- Every affix the order can hold, sorted by name: { id, name, stats }. Prefix and suffix affixes with the same
+-- Every affix the order can hold, sorted by name: { id, name, stats, key } (key is what search matches). Prefix and suffix affixes with the same
 -- index share one ID, as in the game's picker; the list is read once the game's affix table has loaded.
 function Affixes.Options()
 	if not catalog and ItemAttuneAffix and FindItemAffix then
 		local list, ids = {}, {}
 		local function add(id, name, stats)
 			if name and not ids[id] then
-				ids[id] = { id = id, name = name, stats = stats }
+				-- one line per term, so a search can't match across a name and a stat
+				local key = (name .. "\n" .. table.concat(stats, "\n")):lower()
+				ids[id] = { id = id, name = name, stats = stats, key = key }
 				list[#list + 1] = ids[id]
 			end
 		end
@@ -81,6 +83,11 @@ function Affixes.Options()
 		catalog, byId = list, ids
 	end
 	return catalog or {}
+end
+
+-- Whether the affix's name or one of its stats contains the lowercase search text.
+function Affixes.Matches(info, search)
+	return search == "" or info.key:find(search, 1, true) ~= nil
 end
 
 function Affixes.Info(id)
