@@ -11,10 +11,10 @@ local C = S.colors
 local Affixes
 
 local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
-local ORDER_W, PRESET_W = 300, 120
+local ORDER_W, PRESET_W, STATS_W = 300, 120, 110
 
 local panel, current
-local state = { slot = 1, search = "" }
+local state = { slot = 1, search = "", stats = {}, statCount = 0 }
 Editor.state = state
 
 -- Tooltips: the affix name in the accent, like an item name, then its stats in the game's bonus-stat green.
@@ -89,7 +89,7 @@ local function renderPicker(order)
 	local list = panel.picker
 	list:Begin()
 	for _, info in ipairs(Affixes.Options()) do
-		if Affixes.Matches(info, state.search) then
+		if Affixes.Matches(info, state.search, state.stats) then
 			local id = info.id
 			local at = Affixes.Position(order, id)
 			list:Add({
@@ -118,10 +118,46 @@ local function renderPicker(order)
 		end
 	end
 	if list.count == 0 then
-		list:Add({ text = S.Hex(C.muted, state.search ~= "" and "No affixes match your search."
+		local filtered = state.search ~= "" or state.statCount > 0
+		list:Add({ text = S.Hex(C.muted, filtered and "No affixes match your search."
 			or "The affix list loads with the game's attunement data.") })
 	end
 	list:End()
+end
+
+local function statsLabel()
+	local label = "All Stats"
+	if state.statCount == 1 then
+		label = next(state.stats)
+	elseif state.statCount > 1 then
+		label = state.statCount .. " Stats"
+	end
+	return label
+end
+
+local function toggleStat(name)
+	if name == "" then
+		state.stats, state.statCount = {}, 0
+	elseif state.stats[name] then
+		state.stats[name] = nil
+		state.statCount = state.statCount - 1
+	else
+		state.stats[name] = true
+		state.statCount = state.statCount + 1
+	end
+	SBS.Window.Render()
+end
+
+local function statsSpec()
+	local items = { { value = "", text = "All Stats", tooltip = "Show affixes with any stats." } }
+	for _, name in ipairs(Affixes.Stats()) do items[#items + 1] = { value = name, text = name } end
+	return {
+		items = items, multi = true, placeholder = "Search Stats", emptyText = "No Stats Match",
+		isSelected = function(name)
+			return (name == "" and state.statCount == 0) or state.stats[name] == true
+		end,
+		onPick = toggleStat,
+	}
 end
 
 local function summary(order, now)
@@ -147,6 +183,7 @@ function Editor.Render(build)
 	local comparing = now ~= nil and SBS.Window.IsComparing(build)
 	renderOrder(order, now, comparing)
 	renderPicker(order)
+	panel.stats:SetText(statsLabel())
 	panel.preset:SetText("Load Preset")
 	return summary(order, now)
 end
@@ -192,16 +229,16 @@ function Editor.Create(parent, width, height)
 	end, "Take the selected affix out of the order.")
 	panel.remove:SetPoint("BOTTOMLEFT", PAD, PAD)
 
-	-- right: every affix, with a search box
+	-- right: every affix, with a stat filter and a search box
 	local pickW = width - ORDER_W - PAD
 	local pick = CreateFrame("Frame", nil, panel)
 	pick:SetSize(pickW, height)
 	pick:SetPoint("TOPLEFT", ORDER_W + PAD, 0)
 	S.Well(pick)
-	local title = S.Text(pick, "normal")
-	title:SetPoint("LEFT", pick, "TOPLEFT", PAD, -(PAD + CONTROL_H / 2))
-	title:SetText("All Affixes")
-	panel.search = S.Input(pick, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - 90, "Search Affixes or Stats", 40)
+	panel.stats = S.PickerButton(pick, STATS_W, statsSpec)
+	panel.stats:SetPoint("TOPLEFT", PAD, -PAD)
+	panel.stats.tooltipText = "Show only affixes that give any of the stats you pick."
+	panel.search = S.Input(pick, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - STATS_W - GAP, "Search Names or Stats", 40)
 	panel.search:SetPoint("TOPRIGHT", -PAD, -PAD)
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()

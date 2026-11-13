@@ -85,9 +85,33 @@ function Affixes.Options()
 	return catalog or {}
 end
 
--- Whether the affix's name or one of its stats contains the lowercase search text.
-function Affixes.Matches(info, search)
-	return search == "" or info.key:find(search, 1, true) ~= nil
+-- Every stat some affix gives, sorted.
+function Affixes.Stats()
+	local names, seen = {}, {}
+	for _, info in ipairs(Affixes.Options()) do
+		for _, name in ipairs(info.stats) do
+			if not seen[name] then
+				seen[name] = true
+				names[#names + 1] = name
+			end
+		end
+	end
+	table.sort(names)
+	return names
+end
+
+local function givesAny(info, stats)
+	for _, name in ipairs(info.stats) do
+		if stats[name] then return true end
+	end
+	return false
+end
+
+-- Whether the affix's name or one of its stats contains the lowercase search text, and, when a set of stat names
+-- is given and not empty, it gives at least one of them.
+function Affixes.Matches(info, search, stats)
+	local text = search == "" or info.key:find(search, 1, true) ~= nil
+	return text and (stats == nil or next(stats) == nil or givesAny(info, stats))
 end
 
 function Affixes.Info(id)

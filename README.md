@@ -120,7 +120,8 @@ order, most wanted first: drag an affix up or down to change its place, and sele
 it to remove it.
 **Load Preset** starts from one of the game's orders (Strength DPS, Agility DPS, Tank, Caster). The right side
 lists every affix with its stats on hover; click one to add it to the end. Search finds affixes by name or by a
-stat they give ("haste", "stamina").
+stat they give ("haste", "stamina"), and the stats filter beside it shows only affixes that give any of the stats
+you pick.
 
 The affix order belongs to the spec and only changes near an innkeeper; the Perk Manager doesn't need to be open.
 Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.
