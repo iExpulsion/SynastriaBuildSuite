@@ -3,7 +3,8 @@
     python tools/package.py [output folder]
 
 Writes <output>/SynastriaBuildSuite-<version>.zip with a top-level SynastriaBuildSuite/ folder (extract it into
-Interface/AddOns): the .toc, the Lua files the .toc loads, and the textures.
+Interface/AddOns): the .toc, the Lua files the .toc loads, the textures, and the bundled libraries' license files,
+which their licenses require.
 """
 import os, re, sys, zipfile
 
@@ -33,7 +34,9 @@ def main():
     addon = os.path.join(ROOT, NAME)
     meta, loaded = toc_info(addon)
     version = meta.get("Version", "0").strip()
-    files = [NAME + ".toc"] + loaded + files_matching(addon, lambda n: n.lower().endswith((".tga", ".blp")))
+    textures = files_matching(addon, lambda n: n.lower().endswith((".tga", ".blp")))
+    licenses = files_matching(addon, lambda n: n.upper().startswith("LICENSE"))
+    files = [NAME + ".toc"] + loaded + textures + licenses
     missing = [f for f in files if not os.path.isfile(os.path.join(addon, f))]
     if missing:
         sys.exit("not packaged, missing:\n  " + "\n  ".join(missing))

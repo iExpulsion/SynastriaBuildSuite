@@ -187,5 +187,6 @@ Auto Loot screen also shows and edits the SBS Gear rules that Hunt Gear syncs.
 
 Synastria Build Suite is released under the [MIT License](LICENSE). The game data in `SynastriaBuildSuite/Data` comes from the
 Synastria client and isn't covered by it, and neither is the Cognac art in `SynastriaBuildSuite/UI/Skins/Cognac`, which is from
-[AttuneNext](https://github.com/speedyrulz/AttuneNext). `SynastriaBuildSuite/Libs` holds LibStub and LibDataBroker-1.1
-(public domain) and CallbackHandler-1.0 (from Ace3, under its own BSD-style license).
+[AttuneNext](https://github.com/speedyrulz/AttuneNext). `SynastriaBuildSuite/Libs` holds LibStub (public
+domain), LibDataBroker-1.1 (by Tekkub, with no license stated) and CallbackHandler-1.0 (from Ace3, under its own BSD-style
+license, included next to it).
