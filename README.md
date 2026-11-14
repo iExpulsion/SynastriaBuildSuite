@@ -22,8 +22,8 @@ Hunter pet aspects, the spec name and notes.
   SynastriaBuildManager (SBM), SynastriaPerkManager (SPM) and Item Affix Manager strings.
 - **Shared Perks:** your Misc perks live in one list that every build applies, and they're never exported or
   overwritten by an import.
-- **Themes:** the flat Material look, Classic for the game's own frames and buttons, or Cognac's painted gold
-  frames on dark glass.
+- **Themes:** the flat Material look, Classic for the game's own frames and buttons, Cognac's painted gold
+  frames on dark glass, or Material Glass, the Material look on see-through frosted glass.
 
 ## Installation
 
@@ -48,9 +48,9 @@ blank.
 
 ## The Window
 
-- **Title Bar:** **Theme** switches between Material, Classic and Cognac, after a reload; Build Suite offers to
-  reload for you. **Size** makes the window and its dialogs bigger or smaller, from 80% to 200%, for large screens
-  or bigger text. **Snap to Pixels** keeps borders crisp; turn it off to match your UI scale exactly.
+- **Title Bar:** **Theme** switches between Material, Classic, Cognac and Material Glass, after a reload; Build
+  Suite offers to reload for you. **Size** makes the window and its dialogs bigger or smaller, from 80% to 200%, for
+  large screens or bigger text. **Snap to Pixels** keeps borders crisp; turn it off to match your UI scale exactly.
 - **Sidebar:** builds linked to this character's specs are at the top under Your Specs, with the active spec
   in green. Everything else is under Saved Builds, grouped by class. Search filters by name or spec name.
 - **Build Header:** click the name to rename it or set the spec name. Assign To links a build to one of your
@@ -168,7 +168,7 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 | `/sbs minimap` | Hides or shows the minimap button |
 | `/sbs minimap reset` | Puts the minimap button back on the minimap |
 | `/sbs reset` | Moves the window back to the top middle of the screen |
-| `/sbs theme <name>` | Switches the theme after a reload: `material`, `classic` or `cognac` |
+| `/sbs theme <name>` | Switches the theme after a reload: `material`, `classic`, `cognac` or `materialglass` |
 | `/sbs scale <percent>` | Sets the window size, from 50 to 300 (`/sbs scale 150`) |
 | `/sbs pixel` | Turns pixel snapping off or back on (see below) |
 

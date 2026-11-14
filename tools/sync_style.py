@@ -1,4 +1,4 @@
-"""Copies the MaterialCraftUI style kit into SynastriaBuildSuite/UI/Style.lua, and the Cognac and Classic skins into
+"""Copies the MaterialCraftUI style kit into SynastriaBuildSuite/UI/Style.lua, and the Cognac, Classic and Material Glass skins into
 SynastriaBuildSuite/UI/Skins.
 
     py -I -X utf8 tools/sync_style.py
@@ -9,5 +9,5 @@ import os, runpy, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIB = os.environ.get('MATERIALCRAFTUI', os.path.join(ROOT, '..', 'MaterialCraftUI'))
-sys.argv = [sys.argv[0], ROOT, 'SynastriaBuildSuite', 'Cognac', 'Classic']
+sys.argv = [sys.argv[0], ROOT, 'SynastriaBuildSuite', 'Cognac', 'Classic', 'MaterialGlass']
 runpy.run_path(os.path.join(LIB, 'tools', 'sync_style.py'), run_name='__main__')
