@@ -97,11 +97,12 @@ end
 
 -- Picker ----------------------------------------------------------------------------------------------------
 
--- The row's status: its place in the order, and how much of the stat or stats the list is sorted by it gives.
-local function pickerStatus(at, share)
+-- The row's status: its place in the order, its share of the filtered stat, and its total for the build's role.
+local function pickerStatus(at, share, total)
 	local parts = {}
 	if at then parts[#parts + 1] = S.Hex(C.accent, "#" .. at) end
 	if share then parts[#parts + 1] = S.Hex(C.muted, share .. "%") end
+	if total then parts[#parts + 1] = "Role " .. total .. "%" end
 	return #parts > 0 and table.concat(parts, "  ") or nil
 end
 
@@ -122,9 +123,8 @@ end
 local function renderPicker(order)
 	local list = panel.picker
 	local only = state.statCount == 1 and next(state.stats)
-	local focus = Affixes.FocusStats(current.affixFocus)
-	local set = not only and focus
-	local sorted = only and Affixes.ByShare(only, focus) or set and Affixes.ByScore(set) or Affixes.Options()
+	local set = Affixes.FocusStats(current.affixFocus)
+	local sorted = only and Affixes.ByShare(only, set) or set and Affixes.ByScore(set) or Affixes.Options()
 	list:Begin()
 	for _, info in ipairs(sorted) do
 		if Affixes.Matches(info, state.search, state.stats) then
@@ -132,7 +132,7 @@ local function renderPicker(order)
 			local at = Affixes.Position(order, id)
 			list:Add({
 				text = info.name, indent = 2,
-				status = pickerStatus(at, only and info.shares[only] or set and Affixes.Score(info, set)),
+				status = pickerStatus(at, only and info.shares[only], set and Affixes.Score(info, set)),
 				selected = at ~= nil and at == state.slot,
 				onClick = function()
 					if at then
