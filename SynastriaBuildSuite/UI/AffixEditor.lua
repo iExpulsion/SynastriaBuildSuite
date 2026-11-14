@@ -3,7 +3,7 @@ local SBS = NS.SBS
 
 -- The Affixes tab: the build's affix priority on the left, most wanted first, dragged to reorder, with the game's
 -- presets. On the right, every affix with its stats (clicking one adds it to the end of the order), or the
--- character's stats, with the ones the order gives highlighted and the change since the last snapshot.
+-- character's stats with each one's change since the last snapshot.
 local Editor = {}
 SBS.AffixEditor = Editor
 
@@ -17,7 +17,7 @@ local ORDER_W, PRESET_W, STATS_W, VIEW_W = 300, 120, 110, 80
 local panel, current
 local state = { slot = 1, search = "", stats = {}, statCount = 0, view = "affixes" }
 Editor.state = state
-local values, touched = {}, {}
+local values = {}
 
 function Editor.ShowingStats()
 	return state.view == "stats" and SBS.Window.state.tab == "affixes"
@@ -180,13 +180,12 @@ local function change(row)
 	return text, delta
 end
 
-local function shows(row, gives, delta, mana)
-	return (not row.mana or mana) and (row.always or gives or delta ~= 0 or values[row.key] ~= 0)
+local function shows(row, delta, mana)
+	return (not row.mana or mana) and (row.always or delta ~= 0 or values[row.key] ~= 0)
 end
 
-local function renderStats(order)
+local function renderStats()
 	Stats.Read(values)
-	Stats.Touched(order, touched)
 	local mana = Stats.HasMana()
 	local list = panel.statList
 	list:Begin()
@@ -211,21 +210,13 @@ local function renderStats(order)
 		or "Nothing to revert: your order is the one you had before the last test, or you haven't tested one."
 	local group
 	for _, row in ipairs(Stats.ROWS) do
-		local gives = Stats.Gives(row, touched)
 		local delta, amount = change(row)
-		if shows(row, gives, amount, mana) then
+		if shows(row, amount, mana) then
 			if row.group ~= group then
 				group = row.group
 				list:Add({ text = Stats.GROUPS[group], header = true })
 			end
-			list:Add({
-				text = gives and S.Hex(C.accent, row.label) or row.label, indent = 2,
-				status = values[row.key] .. delta,
-				tooltip = gives and function(tt)
-					nameLine(tt, row.label)
-					tt:AddLine("Affixes in this build's order give this stat.", 0.8, 0.8, 0.8, true)
-				end or nil,
-			})
+			list:Add({ text = row.label, indent = 2, status = values[row.key] .. delta })
 		end
 	end
 	list:End()
@@ -262,7 +253,7 @@ function Editor.Render(build)
 	renderOrder(order, now, comparing)
 	local onStats = state.view == "stats"
 	if onStats then
-		renderStats(order)
+		renderStats()
 	else
 		renderPicker(order)
 		panel.stats:SetText(statsLabel())
@@ -271,7 +262,7 @@ function Editor.Render(build)
 	if onStats then panel.statsView:Show() else panel.statsView:Hide() end
 	panel.view:SetLabel(onStats and "Affix List" or "Your Stats")
 	panel.view.tooltipText = onStats and "Back to the list of affixes to add to the order."
-		or "See your character's stats. The ones this build's affixes give are highlighted, and after an order is applied each stat shows how it changed."
+		or "See your character's stats. After an affix order is tested or applied, each stat shows how it changed."
 	panel.preset:SetText("Load Preset")
 	return summary(order, now)
 end

@@ -126,8 +126,8 @@ you pick.
 The affix order belongs to the spec and only changes near an innkeeper; the Perk Manager doesn't need to be open.
 Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.
 
-**Test Affixes** sends just the build's affix order and shows **Your Stats**: your character's stats, with the
-ones the build's affixes give highlighted. Your stats are noted before the order goes out, so once the server
+**Test Affixes** sends just the build's affix order and shows **Your Stats**: your character's stats, grouped
+like the character sheet. Your stats are noted before the order goes out, so once the server
 has switched your affixes, each stat shows how much it went up or down. Don't like it? **Revert** puts back the
 order you had before, in your spec and in the build, and the changes drop back to nothing. Click the Changes Since line to stop showing changes.
 
