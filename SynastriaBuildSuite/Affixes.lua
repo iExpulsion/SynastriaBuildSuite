@@ -78,16 +78,28 @@ local function statNames(...)
 	return names
 end
 
--- Every affix the order can hold, sorted by name: { id, name, stats, key } (key is what search matches). Prefix and suffix affixes with the same
--- index share one ID, as in the game's picker; the list is read once the game's affix table has loaded.
+-- Each stat's share of an item's affix budget, as a whole percent, from the random suffix version (negative ex):
+-- on the same item a bigger share is more of that stat, whichever suffix it's on. Property versions have none.
+local function shares(afx)
+	local sizes, out = afx and afx.ex and afx.ex < 0 and NS.AffixSizes and NS.AffixSizes[afx.ex], {}
+	for i, stat in ipairs(sizes and afx.stats or {}) do
+		local name = GetAttuneStatName and GetAttuneStatName(stat)
+		if name and sizes[i] then out[name] = math.floor(sizes[i] / 100 + 0.5) end
+	end
+	return out
+end
+
+-- Every affix the order can hold, sorted by name: { id, name, stats, shares, key } (key is what search matches).
+-- Prefix and suffix affixes with the same index share one ID, as in the game's picker; the list is read once the
+-- game's affix table has loaded.
 function Affixes.Options()
 	if not catalog and ItemAttuneAffix and FindItemAffix then
 		local list, ids = {}, {}
-		local function add(id, name, stats)
+		local function add(id, name, stats, share)
 			if name and not ids[id] then
 				-- one line per term, so a search can't match across a name and a stat
 				local key = (name .. "\n" .. table.concat(stats, "\n")):lower()
-				ids[id] = { id = id, name = name, stats = stats, key = key }
+				ids[id] = { id = id, name = name, stats = stats, shares = share, key = key }
 				list[#list + 1] = ids[id]
 			end
 		end
@@ -97,16 +109,28 @@ function Affixes.Options()
 				local name = a.name == b.name and a.name or ((a.name or "?") .. " / " .. (b.name or "?"))
 				if a.name2 then name = name .. " / " .. a.name2 end
 				if b.name2 then name = name .. " / " .. b.name2 end
-				add(a.index + 1, name, statNames(a, b))
+				add(a.index + 1, name, statNames(a, b), shares(a))
 			else
-				if a then add((a.filterindex or a.index) + 1, a.name, statNames(a)) end
-				if b then add((b.filterindex or b.index) + 1, b.name, statNames(b)) end
+				if a then add((a.filterindex or a.index) + 1, a.name, statNames(a), shares(a)) end
+				if b then add((b.filterindex or b.index) + 1, b.name, statNames(b), shares(b)) end
 			end
 		end
 		table.sort(list, function(x, y) return x.name:upper() < y.name:upper() end)
 		catalog, byId = list, ids
 	end
 	return catalog or {}
+end
+
+-- Every affix, those giving the biggest share of `stat` first; affixes without a share for it follow by name.
+function Affixes.ByShare(stat)
+	local list = {}
+	for i, info in ipairs(Affixes.Options()) do list[i] = info end
+	table.sort(list, function(x, y)
+		local a, b = x.shares[stat] or -1, y.shares[stat] or -1
+		if a ~= b then return a > b end
+		return x.name:upper() < y.name:upper()
+	end)
+	return list
 end
 
 -- Every stat some affix gives, sorted.

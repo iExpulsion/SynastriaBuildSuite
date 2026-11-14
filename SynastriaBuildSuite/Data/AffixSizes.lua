@@ -1,8 +1,10 @@
 -- Generated from client data. Do not edit.
--- Item affixes with more than one stat: [affix ex] = sizes in the order of its stats, a random suffix's
--- budget shares (negative ex) or a random property's amounts (positive ex). Comparable within one affix only.
+-- [affix ex] = sizes in the order of its stats: a random suffix's share of the item's budget in hundredths of a
+-- percent (negative ex, every suffix; comparable across suffixes), or a random property's amounts (positive ex,
+-- properties with more than one stat; comparable within that property only).
 local _, NS = ...
 NS.AffixSizes = {
+	[-99] = { 10000 },
 	[-93] = { 7889, 6153, 2103 },
 	[-92] = { 7889, 5259, 5259 },
 	[-91] = { 7889, 5259, 5259 },
@@ -38,7 +40,17 @@ NS.AffixSizes = {
 	[-33] = { 10000, 6666 },
 	[-32] = { 10000, 6666 },
 	[-31] = { 10000, 6666 },
+	[-30] = { 4000 },
 	[-29] = { 6666, 6666 },
+	[-28] = { 4000 },
+	[-27] = { 10000 },
+	[-21] = { 11700 },
+	[-20] = { 20000 },
+	[-19] = { 10000 },
+	[-18] = { 10000 },
+	[-17] = { 10000 },
+	[-16] = { 15000 },
+	[-15] = { 10000 },
 	[-14] = { 6666, 6666 },
 	[-13] = { 6666, 6666 },
 	[-12] = { 6666, 6666 },

@@ -128,9 +128,11 @@ one in your spec's affix order, the same 16 slots as the game's Item Affix Manag
 order, most wanted first: drag an affix up or down to change its place, and select one to remove it or right-click
 it to remove it.
 **Load Preset** starts from one of the game's orders (Strength DPS, Agility DPS, Tank, Caster). The right side
-lists every affix with its stats on hover, the biggest first; click one to add it to the end. Search finds affixes by name or by a
+lists every affix with its stats on hover, the biggest first, each with its share of the item's affix budget: on
+the same item, a bigger share is more of that stat, so a single-stat affix gives the most. Click one to add it to
+the end. Search finds affixes by name or by a
 stat they give ("haste", "stamina"), and the stats filter beside it shows only affixes that give any of the stats
-you pick.
+you pick. Pick just one and the affixes giving the most of it come first, with their share beside them.
 
 The affix order belongs to the spec and only changes near an innkeeper; the Perk Manager doesn't need to be open.
 Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.

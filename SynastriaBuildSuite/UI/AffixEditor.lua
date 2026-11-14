@@ -30,13 +30,19 @@ local function nameLine(tt, text)
 	tt:AddLine(text, unpack(C.accent))
 end
 
+-- Each stat, biggest first, with its share of the item's affix budget when the client data has one.
 local function statLines(tt, id)
 	local info = Affixes.Info(id)
 	local stats = info and info.stats or {}
-	if #stats > 0 then
-		for _, name in ipairs(stats) do tt:AddLine(name, unpack(STAT_COLOR)) end
-	else
-		tt:AddLine("No stats", 0.6, 0.6, 0.66)
+	local any = false
+	for _, name in ipairs(stats) do
+		local share = info.shares and info.shares[name]
+		any = any or share ~= nil
+		tt:AddDoubleLine(name, share and (share .. "%") or "", STAT_COLOR[1], STAT_COLOR[2], STAT_COLOR[3], 0.8, 0.8, 0.8)
+	end
+	if #stats == 0 then tt:AddLine("No stats", 0.6, 0.6, 0.66) end
+	if any then
+		tt:AddLine("Share of the item's affix budget: on the same item, a bigger share is more of that stat.", 0.6, 0.6, 0.66, true)
 	end
 end
 
@@ -91,16 +97,26 @@ end
 
 -- Picker ----------------------------------------------------------------------------------------------------
 
+-- The row's status: its place in the order, and with one stat filtered, how big a share of that stat it gives.
+local function pickerStatus(at, share)
+	local parts = {}
+	if at then parts[#parts + 1] = S.Hex(C.accent, "#" .. at) end
+	if share then parts[#parts + 1] = S.Hex(C.muted, share .. "%") end
+	return #parts > 0 and table.concat(parts, "  ") or nil
+end
+
 local function renderPicker(order)
 	local list = panel.picker
+	-- with one stat picked, the affixes giving the most of it come first
+	local only = state.statCount == 1 and next(state.stats)
 	list:Begin()
-	for _, info in ipairs(Affixes.Options()) do
+	for _, info in ipairs(only and Affixes.ByShare(only) or Affixes.Options()) do
 		if Affixes.Matches(info, state.search, state.stats) then
 			local id = info.id
 			local at = Affixes.Position(order, id)
 			list:Add({
 				text = info.name, indent = 2,
-				status = at and S.Hex(C.accent, "#" .. at) or nil,
+				status = pickerStatus(at, only and info.shares[only]),
 				selected = at ~= nil and at == state.slot,
 				onClick = function()
 					if at then
@@ -325,7 +341,7 @@ function Editor.Create(parent, width, height)
 	panel.affixView = affixView
 	panel.stats = S.PickerButton(affixView, STATS_W, statsSpec)
 	panel.stats:SetPoint("TOPLEFT", PAD, -PAD)
-	panel.stats.tooltipText = "Show only affixes that give any of the stats you pick."
+	panel.stats.tooltipText = "Show only affixes that give any of the stats you pick. With one stat picked, the affixes giving the most of it come first, with their share beside them."
 	panel.search = S.Input(affixView, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - STATS_W - VIEW_W - 2 * GAP,
 		"Search Names or Stats", 40)
 	panel.search:SetPoint("LEFT", panel.stats, "RIGHT", GAP, 0)
