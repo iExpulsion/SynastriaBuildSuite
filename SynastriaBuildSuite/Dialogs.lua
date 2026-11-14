@@ -9,7 +9,8 @@ SBS.Dialogs = Dialogs
 -- string has and imports only the checked ones, as a new build or into the selected build.
 local box
 
-local W, H, TOGGLE_W = 560, 340, 72
+-- the string's well: shorter on import, to make room for the Name row under it
+local W, TOGGLE_W, WELL_H = 560, 72, 208
 
 local function chosen()
 	local sections = {}
@@ -91,17 +92,12 @@ local function create()
 	-- the theme's dialog padding; the dialog grows by the difference from the kit's, so its contents keep their size
 	local PAD, GAP, CONTROL_H = S.metrics.inset, S.GAP, S.CONTROL_H
 	local grow = 2 * (PAD - S.PAD)
+	local innerW = W - 2 * S.PAD
 	-- the string's text sits inside the well's frame, however thick the theme draws it
 	local wellPad = S.PAD + S.metrics.wellInset
-	-- rows top to bottom: title and sub line, the Include row, the string, (import: the Name row), the buttons
-	local includeY = PAD + 16 + 4 + 12 + GAP + CONTROL_H / 2
-	local wellTop = includeY + CONTROL_H / 2 + GAP
-	local footerH = PAD + CONTROL_H + PAD
 	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteTextFrame", UIParent)
-	f.pad = PAD
-	f.wellBottom = { export = footerH, import = footerH + CONTROL_H + PAD }
-	f:SetSize(W + grow, H + grow)
+	f:SetWidth(W + grow)
 	f:SetPoint("CENTER")
 	f:SetFrameStrata("DIALOG")
 	f:EnableMouse(true)
@@ -114,42 +110,53 @@ local function create()
 	tinsert(UISpecialFrames, "SynastriaBuildSuiteTextFrame")
 	f:HookScript("OnHide", S.Dismiss)
 
-	f.title = S.Text(f, "large")
-	f.title:SetPoint("TOPLEFT", PAD, -PAD)
-	f.sub = S.Text(f, "small", C.muted)
-	f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
+	-- top to bottom: title, a sub line that wraps, the Include row, the string, (import: the Name row), the buttons;
+	-- the dialog is as tall as they are
+	f.stack = S.Stack(f, { width = innerW, onLayout = function(bottom) f:SetHeight(bottom + PAD) end })
+	local function row(gap)
+		local r = CreateFrame("Frame", nil, f)
+		r:SetHeight(CONTROL_H)
+		r:Show()
+		f.stack:Add(r, { gap = gap, fill = true })
+		return r
+	end
+	f.title = f.stack:Add(S.Text(f, "large"))
+	f.title:SetHeight(16)
+	f.sub = f.stack:Add(S.Wrapped(f, "small", C.muted), { gap = 4 })
 	-- the close button's box lines up with the title's middle
 	local close = S.Button(f, "Close", "ghost", 56, function() f:Hide() end)
 	close:SetPoint("TOPRIGHT", -PAD, -(PAD - 4))
 
-	local include = S.Text(f, "small", C.muted)
-	include:SetPoint("LEFT", f, "TOPLEFT", PAD, -includeY)
+	local includeRow = row(GAP)
+	local include = S.Text(includeRow, "small", C.muted)
+	include:SetPoint("LEFT")
 	include:SetText("Include")
 	f.toggles = {}
 	for i, section in ipairs(SBS.Codec.SECTIONS) do
-		local t = newToggle(f, section)
+		local t = newToggle(includeRow, section)
 		t:SetPoint("LEFT", include, "RIGHT", PAD + (i - 1) * (TOGGLE_W + GAP), 0)
 		f.toggles[i] = t
 	end
 
 	local well = CreateFrame("Frame", nil, f)
-	well:SetPoint("TOPLEFT", PAD, -wellTop)
-	well:SetPoint("BOTTOMRIGHT", -PAD, f.wellBottom.export)
+	well:SetSize(innerW, WELL_H)
+	well:Show()
+	f.stack:Add(well, { gap = GAP })
 	f.well = well
 
-	-- import only: the Name row, centered between the string and the buttons
-	f.nameLabel = S.Text(f, "small", C.muted)
-	f.nameLabel:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, footerH + CONTROL_H / 2)
+	-- import only: the Name row, between the string and the buttons
+	f.nameRow = row(PAD)
+	f.nameLabel = S.Text(f.nameRow, "small", C.muted)
+	f.nameLabel:SetPoint("LEFT")
 	f.nameLabel:SetText("Name")
-	f.name = S.Input(f, "SynastriaBuildSuiteImportName", 240, "Build Name", 40)
+	f.name = S.Input(f.nameRow, "SynastriaBuildSuiteImportName", 240, "Build Name", 40)
 	f.name:SetPoint("LEFT", f.nameLabel, "RIGHT", GAP, 0)
 	f.name:HookScript("OnTextChanged", function(_, userInput)
 		if userInput then box.nameEdited = true end
 	end)
-	f.nameHint = S.Text(f, "small", C.muted)
+	f.nameHint = S.Text(f.nameRow, "small", C.muted)
 	f.nameHint:SetPoint("LEFT", f.name, "RIGHT", GAP, 0)
 	f.nameHint:SetText("For Import as New.")
-	well:SetSize(W - 2 * S.PAD, H - wellTop - f.wellBottom.export)
 	S.Well(well)
 	well:EnableMouse(true)
 	local scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuiteTextScroll", well, "UIPanelScrollFrameTemplate")
@@ -160,7 +167,7 @@ local function create()
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
 	S.SetFont(edit, "edit")
-	edit:SetWidth(W - 2 * S.PAD - 2 * wellPad - 10)
+	edit:SetWidth(innerW - 2 * wellPad - 10)
 	edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 	edit:SetScript("OnTextChanged", function(self, userInput)
 		if box.mode == "import" then
@@ -184,34 +191,45 @@ local function create()
 	f.placeholder:SetPoint("CENTER")
 	f.placeholder:SetText("Click here, then press Ctrl+V.")
 
-	f.note = S.Text(f, "small", C.muted)
-	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, footerH / 2)
-	f.primary = S.Button(f, "Import as New", "primary", 110, function()
+	local footer = row(PAD)
+	f.note = S.Text(footer, "small", C.muted)
+	f.note:SetPoint("LEFT")
+	f.primary = S.Button(footer, "Import as New", "primary", 110, function()
 		local name = box.name:GetText():gsub("^%s+", ""):gsub("%s+$", "")
 		if box.onImport then box.onImport(box.edit:GetText(), chosen(), false, name ~= "" and name or nil) end
 	end, "Make a new build from the checked sections, under the name above.")
-	f.primary:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-	f.secondary = S.Button(f, "Into Build", "secondary", 110, function()
+	f.primary:SetPoint("RIGHT")
+	f.secondary = S.Button(footer, "Into Build", "secondary", 110, function()
 		if box.onImport then box.onImport(box.edit:GetText(), chosen(), true) end
 	end)
 	f.secondary:SetPoint("RIGHT", f.primary, "LEFT", -GAP, 0)
 	f.note:SetPoint("RIGHT", f.secondary, "LEFT", -PAD, 0)
-	f.selectAll = S.Button(f, "Select All", "primary", 100, function()
+	f.selectAll = S.Button(footer, "Select All", "primary", 100, function()
 		box.edit:SetFocus()
 		box.edit:HighlightText()
 		box.note:SetText(S.Hex(C.warn, "Selected: Press Ctrl+C to Copy"))
 	end, "Select the whole string, ready for Ctrl+C.")
-	f.selectAll:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+	f.selectAll:SetPoint("RIGHT")
 	return f
+end
+
+-- Export has no Name row and a taller string; import shows the row under a shorter one.
+local function setMode(mode)
+	box.mode = mode
+	local import = mode == "import"
+	if import then box.nameRow:Show() else box.nameRow:Hide() end
+	box.well:SetHeight(import and (WELL_H - SBS.Style.CONTROL_H - SBS.Style.PAD) or WELL_H)
+	box.stack:Layout()
 end
 
 -- Shows the build as a string, with the sections last chosen for export.
 function Dialogs.ShowExport(build)
 	SBS.Style.Dismiss()
 	box = box or create()
-	box.mode, box.build, box.onImport = "export", build, nil
+	box.build, box.onImport = build, nil
 	box.title:SetText("Export: " .. build.name)
 	box.sub:SetText("Select All, then Ctrl+C to copy. Uncheck what you'd rather not share.")
+	setMode("export")
 	local remembered = SBS.db.exportSections
 	local checked = {}
 	for _, section in ipairs(SBS.Codec.SECTIONS) do checked[section.key] = not remembered or remembered[section.key] == true end
@@ -220,8 +238,6 @@ function Dialogs.ShowExport(build)
 	box.secondary:Hide()
 	box.selectAll:Show()
 	box.placeholder:Hide()
-	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Hide() end
-	box.well:SetPoint("BOTTOMRIGHT", -box.pad, box.wellBottom.export)
 	refreshExport()
 	box:Show()
 end
@@ -231,13 +247,12 @@ end
 function Dialogs.ShowImport(onImport, targetName)
 	SBS.Style.Dismiss()
 	box = box or create()
-	box.mode, box.build, box.onImport = "import", nil, onImport
+	box.build, box.onImport = nil, onImport
 	box.title:SetText("Import a Build")
 	box.sub:SetText("Paste a Synastria Build Suite, SBM, SPM or affix order string, then pick the sections to bring in.")
+	setMode("import")
 	box.selectAll:Hide()
 	box.placeholder:Show()
-	for _, w in ipairs({ box.nameLabel, box.name, box.nameHint }) do w:Show() end
-	box.well:SetPoint("BOTTOMRIGHT", -box.pad, box.wellBottom.import)
 	box.nameEdited = false
 	box.name:SetText("")
 	box.name:UpdatePlaceholder()
@@ -356,13 +371,9 @@ local function createSheet()
 	-- the theme's dialog padding; the dialog grows by the difference from the kit's, so its contents keep their size
 	local PAD, GAP, CONTROL_H = S.metrics.inset, S.GAP, S.CONTROL_H
 	local grow = 2 * (PAD - S.PAD)
-	-- rows top to bottom: title and sub line, Classes, Copy, Name, the buttons
-	local classesY = PAD + 16 + 4 + 12 + PAD + CONTROL_H / 2
-	local copyY = classesY + CONTROL_H + GAP
-	local nameY = copyY + CONTROL_H + GAP
 	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteNewFrame", UIParent)
-	f:SetSize(NEW_W + grow, nameY + CONTROL_H / 2 + PAD + CONTROL_H + PAD)
+	f:SetWidth(NEW_W + grow)
 	f:SetPoint("CENTER")
 	f:SetFrameStrata("DIALOG")
 	f:EnableMouse(true)
@@ -375,54 +386,65 @@ local function createSheet()
 	tinsert(UISpecialFrames, "SynastriaBuildSuiteNewFrame")
 	f:HookScript("OnHide", S.Dismiss)
 
-	f.title = S.Text(f, "large")
-	f.title:SetPoint("TOPLEFT", PAD, -PAD)
+	-- top to bottom: title, a sub line that wraps (below the Add Current Specs button in the corner), Classes, Copy,
+	-- Name, the buttons; the sheet is as tall as they are
+	f.stack = S.Stack(f, { width = NEW_W - 2 * S.PAD, onLayout = function(bottom) f:SetHeight(bottom + PAD) end })
+	f.title = f.stack:Add(S.Text(f, "large"))
+	f.title:SetHeight(16)
 	f.title:SetText("New Build")
-	f.sub = S.Text(f, "small", C.muted)
-	f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
+	f.sub = f.stack:Add(S.Wrapped(f, "small", C.muted), { gap = CONTROL_H - 16 })
 	f.sub:SetText("Copy parts of your character, or leave them unchecked to start blank.")
 
-	local function rowLabel(text, y)
-		local label = S.Text(f, "small", C.muted)
-		label:SetPoint("LEFT", f, "TOPLEFT", PAD, -y)
+	-- a labeled row of controls: the label at the left, the controls from LABEL_W in
+	local function labeledRow(text, gap)
+		local r = CreateFrame("Frame", nil, f)
+		r:SetHeight(CONTROL_H)
+		r:Show()
+		f.stack:Add(r, { gap = gap, fill = true })
+		local label = S.Text(r, "small", C.muted)
+		label:SetPoint("LEFT")
 		label:SetText(text)
-		return label
+		return r
 	end
-	rowLabel("Classes", classesY)
-	f.firstPick = S.Dropdown(f, PICK_W, function(key)
+	local classesRow = labeledRow("Classes", PAD)
+	f.firstPick = S.Dropdown(classesRow, PICK_W, function(key)
 		sheet.first = key
 		refreshSheet()
 	end)
-	f.firstPick:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W, -classesY)
+	f.firstPick:SetPoint("LEFT", LABEL_W, 0)
 	f.firstPick:SetOptions(classOptions(false))
-	f.secondPick = S.Dropdown(f, PICK_W, function(key)
+	f.secondPick = S.Dropdown(classesRow, PICK_W, function(key)
 		sheet.second = key or nil
 		refreshSheet()
 	end)
 	f.secondPick:SetPoint("LEFT", f.firstPick, "RIGHT", GAP, 0)
 	f.secondPick:SetOptions(classOptions(true))
 
-	rowLabel("Copy", copyY)
+	local copyRow = labeledRow("Copy", GAP)
 	f.toggles = {}
 	for i, c in ipairs(COPY) do
-		local t = newCopyToggle(f, c)
-		t:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W + (i - 1) * (TOGGLE_W + GAP), -copyY)
+		local t = newCopyToggle(copyRow, c)
+		t:SetPoint("LEFT", LABEL_W + (i - 1) * (TOGGLE_W + GAP), 0)
 		f.toggles[i] = t
 	end
 
-	rowLabel("Name", nameY)
-	f.name = S.Input(f, "SynastriaBuildSuiteNewName", PICK_W * 2 + GAP, "Build Name", 40)
-	f.name:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W, -nameY)
+	local nameRow = labeledRow("Name", GAP)
+	f.name = S.Input(nameRow, "SynastriaBuildSuiteNewName", PICK_W * 2 + GAP, "Build Name", 40)
+	f.name:SetPoint("LEFT", LABEL_W, 0)
 
-	f.create = S.Button(f, "Create Build", "primary", 100, function()
+	local footer = CreateFrame("Frame", nil, f)
+	footer:SetHeight(CONTROL_H)
+	footer:Show()
+	f.stack:Add(footer, { gap = PAD, fill = true })
+	f.create = S.Button(footer, "Create Build", "primary", 100, function()
 		local name = sheet.name:GetText():gsub("^%s+", ""):gsub("%s+$", "")
 		sheet.onCreate(name ~= "" and name or SBS:UniqueName("New Build"), sheetClasses(), copied())
 	end, "Save the new build and open it.")
-	f.create:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-	local cancel = S.Button(f, "Cancel", "secondary", 70, function() f:Hide() end)
+	f.create:SetPoint("RIGHT")
+	local cancel = S.Button(footer, "Cancel", "secondary", 70, function() f:Hide() end)
 	cancel:SetPoint("RIGHT", f.create, "LEFT", -GAP, 0)
-	f.note = S.Text(f, "small", C.muted)
-	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, PAD + CONTROL_H / 2)
+	f.note = S.Text(footer, "small", C.muted)
+	f.note:SetPoint("LEFT")
 	f.note:SetPoint("RIGHT", cancel, "LEFT", -PAD, 0)
 	-- kept apart from the Copy row and its note, in the top corner with the sheet's padding on both sides
 	f.saveSpecs = S.Button(f, "Add Current Specs", "secondary", 120, function()
@@ -445,6 +467,7 @@ function Dialogs.ShowNew(onCreate, onSaveSpecs)
 	sheet.name:SetText(SBS:UniqueName("New Build"))
 	sheet.name:UpdatePlaceholder()
 	refreshSheet()
+	sheet.stack:Layout()
 	sheet:Show()
 end
 
