@@ -121,16 +121,90 @@ function Affixes.Options()
 	return catalog or {}
 end
 
--- Every affix, those giving the biggest share of `stat` first; affixes without a share for it follow by name.
-function Affixes.ByShare(stat)
-	local list = {}
-	for i, info in ipairs(Affixes.Options()) do list[i] = info end
+-- Every affix by a score, biggest first; affixes that score nothing follow by name.
+local function sortedBy(score)
+	local list, scores = {}, {}
+	for i, info in ipairs(Affixes.Options()) do
+		list[i] = info
+		scores[info] = score(info)
+	end
 	table.sort(list, function(x, y)
-		local a, b = x.shares[stat] or -1, y.shares[stat] or -1
+		local a, b = scores[x] or -1, scores[y] or -1
 		if a ~= b then return a > b end
 		return x.name:upper() < y.name:upper()
 	end)
 	return list
+end
+
+-- Every affix, those giving the biggest share of `stat` first.
+function Affixes.ByShare(stat)
+	return sortedBy(function(info) return info.shares[stat] end)
+end
+
+-- What a build is after, as two choices that add their stats together (names as GetAttuneStatName gives them).
+Affixes.ROLES = {
+	{ key = "damage", label = "Damage", stats = { "Hit Rating", "Crit Rating", "Haste Rating" } },
+	{ key = "tank", label = "Tank", stats = { "Stamina", "Defense Rating", "Dodge Rating", "Block Rating", "Armor" } },
+	{ key = "healer", label = "Healer", stats = { "Spirit", "Mana Regen", "Crit Rating", "Haste Rating" } },
+}
+Affixes.TYPES = {
+	{ key = "strength", label = "Strength", stats = { "Strength", "Attack Power" } },
+	{ key = "agility", label = "Agility", stats = { "Agility", "Attack Power", "Ranged AP" } },
+	{ key = "spell", label = "Spell", stats = { "Intellect", "Spell Power" } },
+}
+
+local function find(list, key)
+	for _, entry in ipairs(list) do
+		if entry.key == key then return entry end
+	end
+end
+
+function Affixes.Role(key) return find(Affixes.ROLES, key) end
+function Affixes.Type(key) return find(Affixes.TYPES, key) end
+
+-- The stats a build's role and type count, as a set; nil when neither is chosen.
+function Affixes.FocusStats(focus)
+	local set
+	local function add(part)
+		for _, name in ipairs(part and part.stats or {}) do
+			set = set or {}
+			set[name] = true
+		end
+	end
+	add(focus and Affixes.Role(focus.role))
+	add(focus and Affixes.Type(focus.kind))
+	return set
+end
+
+-- The sum of an affix's shares of the stats in `set`, or nil when it gives none of them.
+function Affixes.Score(info, set)
+	local sum
+	for name, share in pairs(info.shares) do
+		if set[name] then sum = (sum or 0) + share end
+	end
+	return sum
+end
+
+-- Every affix, those giving the most of the set's stats together first.
+function Affixes.ByScore(set)
+	return sortedBy(function(info) return Affixes.Score(info, set) end)
+end
+
+-- The game preset that fits a role and type: Tank for any tank, Caster for spell damage or healing, else the
+-- physical damage preset of the type.
+function Affixes.SuggestedPreset(focus)
+	local role, kind = focus and focus.role, focus and focus.kind
+	local name
+	if role == "tank" then
+		name = "Tank"
+	elseif kind == "spell" and role ~= nil then
+		name = "Caster"
+	elseif role == "damage" and kind == "strength" then
+		name = "Strength DPS"
+	elseif role == "damage" and kind == "agility" then
+		name = "Agility DPS"
+	end
+	return name
 end
 
 -- Every stat some affix gives, sorted.

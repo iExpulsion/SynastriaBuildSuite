@@ -134,6 +134,13 @@ the end. Search finds affixes by name or by a
 stat they give ("haste", "stamina"), and the stats filter beside it shows only affixes that give any of the stats
 you pick. Pick just one and the affixes giving the most of it come first, with their share beside them.
 
+Below them, pick the build's **role** (Damage, Tank or Healer) and **type** (Strength, Agility or Spell). Together
+they choose the stats that count: Damage adds Hit, Crit and Haste, Tank adds Stamina, Defense, Dodge, Block and
+Armor, Healer adds Spirit, Mana Regen, Crit and Haste; Strength adds Strength and Attack Power, Agility adds
+Agility, Attack Power and Ranged Attack Power, Spell adds Intellect and Spell Power. The affixes giving the most of
+those stats together come first, with the total beside them and how it adds up on hover, and **Load Preset** marks
+the game's preset that fits. Each stat counts the same, so weighing one against another is still up to you.
+
 The affix order belongs to the spec and only changes near an innkeeper; the Perk Manager doesn't need to be open.
 Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.
 

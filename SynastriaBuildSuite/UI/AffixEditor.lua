@@ -97,7 +97,7 @@ end
 
 -- Picker ----------------------------------------------------------------------------------------------------
 
--- The row's status: its place in the order, and with one stat filtered, how big a share of that stat it gives.
+-- The row's status: its place in the order, and how much of the stat or stats the list is sorted by it gives.
 local function pickerStatus(at, share)
 	local parts = {}
 	if at then parts[#parts + 1] = S.Hex(C.accent, "#" .. at) end
@@ -105,18 +105,33 @@ local function pickerStatus(at, share)
 	return #parts > 0 and table.concat(parts, "  ") or nil
 end
 
+-- The tooltip's line on the role sort: which of the build's stats the affix gives, adding up to its total.
+local function focusLine(tt, info, set)
+	local parts = {}
+	for _, name in ipairs(info.stats) do
+		if set[name] and info.shares[name] then parts[#parts + 1] = ("%s %d%%"):format(name, info.shares[name]) end
+	end
+	if #parts > 0 then
+		tt:AddLine(" ")
+		tt:AddLine(("For your role: %d%% (%s)."):format(Affixes.Score(info, set), table.concat(parts, " + ")), 0.8, 0.8, 0.8, true)
+	end
+end
+
+-- Sorting: one stat picked in the filter goes by that stat's share, else the build's role and type go by the sum
+-- of their stats' shares, else by name.
 local function renderPicker(order)
 	local list = panel.picker
-	-- with one stat picked, the affixes giving the most of it come first
 	local only = state.statCount == 1 and next(state.stats)
+	local set = not only and Affixes.FocusStats(current.affixFocus)
+	local sorted = only and Affixes.ByShare(only) or set and Affixes.ByScore(set) or Affixes.Options()
 	list:Begin()
-	for _, info in ipairs(only and Affixes.ByShare(only) or Affixes.Options()) do
+	for _, info in ipairs(sorted) do
 		if Affixes.Matches(info, state.search, state.stats) then
 			local id = info.id
 			local at = Affixes.Position(order, id)
 			list:Add({
 				text = info.name, indent = 2,
-				status = pickerStatus(at, only and info.shares[only]),
+				status = pickerStatus(at, only and info.shares[only] or set and Affixes.Score(info, set)),
 				selected = at ~= nil and at == state.slot,
 				onClick = function()
 					if at then
@@ -132,6 +147,7 @@ local function renderPicker(order)
 				tooltip = function(tt)
 					nameLine(tt, info.name)
 					statLines(tt, id)
+					if set then focusLine(tt, info, set) end
 					tt:AddLine(" ")
 					tt:AddLine(at and ("Number %d in the order. Click to select it."):format(at)
 						or "Click to add it to the end of the order.", 0.6, 0.6, 0.66, true)
@@ -259,6 +275,41 @@ local function summary(order, now)
 	return text
 end
 
+-- The build's role and type pickers, and the preset menu with the game's preset that fits them marked.
+local function renderFocus(build)
+	local focus = build.affixFocus or {}
+	local role, kind = Affixes.Role(focus.role), Affixes.Type(focus.kind)
+	panel.role:SetText(role and role.label or "Any Role")
+	panel.kind:SetText(kind and kind.label or "Any Type")
+	local suggested, presets = Affixes.SuggestedPreset(build.affixFocus), {}
+	for i, preset in ipairs(Affixes.PRESETS) do
+		local mark = preset.name == suggested
+		presets[i] = { value = i, text = mark and (preset.name .. S.Hex(C.muted, " (Suggested)")) or preset.name,
+			tooltip = ("Replace this build's order with the game's %s order.%s"):format(preset.name,
+				mark and " It fits the role and type picked for this build." or "") }
+	end
+	panel.preset:SetOptions(presets)
+	panel.preset:SetText("Load Preset")
+end
+
+-- Sets the build's role or type (`which` is "role" or "kind"); choosing neither clears it.
+local function setFocus(which, key)
+	local focus = current.affixFocus or {}
+	focus[which] = key or nil
+	current.affixFocus = (focus.role or focus.kind) and focus or nil
+	S.Dismiss()
+	SBS.Window.Render()
+end
+
+local function focusOptions(list, none, what)
+	local options = { { value = false, text = none, tooltip = ("Don't sort by a %s."):format(what) } }
+	for _, entry in ipairs(list) do
+		options[#options + 1] = { value = entry.key, text = entry.label,
+			tooltip = ("Counts %s."):format(table.concat(entry.stats, ", ")) }
+	end
+	return options
+end
+
 function Editor.Render(build)
 	current = build
 	Affixes, Stats = SBS.Affixes, SBS.Stats
@@ -279,7 +330,7 @@ function Editor.Render(build)
 	panel.view:SetLabel(onStats and "Affix List" or "Your Stats")
 	panel.view.tooltipText = onStats and "Back to the list of affixes to add to the order."
 		or "See your character's stats. After an affix order is tested or applied, each stat shows how it changed."
-	panel.preset:SetText("Load Preset")
+	renderFocus(build)
 	return summary(order, now)
 end
 
@@ -303,11 +354,8 @@ function Editor.Create(parent, width, height)
 		SBS:Changed()
 	end)
 	panel.preset:SetPoint("TOPRIGHT", -PAD, -PAD)
-	local presets = {}
-	for i, preset in ipairs(Affixes.PRESETS) do
-		presets[i] = { value = i, text = preset.name, tooltip = ("Replace this build's order with the game's %s order."):format(preset.name) }
-	end
-	panel.preset:SetOptions(presets)
+	-- the menu fits a preset's name with its Suggested mark
+	panel.preset.menu:SetWidth(170)
 	panel.orderTitle = S.Text(left, "normal")
 	panel.orderTitle:SetPoint("LEFT", left, "TOPLEFT", PAD, -(PAD + CONTROL_H / 2))
 	local listTop = PAD + CONTROL_H + GAP
@@ -349,8 +397,21 @@ function Editor.Create(parent, width, height)
 		state.search = self:GetText():lower()
 		SBS.Window.Render()
 	end)
-	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
-	panel.picker.scroll:SetPoint("TOPLEFT", wi, -listTop)
+	-- a second row: the build's role and type, which sort the affixes by how much of their stats each gives; the
+	-- spare width goes to the first
+	local rowY = PAD + CONTROL_H + GAP
+	local kindW = math.floor((pickW - 2 * PAD - GAP) / 2)
+	panel.role = S.Dropdown(affixView, pickW - 2 * PAD - GAP - kindW, function(key) setFocus("role", key) end)
+	panel.role:SetPoint("TOPLEFT", PAD, -rowY)
+	panel.role:SetOptions(focusOptions(Affixes.ROLES, "Any Role", "role"))
+	panel.role.tooltipText = "What this build does. With a role or type picked, the affixes giving the most of their stats together come first."
+	panel.kind = S.Dropdown(affixView, kindW, function(key) setFocus("kind", key) end)
+	panel.kind:SetPoint("LEFT", panel.role, "RIGHT", GAP, 0)
+	panel.kind:SetOptions(focusOptions(Affixes.TYPES, "Any Type", "type"))
+	panel.kind.tooltipText = "Where this build's damage or healing comes from."
+	local pickTop = rowY + CONTROL_H + GAP
+	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - pickTop - PAD, nil, 20)
+	panel.picker.scroll:SetPoint("TOPLEFT", wi, -pickTop)
 
 	local statsView = CreateFrame("Frame", nil, pick)
 	statsView:SetAllPoints()
