@@ -42,7 +42,7 @@ local function statLines(tt, id)
 	end
 	if #stats == 0 then tt:AddLine("No stats", 0.6, 0.6, 0.66) end
 	if any then
-		tt:AddLine("Share of the item's affix budget: on the same item, a bigger share is more of that stat.", 0.6, 0.6, 0.66, true)
+		tt:AddLine("100% is the item's affix budget, set by its item level and slot: on the same item, a bigger share is more of that stat.", 0.6, 0.6, 0.66, true)
 	end
 end
 
@@ -115,6 +115,7 @@ local function focusLine(tt, info, set)
 	if #parts > 0 then
 		tt:AddLine(" ")
 		tt:AddLine(("For your role: %d%% (%s)."):format(Affixes.Score(info, set), table.concat(parts, " + ")), 0.8, 0.8, 0.8, true)
+		tt:AddLine("Totals add up raw stat points, so they can pass 100%. Cheap stats like Attack Power and Stamina get bigger numbers per point of value.", 0.6, 0.6, 0.66, true)
 	end
 end
 
