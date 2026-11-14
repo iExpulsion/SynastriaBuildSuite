@@ -17,7 +17,9 @@ Hunter pet aspects, the spec name and notes.
 - **Glyphs and Gear:** see what's socketed, worn, in your bags or missing, and equip a build's gear in one click,
   or every time you switch to its spec.
 - **Hunt Gear:** have the loot filter pick up the gear your chosen builds are still missing.
-- **Affix Priority:** a suggested order for the Item Affix Manager, set along with the rest of the build.
+- **Affix Priority:** a suggested order for the Item Affix Manager, set along with the rest of the build. Test an
+  order on its own and see how your stats change, then keep it or revert.
+- **Templates:** save any tab (perks, talents, glyphs, gear or affixes) by name and load it into any build.
 - **Share Builds:** export the sections you choose as a single line, and import Synastria Build Suite,
   SynastriaBuildManager (SBM), SynastriaPerkManager (SPM) and Item Affix Manager strings.
 - **Shared Perks:** your Misc perks live in one list that every build applies, and they're never exported or
@@ -59,6 +61,11 @@ blank.
 - **Tabs:** Perks, Talents, Glyphs, Gear, Affixes and Notes. A badge on a tab counts what differs from your character.
 - **Use Current:** each tab's Use Current button copies that part of your character into the build, only for
   the build's classes you have.
+- **Templates:** the menu at the right of the tabs saves the open tab as a named template, shared by all your
+  characters, and loads one into any build, so you can try variations without making copies of the whole build.
+  Talent and glyph templates are for the class the tab shows and load into builds with that class. Perk templates
+  replace only the perks their classes use, so a two-class build keeps its other class's perks. Gear and affix
+  templates fit any build. **Manage Templates** renames and deletes them.
 
 ### Perks
 

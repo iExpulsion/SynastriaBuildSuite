@@ -25,6 +25,7 @@ Stats.lua
 Affixes.lua
 LootFilter.lua
 Build.lua
+Templates.lua
 Dialogs.lua
 Commands.lua
 UI\Style.lua
@@ -41,6 +42,7 @@ UI\PerkEditor.lua
 UI\GearEditor.lua
 UI\GlyphEditor.lua
 UI\AffixEditor.lua
+UI\TemplateSheet.lua
 UI\Window.lua
 UI\Tabs.lua
 UI\Launchers.lua

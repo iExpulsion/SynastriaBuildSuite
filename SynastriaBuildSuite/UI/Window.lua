@@ -124,6 +124,7 @@ function Window.Select(name)
 		frame.review:Hide()
 		frame.sources:Hide()
 	end
+	SBS.TemplateSheet.Hide()
 	Window.Render()
 end
 
@@ -308,6 +309,45 @@ local function renderTabs(build)
 	for key, editor in pairs(frame.editors) do setShown(editor, key == state.tab) end
 end
 
+-- The class the Talents or Glyphs tab shows, which their templates are saved for.
+local function templateClass()
+	local editor = state.tab == "talents" and SBS.TalentEditor or state.tab == "glyphs" and SBS.GlyphEditor
+	return editor and editor.state.class or nil
+end
+
+-- The Templates menu: load any template that fits the build, save this tab as one, or open the sheet to manage them.
+local function renderTemplates(build)
+	local T = SBS.Templates
+	local section = state.tab
+	local shown = EDITORS[section] ~= nil and not build.sharedOnly
+	setShown(frame.templates, shown)
+	if shown then
+		local options, label = {}, T.Label(section)
+		for _, t in ipairs(T.List(section)) do
+			if T.Fits(section, t, build) then
+				options[#options + 1] = { value = { load = t.name }, text = "Load: " .. t.name, tooltip = T.Describe(section, t) }
+			end
+		end
+		options[#options + 1] = { value = "save", text = ("Save %s as Template..."):format(label),
+			tooltip = ("Save this build's %s under a name, to load into any build."):format(label:lower()) }
+		options[#options + 1] = { value = "manage", text = "Manage Templates...",
+			tooltip = ("Every %s template: load, rename or delete them."):format(label:lower()) }
+		frame.templates:SetOptions(options)
+		frame.templates:SetText("Templates")
+	end
+end
+
+local function pickTemplate(value)
+	local build, section = selectedBuild(), state.tab
+	local T = SBS.Templates
+	local t = type(value) == "table" and T.Get(section, value.load)
+	if t then
+		if T.Load(section, t, build) then SBS.TemplateSheet.Loaded(section, t) end
+	else
+		SBS.TemplateSheet.Open(section, build, templateClass(), value == "save")
+	end
+end
+
 local function renderActions(build)
 	local actions = SBS.Tabs.actions[state.tab] or {}
 	-- the summary runs up to the last button shown, so a tab with fewer buttons gives it more room
@@ -381,6 +421,7 @@ local function renderBuild(build)
 	for _, w in ipairs({ frame.spec, frame.specLabel, frame.export, frame.duplicate, frame.delete }) do setShown(w, not shared) end
 	renderSpecLink(build)
 	renderTabs(build)
+	renderTemplates(build)
 	renderActions(build)
 	if state.tab == "notes" then
 		if not frame.notes.edit.focused then frame.notes.edit:SetText(build.notes or "") end
@@ -792,6 +833,13 @@ local function createTabBar(main)
 		end)
 		f.tabs[i] = b
 	end
+	-- the menu opens leftward from the button's right edge, wide enough for its Save line
+	f.templates = S.Dropdown(bar, 100, pickTemplate)
+	f.templates:SetPoint("RIGHT", bar, "RIGHT", -PAD, 0)
+	f.templates.menu:SetWidth(220)
+	f.templates.menu:ClearAllPoints()
+	f.templates.menu:SetPoint("TOPRIGHT", f.templates, "BOTTOMRIGHT", 0, -2)
+	f.templates.tooltipText = "Save this tab as a template, or load one into this build."
 end
 
 local function createNotes(main, width, height)
@@ -924,6 +972,7 @@ local function create()
 		PlaySound("igCharacterInfoClose")
 		f.review:Hide()
 		f.sources:Hide()
+		SBS.TemplateSheet.Hide()
 		S.Dismiss()
 		SBS.Launchers.WindowClosed()
 	end)

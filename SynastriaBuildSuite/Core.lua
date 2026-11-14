@@ -177,6 +177,7 @@ frame:SetScript("OnEvent", function(self, event, name)
 		SynastriaBuildSuiteDB.builds = SynastriaBuildSuiteDB.builds or {}
 		SynastriaBuildSuiteDB.shared = SynastriaBuildSuiteDB.shared or { perks = {} }
 		SynastriaBuildSuiteDB.links = SynastriaBuildSuiteDB.links or {}
+		SynastriaBuildSuiteDB.templates = SynastriaBuildSuiteDB.templates or {}
 		SynastriaBuildSuiteCharDB = SynastriaBuildSuiteCharDB or {}
 		SBS.db, SBS.charDB = SynastriaBuildSuiteDB, SynastriaBuildSuiteCharDB
 		self:UnregisterEvent("ADDON_LOADED")
