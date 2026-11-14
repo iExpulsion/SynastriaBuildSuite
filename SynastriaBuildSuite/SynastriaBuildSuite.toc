@@ -2,7 +2,7 @@
 ## Title: |cffff9a2eSynastria Build Suite|r
 ## Notes: Save, share and apply Synastria builds: Perks with their options, Talents for every class, Glyphs, Recommended Gear and pet aspects. /sbs
 ## Author: Expulsion
-## Version: 1.4.4
+## Version: 1.5.0
 ## SavedVariables: SynastriaBuildSuiteDB
 ## SavedVariablesPerCharacter: SynastriaBuildSuiteCharDB
 
