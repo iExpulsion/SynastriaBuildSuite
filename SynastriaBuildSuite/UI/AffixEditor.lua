@@ -2,20 +2,26 @@ local _, NS = ...
 local SBS = NS.SBS
 
 -- The Affixes tab: the build's affix priority on the left, most wanted first, dragged to reorder, with the game's
--- presets, and every affix on the right with its stats; clicking one adds it to the end of the order.
+-- presets. On the right, every affix with its stats (clicking one adds it to the end of the order), or the
+-- character's stats, with the ones the order gives highlighted and the change since the last snapshot.
 local Editor = {}
 SBS.AffixEditor = Editor
 
 local S = SBS.Style
 local C = S.colors
-local Affixes
+local Affixes, Stats
 
 local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
-local ORDER_W, PRESET_W, STATS_W = 300, 120, 110
+local ORDER_W, PRESET_W, STATS_W, VIEW_W = 300, 120, 110, 80
 
 local panel, current
-local state = { slot = 1, search = "", stats = {}, statCount = 0 }
+local state = { slot = 1, search = "", stats = {}, statCount = 0, view = "affixes" }
 Editor.state = state
+local values, touched = {}, {}
+
+function Editor.ShowingStats()
+	return state.view == "stats" and SBS.Window.state.tab == "affixes"
+end
 
 -- Tooltips: the affix name in the accent, like an item name, then its stats in the game's bonus-stat green.
 local STAT_COLOR = { 0.1, 1, 0.1 }
@@ -160,6 +166,63 @@ local function statsSpec()
 	}
 end
 
+-- Stats ------------------------------------------------------------------------------------------------------
+
+local function change(row)
+	local before = Stats.baseline and Stats.baseline[row.key]
+	local delta = before and values[row.key] - before or 0
+	local text = ""
+	if delta > 0 then
+		text = "  " .. S.Hex(C.good, "+" .. delta)
+	elseif delta < 0 then
+		text = "  " .. S.Hex(C.bad, tostring(delta))
+	end
+	return text, delta
+end
+
+local function shows(row, gives, delta, mana)
+	return (not row.mana or mana) and (row.always or gives or delta ~= 0 or values[row.key] ~= 0)
+end
+
+local function renderStats(order)
+	Stats.Read(values)
+	Stats.Touched(order, touched)
+	local mana = Stats.HasMana()
+	local list = panel.statList
+	list:Begin()
+	if Stats.baseline then
+		list:Add({ text = S.Hex(C.muted, "Changes Since " .. Stats.baselineAt) })
+	end
+	local group
+	for _, row in ipairs(Stats.ROWS) do
+		local gives = Stats.Gives(row, touched)
+		local delta, amount = change(row)
+		if shows(row, gives, amount, mana) then
+			if row.group ~= group then
+				group = row.group
+				list:Add({ text = Stats.GROUPS[group], header = true })
+			end
+			list:Add({
+				text = gives and S.Hex(C.accent, row.label) or row.label, indent = 2,
+				status = values[row.key] .. delta,
+				tooltip = gives and function(tt)
+					nameLine(tt, row.label)
+					tt:AddLine("Affixes in this build's order give this stat.", 0.8, 0.8, 0.8, true)
+				end or nil,
+			})
+		end
+	end
+	list:End()
+	enable(panel.clear, Stats.baseline ~= nil)
+end
+
+local function showView(view)
+	state.view = view
+	S.Dismiss()
+	Stats.Poll()
+	SBS.Window.Render()
+end
+
 local function summary(order, now)
 	local text
 	if #order == 0 then
@@ -176,14 +239,24 @@ end
 
 function Editor.Render(build)
 	current = build
-	Affixes = SBS.Affixes
+	Affixes, Stats = SBS.Affixes, SBS.Stats
 	local order = build.affixes or {}
 	if state.slot > math.max(#order, 1) then state.slot = math.max(#order, 1) end
 	local now = Affixes.Current()
 	local comparing = now ~= nil and SBS.Window.IsComparing(build)
 	renderOrder(order, now, comparing)
-	renderPicker(order)
-	panel.stats:SetText(statsLabel())
+	local onStats = state.view == "stats"
+	if onStats then
+		renderStats(order)
+	else
+		renderPicker(order)
+		panel.stats:SetText(statsLabel())
+	end
+	if onStats then panel.affixView:Hide() else panel.affixView:Show() end
+	if onStats then panel.statsView:Show() else panel.statsView:Hide() end
+	panel.view:SetLabel(onStats and "Affix List" or "Your Stats")
+	panel.view.tooltipText = onStats and "Back to the list of affixes to add to the order."
+		or "See your character's stats. The ones this build's affixes give are highlighted, and after an order is applied each stat shows how it changed."
 	panel.preset:SetText("Load Preset")
 	return summary(order, now)
 end
@@ -191,7 +264,7 @@ end
 -- Construction ----------------------------------------------------------------------------------------------
 
 function Editor.Create(parent, width, height)
-	Affixes = SBS.Affixes
+	Affixes, Stats = SBS.Affixes, SBS.Stats
 	panel = CreateFrame("Frame", nil, parent)
 	panel:SetSize(width, height)
 
@@ -229,22 +302,49 @@ function Editor.Create(parent, width, height)
 	end, "Take the selected affix out of the order.")
 	panel.remove:SetPoint("BOTTOMLEFT", PAD, PAD)
 
-	-- right: every affix, with a stat filter and a search box
+	-- right: every affix, with a stat filter and a search box, or the character's stats; the button between them
+	-- keeps its spot in both
 	local pickW = width - ORDER_W - PAD
 	local pick = CreateFrame("Frame", nil, panel)
 	pick:SetSize(pickW, height)
 	pick:SetPoint("TOPLEFT", ORDER_W + PAD, 0)
 	S.Well(pick)
-	panel.stats = S.PickerButton(pick, STATS_W, statsSpec)
+	panel.view = S.Button(pick, "Your Stats", "secondary", VIEW_W, function()
+		showView(state.view == "stats" and "affixes" or "stats")
+	end)
+	panel.view:SetPoint("TOPRIGHT", -PAD, -PAD)
+
+	local affixView = CreateFrame("Frame", nil, pick)
+	affixView:SetAllPoints()
+	panel.affixView = affixView
+	panel.stats = S.PickerButton(affixView, STATS_W, statsSpec)
 	panel.stats:SetPoint("TOPLEFT", PAD, -PAD)
 	panel.stats.tooltipText = "Show only affixes that give any of the stats you pick."
-	panel.search = S.Input(pick, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - STATS_W - GAP, "Search Names or Stats", 40)
-	panel.search:SetPoint("TOPRIGHT", -PAD, -PAD)
+	panel.search = S.Input(affixView, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - STATS_W - VIEW_W - 2 * GAP,
+		"Search Names or Stats", 40)
+	panel.search:SetPoint("LEFT", panel.stats, "RIGHT", GAP, 0)
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()
 		SBS.Window.Render()
 	end)
-	panel.picker = SBS.List.New(pick, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - listTop - PAD)
+	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - listTop - PAD)
 	panel.picker.scroll:SetPoint("TOPLEFT", wi, -listTop)
+
+	local statsView = CreateFrame("Frame", nil, pick)
+	statsView:SetAllPoints()
+	statsView:Hide()
+	panel.statsView = statsView
+	panel.snapshot = S.Button(statsView, "Snapshot", "secondary", 80, function()
+		Stats.Snapshot()
+		SBS.Window.Render()
+	end, "Remember your stats now, so each one shows how it changes from here. Applying an affix order takes a snapshot for you.")
+	panel.snapshot:SetPoint("TOPLEFT", PAD, -PAD)
+	panel.clear = S.Button(statsView, "Clear", "secondary", 60, function()
+		Stats.ClearSnapshot()
+		SBS.Window.Render()
+	end, "Forget the snapshot and stop showing changes.")
+	panel.clear:SetPoint("LEFT", panel.snapshot, "RIGHT", GAP, 0)
+	panel.statList = SBS.List.New(statsView, "SynastriaBuildSuiteAffixStats", pickW - 20 - 2 * wi, height - listTop - PAD)
+	panel.statList.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	return panel
 end

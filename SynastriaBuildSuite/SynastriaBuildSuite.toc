@@ -21,6 +21,7 @@ Talents.lua
 TalentCalc.lua
 Glyphs.lua
 Gear.lua
+Stats.lua
 Affixes.lua
 LootFilter.lua
 Build.lua

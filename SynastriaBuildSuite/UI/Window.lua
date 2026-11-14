@@ -423,6 +423,19 @@ local function eventRefresh()
 	if frame and not SBS.Talents.switching then frame.eventDirty = true end
 end
 
+-- Stat events matter only while the Affixes tab shows the character's stats, and only when a shown value moved
+-- (buffs change them all the time). true: a unit event, which counts only for the player.
+local STAT_EVENTS = { UNIT_STATS = true, UNIT_ATTACK_POWER = true, UNIT_RANGED_ATTACK_POWER = true,
+	UNIT_RESISTANCES = true, UNIT_MAXHEALTH = true, UNIT_MAXMANA = true, COMBAT_RATING_UPDATE = false,
+	PLAYER_DAMAGE_DONE_MODS = false }
+
+local function onEvent(_, event, unit)
+	local stat = STAT_EVENTS[event]
+	if stat == nil or ((not stat or unit == "player") and SBS.AffixEditor.ShowingStats() and SBS.Stats.Poll()) then
+		eventRefresh()
+	end
+end
+
 -- Shows a one-off status message in the footer until the next tab or build change.
 function Window.Message(text)
 	state.message = text
@@ -927,7 +940,8 @@ local function create()
 		"GLYPH_ADDED", "GLYPH_REMOVED", "GLYPH_UPDATED", "ACTIVE_TALENT_GROUP_CHANGED" }) do
 		f:RegisterEvent(event)
 	end
-	f:SetScript("OnEvent", eventRefresh)
+	for event in pairs(STAT_EVENTS) do f:RegisterEvent(event) end
+	f:SetScript("OnEvent", onEvent)
 	return f
 end
 

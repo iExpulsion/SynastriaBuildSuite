@@ -126,6 +126,11 @@ you pick.
 The affix order belongs to the spec and only changes near an innkeeper; the Perk Manager doesn't need to be open.
 Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.
 
+**Your Stats** swaps the affix list for your character's stats, with the ones the build's affixes give
+highlighted. Applying an affix order takes a snapshot first, so once the server has switched your affixes, each
+stat shows how much it went up or down. **Snapshot** takes one by hand (before changing the order in the game's
+own Affix Manager, say), and **Clear** stops showing changes.
+
 ![The Affixes tab: a 15-affix priority order on the left that matches the spec's, and every affix on the right](docs/images/affixes.png)
 
 ## Sharing Builds

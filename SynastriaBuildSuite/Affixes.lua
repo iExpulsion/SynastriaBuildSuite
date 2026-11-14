@@ -171,6 +171,7 @@ function Affixes.Apply(plan)
 	if sent then
 		local slots = {}
 		for i = 1, Affixes.SLOTS do slots[i] = plan.order[i] or 0 end
+		SBS.Stats.Snapshot()
 		NotifyServer(4, 0, table.concat(slots, ","))
 		watchUntil, sentOrder = GetTime() + WATCH_FOR, plan.order
 	end
