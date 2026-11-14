@@ -63,9 +63,10 @@ blank.
   the build's classes you have.
 - **Templates:** the menu at the right of the tabs saves the open tab as a named template, shared by all your
   characters, and loads one into any build, so you can try variations without making copies of the whole build.
-  Talent and glyph templates are for the class the tab shows and load into builds with that class. Perk templates
-  replace only the perks their classes use, so a two-class build keeps its other class's perks. Gear and affix
-  templates fit any build. After loading one, **Undo Load** at the top of the menu puts the tab back as it was.
+  Like an export, a template keeps the whole tab, both classes of a two-class build included. Loading one replaces
+  only its classes' part: a Hunter talent template loaded into a Hunter/Paladin build leaves the Paladin talents
+  alone. Perk templates load into any build that can use every perk in them, and replace the general perks too.
+  Gear and affix templates fit any build. After loading one, **Undo Load** at the top of the menu puts the tab back as it was.
   **Manage Templates** renames and deletes them.
 
 ### Perks

@@ -2,9 +2,9 @@ local _, NS = ...
 local SBS = NS.SBS
 
 -- Templates: one tab of a build saved under a name, account-wide, to load into any build. SBS.db.templates[section]
--- [name] = { name, data, ... }. Talents and glyphs are kept per class (the class the tab shows) and load into
--- builds with that class. Perks keep the build's classes and replace only the perks those classes can use, so a
--- two-class build keeps its other class's perks; a Hunter's pet aspects come along. Gear and affixes fit any build.
+-- [name] = { name, classes, data, ... }. Like an export, a template holds every class's part of the tab; loading
+-- replaces only the template's classes' parts, so a one-class template leaves a two-class build's other class
+-- alone. A Hunter's pet aspects come with perks. Gear and affixes fit any build.
 local Templates = {}
 SBS.Templates = Templates
 
@@ -50,22 +50,109 @@ end
 -- not), how to load it, and a short summary for lists.
 local KINDS = {}
 
+-- The class a perk belongs to, or nil for the general categories any class can take.
+local function perkClass(id)
+	local perk = PerkMgrPerks and PerkMgrPerks[id]
+	return perk and perk.cat <= 11 and SBS.CLASS_KEYS[perk.cat] or nil
+end
+
+-- The classes a per-class table (talents, glyphs) has something for, in the build's class order.
+local function classesWith(build, byClass, has)
+	local list, seen = {}, {}
+	for _, class in ipairs(build.classes or {}) do
+		if not seen[class] and byClass[class] and has(byClass[class]) then
+			seen[class] = true
+			list[#list + 1] = class
+		end
+	end
+	return list
+end
+
+local function classText(classes)
+	return #classes > 0 and SBS.Window.ClassText(classes, true) or "General"
+end
+
+-- Per-class sections (build[field][class]) fit a build that has each of the template's classes, and loading
+-- replaces only those classes. count(value) sizes one class's part for the summary, in `unit`s; enough(value,
+-- build, class) may give a reason it doesn't fit.
+local function perClass(field, count, unit, enough)
+	local function has(value) return count(value) > 0 end
+	return {
+		take = function(build)
+			local classes = classesWith(build, build[field] or {}, has)
+			local data = {}
+			for _, class in ipairs(classes) do data[class] = copy(build[field][class]) end
+			return #classes > 0 and { classes = classes, data = data } or nil
+		end,
+		fits = function(t, build)
+			local reason
+			for _, class in ipairs(t.classes) do
+				if not hasClass(build, class) then
+					reason = reason or ("Needs " .. className(class))
+				elseif enough then
+					reason = reason or enough(t.data[class], build, class)
+				end
+			end
+			return reason == nil, reason
+		end,
+		load = function(t, build)
+			build[field] = build[field] or {}
+			for _, class in ipairs(t.classes) do build[field][class] = copy(t.data[class]) end
+		end,
+		describe = function(t)
+			local n = 0
+			for _, class in ipairs(t.classes) do n = n + count(t.data[class]) end
+			return classText(t.classes) .. ", " .. SBS.Style.Count(n, unit)
+		end,
+	}
+end
+
+local function glyphCount(sockets)
+	local n = 0
+	for _ in pairs(sockets) do n = n + 1 end
+	return n
+end
+
+KINDS.talents = perClass("talents", SBS.TalentCalc.TotalPoints, "Point", function(trees, build, class)
+	local points = SBS.TalentCalc.TotalPoints(trees)
+	return points > SBS.TalentCalc.MaxPoints(build, class) and ("Needs %d %s Points"):format(points, className(class)) or nil
+end)
+
+KINDS.glyphs = perClass("glyphs", glyphCount, "Glyph")
+
+-- Perks keep every class's perks in one template, like an export. One fits a build whose classes can use each of
+-- its perks, and replaces the build's general perks and the class perks of the classes it has perks for.
 KINDS.perks = {
 	take = function(build)
-		return #(build.perks or {}) > 0 and { classes = copy(build.classes or {}), data = copy(build.perks), pet = build.pet } or nil
+		local classes, seen = {}, {}
+		for _, w in ipairs(build.perks or {}) do
+			local class = perkClass(w.id)
+			if class and not seen[class] then
+				seen[class] = true
+				classes[#classes + 1] = class
+			end
+		end
+		return #(build.perks or {}) > 0 and { classes = classes, data = copy(build.perks), pet = build.pet } or nil
 	end,
 	fits = function(t, build)
-		local missing
-		for _, class in ipairs(t.classes) do
-			if not hasClass(build, class) then missing = missing or class end
+		local mask, reason = SBS.Perks.ClassMask(build.classes), nil
+		for _, w in ipairs(t.data) do
+			local perk = PerkMgrPerks and PerkMgrPerks[w.id]
+			if not reason and perk and not SBS.Perks.UsableFor(perk, mask) then
+				local class = perkClass(w.id)
+				reason = class and ("Needs " .. className(class)) or ("Can't Use " .. (perk.name or "a Perk"))
+			end
 		end
-		return missing == nil, missing and ("Needs " .. className(missing))
+		return reason == nil, reason
 	end,
 	load = function(t, build)
-		local mask, kept = SBS.Perks.ClassMask(t.classes), {}
+		local replaced, kept = {}, {}
+		for _, class in ipairs(t.classes) do replaced[class] = true end
 		for _, w in ipairs(build.perks or {}) do
 			local perk = PerkMgrPerks and PerkMgrPerks[w.id]
-			if perk and not SBS.Perks.UsableFor(perk, mask) then kept[#kept + 1] = w end
+			local class = perkClass(w.id)
+			local goes = perk ~= nil and (class == nil or replaced[class] == true)
+			if not goes then kept[#kept + 1] = w end
 		end
 		for _, w in ipairs(copy(t.data)) do kept[#kept + 1] = w end
 		table.sort(kept, function(a, b) return a.id < b.id end)
@@ -74,51 +161,7 @@ KINDS.perks = {
 		if t.pet then build.pet = t.pet end
 	end,
 	describe = function(t)
-		return SBS.Window.ClassText(t.classes, true) .. ", " .. SBS.Style.Count(#t.data, "Perk")
-	end,
-}
-
-KINDS.talents = {
-	take = function(build, class)
-		local trees = class and build.talents and build.talents[class]
-		return trees and SBS.TalentCalc.TotalPoints(trees) > 0 and { class = class, data = copy(trees) } or nil
-	end,
-	fits = function(t, build)
-		local points = SBS.TalentCalc.TotalPoints(t.data)
-		local reason
-		if not hasClass(build, t.class) then
-			reason = "Needs " .. className(t.class)
-		elseif points > SBS.TalentCalc.MaxPoints(build, t.class) then
-			reason = ("Needs %d Points"):format(points)
-		end
-		return reason == nil, reason
-	end,
-	load = function(t, build)
-		build.talents = build.talents or {}
-		build.talents[t.class] = copy(t.data)
-	end,
-	describe = function(t)
-		return className(t.class) .. ", " .. SBS.Style.Count(SBS.TalentCalc.TotalPoints(t.data), "Point")
-	end,
-}
-
-KINDS.glyphs = {
-	take = function(build, class)
-		local sockets = class and build.glyphs and build.glyphs[class]
-		return sockets and next(sockets) and { class = class, data = copy(sockets) } or nil
-	end,
-	fits = function(t, build)
-		local ok = hasClass(build, t.class)
-		return ok, not ok and ("Needs " .. className(t.class)) or nil
-	end,
-	load = function(t, build)
-		build.glyphs = build.glyphs or {}
-		build.glyphs[t.class] = copy(t.data)
-	end,
-	describe = function(t)
-		local n = 0
-		for _ in pairs(t.data) do n = n + 1 end
-		return className(t.class) .. ", " .. SBS.Style.Count(n, "Glyph")
+		return classText(t.classes) .. ", " .. SBS.Style.Count(#t.data, "Perk")
 	end,
 }
 
@@ -158,14 +201,14 @@ function Templates.Get(section, name)
 	return store(section)[name]
 end
 
--- Whether the build has anything in the section to save; `class` is the class the Talents or Glyphs tab shows.
-function Templates.CanSave(section, build, class)
-	return KINDS[section].take(build, class) ~= nil
+-- Whether the build has anything in the section to save.
+function Templates.CanSave(section, build)
+	return KINDS[section].take(build) ~= nil
 end
 
 -- Saves the build's section under `name`, replacing a template of that name. Returns it, or nil with nothing to save.
-function Templates.Save(section, name, build, class)
-	local t = KINDS[section].take(build, class)
+function Templates.Save(section, name, build)
+	local t = KINDS[section].take(build)
 	if t then
 		t.name = name
 		store(section)[name] = t

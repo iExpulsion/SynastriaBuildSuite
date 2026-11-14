@@ -8,7 +8,7 @@ SBS.TemplateSheet = Sheet
 
 local W, LIST_H, LABEL_W = 460, 220, 44
 local sheet
-local state = { section = nil, build = nil, class = nil, selected = nil }
+local state = { section = nil, build = nil, selected = nil }
 Sheet.state = state
 
 local function trimmed()
@@ -54,10 +54,10 @@ function Sheet.Render()
 	local name = trimmed()
 	local fits = selected and T.Fits(state.section, selected, state.build)
 	enable(sheet.load, fits)
-	enable(sheet.save, name ~= "" and T.CanSave(state.section, state.build, state.class))
+	enable(sheet.save, name ~= "" and T.CanSave(state.section, state.build))
 	enable(sheet.rename, selected ~= nil and name ~= "" and name ~= state.selected)
 	enable(sheet.delete, selected ~= nil)
-	sheet.save.tooltipText = T.CanSave(state.section, state.build, state.class)
+	sheet.save.tooltipText = T.CanSave(state.section, state.build)
 		and ("Save this build's %s under the name above, replacing a template of that name."):format(label:lower())
 		or ("This build has no %s to save."):format(label:lower())
 end
@@ -67,7 +67,7 @@ local function load()
 	local t = T.Get(state.section, state.selected)
 	if t and T.Load(state.section, t, state.build) then
 		sheet:Hide()
-		Sheet.Loaded(state.section, t)
+		Sheet.Loaded(t)
 	end
 end
 
@@ -75,7 +75,7 @@ local function save()
 	local T, S, C = SBS.Templates, SBS.Style, SBS.Style.colors
 	local name = trimmed()
 	local function commit()
-		T.Save(state.section, name, state.build, state.class)
+		T.Save(state.section, name, state.build)
 		state.selected = name
 		note(S.Hex(C.good, "Saved " .. name))
 		Sheet.Render()
@@ -168,12 +168,12 @@ local function create()
 	return f
 end
 
--- Opens the sheet for `section` of `build`; `class` is the class the Talents or Glyphs tab shows. With `saving`
--- the name box starts with a fresh name based on the build's.
-function Sheet.Open(section, build, class, saving)
+-- Opens the sheet for `section` of `build`. With `saving` the name box starts with a fresh name based on the
+-- build's.
+function Sheet.Open(section, build, saving)
 	SBS.Style.Dismiss()
 	sheet = sheet or create()
-	state.section, state.build, state.class, state.selected = section, build, class, nil
+	state.section, state.build, state.selected = section, build, nil
 	sheet.name:SetText(saving and SBS.Templates.UniqueName(section, build.name) or "")
 	sheet.name:UpdatePlaceholder()
 	note()
@@ -190,10 +190,8 @@ function Sheet.Frame()
 	return sheet
 end
 
--- After a template loads: the tab shows the class it was for, and the footer says what happened.
-function Sheet.Loaded(section, t)
-	if t.class and section == "talents" then SBS.TalentEditor.state.class = t.class end
-	if t.class and section == "glyphs" then SBS.GlyphEditor.state.class = t.class end
+-- After a template loads, the footer says what happened.
+function Sheet.Loaded(t)
 	SBS:Changed()
 	SBS.Window.Message(SBS.Style.Hex(SBS.Style.colors.good, "Loaded " .. t.name .. ": Undo Is in Templates"))
 end

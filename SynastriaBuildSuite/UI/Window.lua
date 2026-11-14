@@ -309,12 +309,6 @@ local function renderTabs(build)
 	for key, editor in pairs(frame.editors) do setShown(editor, key == state.tab) end
 end
 
--- The class the Talents or Glyphs tab shows, which their templates are saved for.
-local function templateClass()
-	local editor = state.tab == "talents" and SBS.TalentEditor or state.tab == "glyphs" and SBS.GlyphEditor
-	return editor and editor.state.class or nil
-end
-
 -- The Templates menu: load any template that fits the build, save this tab as one, or open the sheet to manage them.
 local function renderTemplates(build)
 	local T = SBS.Templates
@@ -347,13 +341,13 @@ local function pickTemplate(value)
 	local T = SBS.Templates
 	local t = type(value) == "table" and T.Get(section, value.load)
 	if t then
-		if T.Load(section, t, build) then SBS.TemplateSheet.Loaded(section, t) end
+		if T.Load(section, t, build) then SBS.TemplateSheet.Loaded(t) end
 	elseif value == "undo" then
 		local name = T.Undo()
 		SBS:Changed()
 		Window.Message(S.Hex(C.muted, "Undid Loading " .. name))
 	else
-		SBS.TemplateSheet.Open(section, build, templateClass(), value == "save")
+		SBS.TemplateSheet.Open(section, build, value == "save")
 	end
 end
 
