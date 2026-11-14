@@ -142,7 +142,7 @@ local function create()
 	well:SetSize(W - 2 * S.PAD, LIST_H)
 	S.Well(well)
 	local wi = 1 + S.metrics.wellInset
-	f.list = SBS.List.New(well, "SynastriaBuildSuiteTemplateList", W - 2 * S.PAD - 20 - 2 * wi, LIST_H - 2 * wi)
+	f.list = SBS.List.New(well, "SynastriaBuildSuiteTemplateList", W - 2 * S.PAD - 20 - 2 * wi, LIST_H - 2 * wi, nil, 20)
 	f.list.scroll:SetPoint("TOPLEFT", wi, -wi)
 
 	local nameLabel = S.Text(f, "small", C.muted)

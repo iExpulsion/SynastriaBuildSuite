@@ -296,7 +296,7 @@ function Editor.Create(parent, width, height)
 	panel.orderTitle:SetPoint("LEFT", left, "TOPLEFT", PAD, -(PAD + CONTROL_H / 2))
 	local listTop = PAD + CONTROL_H + GAP
 	local footer = PAD + CONTROL_H + GAP
-	panel.order = SBS.List.New(left, "SynastriaBuildSuiteAffixOrder", ORDER_W - 20 - 2 * wi, height - listTop - footer)
+	panel.order = SBS.List.New(left, "SynastriaBuildSuiteAffixOrder", ORDER_W - 20 - 2 * wi, height - listTop - footer, nil, 20)
 	panel.order.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	panel.order:SetReorder(function(from, to)
 		state.slot = Affixes.Move(current, from, to)
@@ -333,7 +333,7 @@ function Editor.Create(parent, width, height)
 		state.search = self:GetText():lower()
 		SBS.Window.Render()
 	end)
-	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - listTop - PAD)
+	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
 	panel.picker.scroll:SetPoint("TOPLEFT", wi, -listTop)
 
 	local statsView = CreateFrame("Frame", nil, pick)
@@ -350,7 +350,7 @@ function Editor.Create(parent, width, height)
 		SBS.Window.Message(S.Hex(C.muted, "Reverting Affix Order..."))
 	end)
 	panel.revert:SetPoint("TOPLEFT", PAD, -PAD)
-	panel.statList = SBS.List.New(statsView, "SynastriaBuildSuiteAffixStats", pickW - 20 - 2 * wi, height - listTop - PAD)
+	panel.statList = SBS.List.New(statsView, "SynastriaBuildSuiteAffixStats", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
 	panel.statList.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	return panel
 end

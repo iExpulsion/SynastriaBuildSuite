@@ -79,14 +79,20 @@ local function newRow(self)
 	return row
 end
 
-function List.New(parent, name, width, height, style)
+-- `width` leaves room on the right for the scroll bar; `gutter` is that room, which the rows take over while
+-- there's nothing to scroll and the bar is hidden.
+function List.New(parent, name, width, height, style, gutter)
 	local self = setmetatable({ rows = {}, count = 0, style = STYLES[style or "content"], width = width, name = name }, { __index = List })
 	self.scroll = CreateFrame("ScrollFrame", name, parent, "UIPanelScrollFrameTemplate")
 	self.scroll:SetSize(width, height)
 	self.content = CreateFrame("Frame", nil, self.scroll)
 	self.content:SetSize(width, height)
 	self.scroll:SetScrollChild(self.content)
-	self.updateBar = List.AutoHideBar(self.scroll, name)
+	self.updateBar = List.AutoHideBar(self.scroll, name, function(shown)
+		local w = shown and width or width + (gutter or 0)
+		self.scroll:SetWidth(w)
+		self.content:SetWidth(w)
+	end)
 	return self
 end
 
@@ -101,11 +107,13 @@ function List:SetReorder(onMove)
 	for _, row in ipairs(self.rows) do self.reorder:Attach(row, dragLabel) end
 end
 
--- A flat bar that only shows when there's something to scroll.
-function List.AutoHideBar(scroll, scrollName)
+-- A flat bar that only shows when there's something to scroll; onToggle(shown), if given, runs with each update.
+function List.AutoHideBar(scroll, scrollName, onToggle)
 	local bar = S.ScrollBar(scroll, scrollName)
 	local function update()
-		if (scroll:GetVerticalScrollRange() or 0) > 0 then bar:Show() else bar:Hide() end
+		local shown = (scroll:GetVerticalScrollRange() or 0) > 0
+		if shown then bar:Show() else bar:Hide() end
+		if onToggle then onToggle(shown) end
 	end
 	scroll:HookScript("OnScrollRangeChanged", update)
 	update()

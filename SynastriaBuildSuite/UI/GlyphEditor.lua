@@ -412,7 +412,7 @@ function Editor.Create(parent, width, height)
 	end)
 	local listTop = PAD + TITLE_LINE + SEARCH_H
 	panel.picker = SBS.List.New(pick, "SynastriaBuildSuiteGlyphPicker", pickW - 20 - 2 * wi,
-		height - listTop - (PAD + CONTROL_H + GAP))
+		height - listTop - (PAD + CONTROL_H + GAP), nil, 20)
 	panel.picker.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	panel.clear = S.Button(pick, "Clear Socket", "secondary", 100, function()
 		Glyphs.Clear(current, state.class, state.socket)

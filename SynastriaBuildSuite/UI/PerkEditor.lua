@@ -589,7 +589,7 @@ function Editor.Create(parent, width, height)
 		SBS.Window.Render()
 	end)
 
-	panel.list = SBS.List.New(panel, "SynastriaBuildSuitePerkList", LIST_W - 14, height - TOOLBAR_H)
+	panel.list = SBS.List.New(panel, "SynastriaBuildSuitePerkList", LIST_W - 14, height - TOOLBAR_H, nil, 14)
 	panel.list.scroll:SetPoint("TOPLEFT", 0, -TOOLBAR_H)
 
 	panel.detail = createDetail(width - LIST_RIGHT - PAD, height)

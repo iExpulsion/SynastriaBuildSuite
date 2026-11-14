@@ -209,7 +209,7 @@ function Review.Create(parent, width, height)
 	rule:SetPoint("TOPLEFT", 0, -headerH)
 	rule:SetPoint("TOPRIGHT", 0, -headerH)
 
-	sheet.list = SBS.List.New(sheet, "SynastriaBuildSuiteReviewScroll", width - 14, height - headerH - footerH - 2 * GAP)
+	sheet.list = SBS.List.New(sheet, "SynastriaBuildSuiteReviewScroll", width - 14, height - headerH - footerH - 2 * GAP, nil, 14)
 	sheet.list.scroll:SetPoint("TOPLEFT", 0, -(headerH + GAP))
 
 	local footer, footerRuleH = S.Divider(sheet, "rule")

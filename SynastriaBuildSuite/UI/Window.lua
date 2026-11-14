@@ -674,7 +674,7 @@ local function createSidebar(f, edge)
 	-- the list runs from below the search box to the footer, which lines up with the build pane's footer
 	local listTop = PAD + CONTROL_H + GAP
 	f.list = SBS.List.New(side, "SynastriaBuildSuiteListScroll", SIDEBAR_W - 14 - 2 * inset,
-		H - TITLE_H - listTop - FOOTER_H, "sidebar")
+		H - TITLE_H - listTop - FOOTER_H, "sidebar", 14)
 	f.list.scroll:SetPoint("TOPLEFT", inset, -listTop)
 
 	f.noMatches = S.Text(side, "small", C.muted)
