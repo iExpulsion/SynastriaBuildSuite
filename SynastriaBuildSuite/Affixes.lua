@@ -142,8 +142,9 @@ end
 
 -- Every affix, those giving the biggest share of `stat` first; with a set of stats (the build's role and type),
 -- affixes giving the same share go by how much of those they give.
-function Affixes.ByShare(stat, set)
-	return sortedBy(function(info) return info.shares[stat] end, set and function(info) return Affixes.Score(info, set) end)
+function Affixes.ByShare(stat, set, weighted)
+	return sortedBy(function(info) return info.shares[stat] end,
+		set and function(info) return Affixes.Score(info, set, weighted) end)
 end
 
 -- What a build is after, as two choices that add their stats together (names as GetAttuneStatName gives them).
@@ -181,18 +182,33 @@ function Affixes.FocusStats(focus)
 	return set
 end
 
--- The sum of an affix's shares of the stats in `set`, or nil when it gives none of them.
-function Affixes.Score(info, set)
+-- What 1% of share is worth in budget: one budget buys 100% of most stats but 150% Stamina or 200% Attack Power,
+-- which the single-stat suffixes show; a stat none of them gives counts as 1. Read once the affix list has loaded.
+local weights
+function Affixes.Weight(name)
+	if not weights and catalog then
+		weights = {}
+		for _, info in ipairs(catalog) do
+			local stat, share = next(info.shares)
+			if stat and next(info.shares, stat) == nil and share > 0 then weights[stat] = 100 / share end
+		end
+	end
+	return weights and weights[name] or 1
+end
+
+-- How much of the stats in `set` an affix gives: its shares added up, or with `weighted` each share times its
+-- stat's weight, so the total is the part of the item's budget spent on them. nil when it gives none of them.
+function Affixes.Score(info, set, weighted)
 	local sum
 	for name, share in pairs(info.shares) do
-		if set[name] then sum = (sum or 0) + share end
+		if set[name] then sum = (sum or 0) + share * (weighted and Affixes.Weight(name) or 1) end
 	end
 	return sum
 end
 
 -- Every affix, those giving the most of the set's stats together first.
-function Affixes.ByScore(set)
-	return sortedBy(function(info) return Affixes.Score(info, set) end)
+function Affixes.ByScore(set, weighted)
+	return sortedBy(function(info) return Affixes.Score(info, set, weighted) end)
 end
 
 -- The game preset that fits a role and type: Tank for any tank, Caster for spell damage or healing, else the

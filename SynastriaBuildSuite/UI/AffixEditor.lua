@@ -12,7 +12,7 @@ local C = S.colors
 local Affixes, Stats
 
 local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
-local ORDER_W, PRESET_W, STATS_W, VIEW_W = 300, 120, 110, 80
+local ORDER_W, PRESET_W, STATS_W, VIEW_W, WEIGHT_W = 300, 120, 110, 80, 76
 
 local panel, current
 local state = { slot = 1, search = "", stats = {}, statCount = 0, view = "affixes" }
@@ -97,35 +97,50 @@ end
 
 -- Picker ----------------------------------------------------------------------------------------------------
 
+-- Whether role totals weigh each stat by what a budget buys of it (the default) or add raw shares.
+local function weighted()
+	return SBS.db.affixWeighted ~= false
+end
+
+local function percent(v)
+	return math.floor(v + 0.5) .. "%"
+end
+
 -- The row's status: its place in the order, its share of the filtered stat, and its total for the build's role.
 local function pickerStatus(at, share, total)
 	local parts = {}
 	if at then parts[#parts + 1] = S.Hex(C.accent, "#" .. at) end
 	if share then parts[#parts + 1] = S.Hex(C.muted, share .. "%") end
-	if total then parts[#parts + 1] = "Role " .. total .. "%" end
+	if total then parts[#parts + 1] = "Role " .. percent(total) end
 	return #parts > 0 and table.concat(parts, "  ") or nil
 end
 
--- The tooltip's line on the role sort: which of the build's stats the affix gives, adding up to its total.
+-- The tooltip's line on the role sort: which of the build's stats the affix gives, adding up to its total, with
+-- each stat's weight where it isn't 1.
 local function focusLine(tt, info, set)
-	local parts = {}
+	local parts, weigh = {}, weighted()
 	for _, name in ipairs(info.stats) do
-		if set[name] and info.shares[name] then parts[#parts + 1] = ("%s %d%%"):format(name, info.shares[name]) end
+		local share, weight = info.shares[name], weigh and Affixes.Weight(name) or 1
+		if set[name] and share then
+			parts[#parts + 1] = math.abs(weight - 1) < 0.01 and ("%s %d%%"):format(name, share)
+				or ("%s %d%% × %.2g"):format(name, share, weight)
+		end
 	end
 	if #parts > 0 then
 		tt:AddLine(" ")
-		tt:AddLine(("For your role: %d%% (%s)."):format(Affixes.Score(info, set), table.concat(parts, " + ")), 0.8, 0.8, 0.8, true)
-		tt:AddLine("Totals add up raw stat points, so they can pass 100%. Cheap stats like Attack Power and Stamina get bigger numbers per point of value.", 0.6, 0.6, 0.66, true)
+		tt:AddLine(("For your role: %s (%s)."):format(percent(Affixes.Score(info, set, weigh)), table.concat(parts, " + ")), 0.8, 0.8, 0.8, true)
+		tt:AddLine(weigh and "Weighted by what one budget buys of each stat (twice the Attack Power, half again the Stamina), so the total is the part of the item's budget your role's stats get."
+			or "Totals add up raw stat points, so they can pass 100%. Cheap stats like Attack Power and Stamina get bigger numbers per point of value.", 0.6, 0.6, 0.66, true)
 	end
 end
 
 -- Sorting: one stat picked in the filter goes by that stat's share, ties by the build's role and type; else the
--- role and type go by the sum of their stats' shares; else by name.
+-- role and type go by their total; else by name.
 local function renderPicker(order)
 	local list = panel.picker
 	local only = state.statCount == 1 and next(state.stats)
-	local set = Affixes.FocusStats(current.affixFocus)
-	local sorted = only and Affixes.ByShare(only, set) or set and Affixes.ByScore(set) or Affixes.Options()
+	local set, weigh = Affixes.FocusStats(current.affixFocus), weighted()
+	local sorted = only and Affixes.ByShare(only, set, weigh) or set and Affixes.ByScore(set, weigh) or Affixes.Options()
 	list:Begin()
 	for _, info in ipairs(sorted) do
 		if Affixes.Matches(info, state.search, state.stats) then
@@ -133,7 +148,7 @@ local function renderPicker(order)
 			local at = Affixes.Position(order, id)
 			list:Add({
 				text = info.name, indent = 2,
-				status = pickerStatus(at, only and info.shares[only], set and Affixes.Score(info, set)),
+				status = pickerStatus(at, only and info.shares[only], set and Affixes.Score(info, set, weigh)),
 				selected = at ~= nil and at == state.slot,
 				onClick = function()
 					if at then
@@ -283,6 +298,7 @@ local function renderFocus(build)
 	local role, kind = Affixes.Role(focus.role), Affixes.Type(focus.kind)
 	panel.role:SetText(role and role.label or "Any Role")
 	panel.kind:SetText(kind and kind.label or "Any Type")
+	panel.weighted:SetChecked(weighted())
 	local suggested, presets = Affixes.SuggestedPreset(build.affixFocus), {}
 	for i, preset in ipairs(Affixes.PRESETS) do
 		local mark = preset.name == suggested
@@ -399,11 +415,12 @@ function Editor.Create(parent, width, height)
 		state.search = self:GetText():lower()
 		SBS.Window.Render()
 	end)
-	-- a second row: the build's role and type, which sort the affixes by how much of their stats each gives; the
-	-- spare width goes to the first
+	-- a second row: the build's role and type, which sort the affixes by how much of their stats each gives, and
+	-- whether that weighs each stat; the spare width goes to the first
 	local rowY = PAD + CONTROL_H + GAP
-	local kindW = math.floor((pickW - 2 * PAD - GAP) / 2)
-	panel.role = S.Dropdown(affixView, pickW - 2 * PAD - GAP - kindW, function(key) setFocus("role", key) end)
+	local dropsW = pickW - 2 * PAD - 2 * GAP - WEIGHT_W
+	local kindW = math.floor((dropsW - GAP) / 2)
+	panel.role = S.Dropdown(affixView, dropsW - GAP - kindW, function(key) setFocus("role", key) end)
 	panel.role:SetPoint("TOPLEFT", PAD, -rowY)
 	panel.role:SetOptions(focusOptions(Affixes.ROLES, "Any Role", "role"))
 	panel.role.tooltipText = "What this build does. With a role or type picked, the affixes giving the most of their stats together come first."
@@ -411,6 +428,27 @@ function Editor.Create(parent, width, height)
 	panel.kind:SetPoint("LEFT", panel.role, "RIGHT", GAP, 0)
 	panel.kind:SetOptions(focusOptions(Affixes.TYPES, "Any Type", "type"))
 	panel.kind.tooltipText = "Where this build's damage or healing comes from."
+	-- the label is part of the button, so clicking either toggles it
+	local weight = CreateFrame("Button", nil, affixView)
+	weight:SetSize(WEIGHT_W, CONTROL_H)
+	weight:SetPoint("LEFT", panel.kind, "RIGHT", GAP, 0)
+	panel.weighted = S.Check(weight, nil, function() weight:Click() end)
+	panel.weighted:SetPoint("LEFT", 0, 0)
+	local weightLabel = S.Text(weight, "small")
+	weightLabel:SetPoint("LEFT", panel.weighted, "RIGHT", 6, 0)
+	weightLabel:SetText("Weighted")
+	weight:SetScript("OnClick", function()
+		SBS.db.affixWeighted = not weighted()
+		SBS.Window.Render()
+	end)
+	weight:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:AddLine("Weighted", 1, 1, 1)
+		GameTooltip:AddLine("Count each stat by what one affix budget buys of it, so 2 Attack Power or 1.5 Stamina weigh the same as 1 Strength or 1 Crit. Off, role totals add raw stat points.", nil, nil, nil, true)
+		GameTooltip:Show()
+	end)
+	weight:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	panel.weightToggle = weight
 	local pickTop = rowY + CONTROL_H + GAP
 	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - pickTop - PAD, nil, 20)
 	panel.picker.scroll:SetPoint("TOPLEFT", wi, -pickTop)

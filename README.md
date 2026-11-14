@@ -140,7 +140,10 @@ they choose the stats that count: Damage adds Hit, Crit and Haste, Tank adds Sta
 Armor, Healer adds Spirit, Mana Regen, Crit and Haste; Strength adds Strength and Attack Power, Agility adds
 Agility, Attack Power and Ranged Attack Power, Spell adds Intellect and Spell Power. The affixes giving the most of
 those stats together come first, with the total beside them and how it adds up on hover, and **Load Preset** marks
-the game's preset that fits. Each stat counts the same, so weighing one against another is still up to you.
+the game's preset that fits. With **Weighted** checked (the default), each stat counts by what one affix budget buys
+of it, from the game's own single-stat affixes: 2 Attack Power or 1.5 Stamina count the same as 1 Strength or 1 Crit,
+so the total is the part of the item's budget your stats get. Unchecked, totals add raw stat points. Which stats
+matter more to your class is still up to you.
 
 The affix order belongs to the spec and only changes near an innkeeper; the Perk Manager doesn't need to be open.
 Apply Build sets it along with the rest of the build. A build with no affix order leaves yours alone.
