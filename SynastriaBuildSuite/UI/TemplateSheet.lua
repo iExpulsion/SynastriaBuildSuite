@@ -195,7 +195,7 @@ function Sheet.Loaded(section, t)
 	if t.class and section == "talents" then SBS.TalentEditor.state.class = t.class end
 	if t.class and section == "glyphs" then SBS.GlyphEditor.state.class = t.class end
 	SBS:Changed()
-	SBS.Window.Message(SBS.Style.Hex(SBS.Style.colors.good, "Loaded " .. t.name))
+	SBS.Window.Message(SBS.Style.Hex(SBS.Style.colors.good, "Loaded " .. t.name .. ": Undo Is in Templates"))
 end
 
 StaticPopupDialogs["SBS_TEMPLATE_REPLACE"] = {

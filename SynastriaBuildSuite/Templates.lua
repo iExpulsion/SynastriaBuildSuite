@@ -177,11 +177,39 @@ function Templates.Fits(section, t, build)
 	return KINDS[section].fits(t, build)
 end
 
--- Replaces the build's section (for its classes, as above) with the template's. Returns whether it fit.
+-- The build fields each section's load can change, kept so the last load can be undone.
+local FIELDS = {
+	perks = { "perks", "pet", "perksPending" }, talents = { "talents" }, glyphs = { "glyphs" },
+	gear = { "gear" }, affixes = { "affixes" },
+}
+
+-- Replaces the build's section (for its classes, as above) with the template's, remembering what it had for
+-- Undo. Returns whether it fit.
 function Templates.Load(section, t, build)
 	local ok = KINDS[section].fits(t, build)
-	if ok then KINDS[section].load(t, build) end
+	if ok then
+		local saved = {}
+		for _, field in ipairs(FIELDS[section]) do saved[field] = copy(build[field]) end
+		Templates.last = { section = section, build = build, name = t.name, saved = saved }
+		KINDS[section].load(t, build)
+	end
 	return ok
+end
+
+-- The name of the template last loaded into this build's section, while it can still be undone.
+function Templates.Undoable(section, build)
+	local last = Templates.last
+	return last and last.section == section and last.build == build and last.name or nil
+end
+
+-- Puts the build's section back as it was before the last load. Returns the template's name, or nil.
+function Templates.Undo()
+	local last = Templates.last
+	if last then
+		for _, field in ipairs(FIELDS[last.section]) do last.build[field] = last.saved[field] end
+		Templates.last = nil
+	end
+	return last and last.name
 end
 
 function Templates.Describe(section, t)

@@ -323,6 +323,11 @@ local function renderTemplates(build)
 	setShown(frame.templates, shown)
 	if shown then
 		local options, label = {}, T.Label(section)
+		local undo = T.Undoable(section, build)
+		if undo then
+			options[1] = { value = "undo", text = "Undo Load: " .. undo,
+				tooltip = ("Put this build's %s back as they were before loading %s."):format(label:lower(), undo) }
+		end
 		for _, t in ipairs(T.List(section)) do
 			if T.Fits(section, t, build) then
 				options[#options + 1] = { value = { load = t.name }, text = "Load: " .. t.name, tooltip = T.Describe(section, t) }
@@ -343,6 +348,10 @@ local function pickTemplate(value)
 	local t = type(value) == "table" and T.Get(section, value.load)
 	if t then
 		if T.Load(section, t, build) then SBS.TemplateSheet.Loaded(section, t) end
+	elseif value == "undo" then
+		local name = T.Undo()
+		SBS:Changed()
+		Window.Message(S.Hex(C.muted, "Undid Loading " .. name))
 	else
 		SBS.TemplateSheet.Open(section, build, templateClass(), value == "save")
 	end
