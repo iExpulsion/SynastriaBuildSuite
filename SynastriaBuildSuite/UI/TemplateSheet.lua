@@ -132,8 +132,11 @@ local function create()
 
 	f.title = S.Text(f, "large")
 	f.title:SetPoint("TOPLEFT", PAD, -PAD)
+	-- one line within the dialog's padding, so a long build name or wide skin cuts it short rather than past the edge
 	f.sub = S.Text(f, "small", C.muted)
 	f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
+	f.sub:SetWidth(W - 2 * S.PAD)
+	f.sub:SetWordWrap(false)
 	local close = S.Button(f, "Close", "ghost", 56, function() f:Hide() end)
 	close:SetPoint("TOPRIGHT", -PAD, -(PAD - 4))
 
