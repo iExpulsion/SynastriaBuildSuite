@@ -6,7 +6,7 @@ local SBS = NS.SBS
 local Sheet = {}
 SBS.TemplateSheet = Sheet
 
-local W, LIST_H, LABEL_W, BUTTON_W = 460, 220, 44, 70
+local W, LIST_H, LABEL_W, BUTTON_W = 460, 220, 44, 80
 local sheet
 local state = { section = nil, build = nil, selected = nil }
 Sheet.state = state
@@ -160,9 +160,10 @@ local function create()
 	f.rename = S.Button(f, "Rename", "secondary", BUTTON_W, rename, "Give the selected template the name in the box.")
 	f.rename:SetPoint("LEFT", f.save, "RIGHT", GAP, 0)
 
-	f.load = S.Button(f, "Load", "primary", 80, load, "Replace this build's tab with the selected template.")
+	-- Delete and Load sit under Save and Rename, the four buttons one block in the corner
+	f.load = S.Button(f, "Load", "primary", BUTTON_W, load, "Replace this build's tab with the selected template.")
 	f.load:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-	f.delete = S.Button(f, "Delete", "danger", 70, delete, "Delete the selected template.")
+	f.delete = S.Button(f, "Delete", "danger", BUTTON_W, delete, "Delete the selected template.")
 	f.delete:SetPoint("RIGHT", f.load, "LEFT", -GAP, 0)
 	f.note = S.Text(f, "small", C.muted)
 	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, PAD + CONTROL_H / 2)
