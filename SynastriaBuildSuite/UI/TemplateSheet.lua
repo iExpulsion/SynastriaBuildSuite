@@ -6,7 +6,7 @@ local SBS = NS.SBS
 local Sheet = {}
 SBS.TemplateSheet = Sheet
 
-local W, LIST_H, LABEL_W = 460, 220, 44
+local W, LIST_H, LABEL_W, BUTTON_W = 460, 220, 44, 70
 local sheet
 local state = { section = nil, build = nil, selected = nil }
 Sheet.state = state
@@ -58,7 +58,7 @@ function Sheet.Render()
 	enable(sheet.rename, selected ~= nil and name ~= "" and name ~= state.selected)
 	enable(sheet.delete, selected ~= nil)
 	sheet.save.tooltipText = T.CanSave(state.section, state.build)
-		and ("Save this build's %s under the name above, replacing a template of that name."):format(label:lower())
+		and ("Save this build's %s under the name in the box, replacing a template of that name."):format(label:lower())
 		or ("This build has no %s to save."):format(label:lower())
 end
 
@@ -148,14 +148,16 @@ local function create()
 	local nameLabel = S.Text(f, "small", C.muted)
 	nameLabel:SetPoint("LEFT", f, "TOPLEFT", PAD, -nameY)
 	nameLabel:SetText("Name")
-	f.name = S.Input(f, "SynastriaBuildSuiteTemplateName", 220, "Template Name", 40)
+	-- the name box takes the row's spare width, so Rename ends in line with the list and Load
+	local nameW = W - 2 * S.PAD - LABEL_W - 2 * (BUTTON_W + GAP)
+	f.name = S.Input(f, "SynastriaBuildSuiteTemplateName", nameW, "Template Name", 40)
 	f.name:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W, -nameY)
 	f.name:HookScript("OnTextChanged", function(_, userInput)
 		if userInput then Sheet.Render() end
 	end)
-	f.save = S.Button(f, "Save", "secondary", 70, save)
+	f.save = S.Button(f, "Save", "secondary", BUTTON_W, save)
 	f.save:SetPoint("LEFT", f.name, "RIGHT", GAP, 0)
-	f.rename = S.Button(f, "Rename", "secondary", 70, rename, "Give the selected template the name above.")
+	f.rename = S.Button(f, "Rename", "secondary", BUTTON_W, rename, "Give the selected template the name in the box.")
 	f.rename:SetPoint("LEFT", f.save, "RIGHT", GAP, 0)
 
 	f.load = S.Button(f, "Load", "primary", 80, load, "Replace this build's tab with the selected template.")
