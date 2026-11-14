@@ -12,6 +12,7 @@ Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Data\Talents.lua
 Data\Abilities.lua
 Data\Glyphs.lua
+Data\AffixSizes.lua
 Core.lua
 Codec.lua
 SBM.lua

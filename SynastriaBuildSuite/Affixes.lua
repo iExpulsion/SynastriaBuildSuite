@@ -39,18 +39,42 @@ function Affixes.Current()
 	return order
 end
 
+-- An affix version's stats, biggest first (NS.AffixSizes, from the client's suffix data); equal or unknown sizes
+-- keep the game's order.
+local function bySize(afx)
+	local sizes, order = NS.AffixSizes and NS.AffixSizes[afx.ex] or {}, {}
+	for i in ipairs(afx.stats or {}) do order[i] = i end
+	table.sort(order, function(x, y)
+		local sx, sy = sizes[x] or 0, sizes[y] or 0
+		if sx ~= sy then return sx > sy end
+		return x < y
+	end)
+	return order
+end
+
+-- The stat names of one affix's versions (prefix and suffix share an ID), biggest first. Sizes only compare within
+-- a version, so each stat goes by its best place in either one, then by which version lists it first.
 local function statNames(...)
-	local names, seen = {}, {}
+	local rank, first, names = {}, {}, {}
 	for n = 1, select("#", ...) do
-		for _, stat in ipairs(select(n, ...) or {}) do
-			local name = GetAttuneStatName and GetAttuneStatName(stat)
-			if name and name ~= "" and not seen[name] then
-				seen[name] = true
-				names[#names + 1] = name
+		local afx = select(n, ...)
+		if afx then
+			for place, i in ipairs(bySize(afx)) do
+				local name = GetAttuneStatName and GetAttuneStatName(afx.stats[i])
+				if name and name ~= "" then
+					if not rank[name] then
+						names[#names + 1] = name
+						first[name] = #names
+					end
+					rank[name] = math.min(rank[name] or place, place)
+				end
 			end
 		end
 	end
-	table.sort(names)
+	table.sort(names, function(a, b)
+		if rank[a] ~= rank[b] then return rank[a] < rank[b] end
+		return first[a] < first[b]
+	end)
 	return names
 end
 
@@ -73,10 +97,10 @@ function Affixes.Options()
 				local name = a.name == b.name and a.name or ((a.name or "?") .. " / " .. (b.name or "?"))
 				if a.name2 then name = name .. " / " .. a.name2 end
 				if b.name2 then name = name .. " / " .. b.name2 end
-				add(a.index + 1, name, statNames(a.stats, b.stats))
+				add(a.index + 1, name, statNames(a, b))
 			else
-				if a then add((a.filterindex or a.index) + 1, a.name, statNames(a.stats)) end
-				if b then add((b.filterindex or b.index) + 1, b.name, statNames(b.stats)) end
+				if a then add((a.filterindex or a.index) + 1, a.name, statNames(a)) end
+				if b then add((b.filterindex or b.index) + 1, b.name, statNames(b)) end
 			end
 		end
 		table.sort(list, function(x, y) return x.name:upper() < y.name:upper() end)

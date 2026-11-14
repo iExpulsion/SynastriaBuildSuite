@@ -128,7 +128,7 @@ one in your spec's affix order, the same 16 slots as the game's Item Affix Manag
 order, most wanted first: drag an affix up or down to change its place, and select one to remove it or right-click
 it to remove it.
 **Load Preset** starts from one of the game's orders (Strength DPS, Agility DPS, Tank, Caster). The right side
-lists every affix with its stats on hover; click one to add it to the end. Search finds affixes by name or by a
+lists every affix with its stats on hover, the biggest first; click one to add it to the end. Search finds affixes by name or by a
 stat they give ("haste", "stamina"), and the stats filter beside it shows only affixes that give any of the stats
 you pick.
 
