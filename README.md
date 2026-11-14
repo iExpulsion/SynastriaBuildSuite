@@ -132,7 +132,8 @@ lists every affix with its stats on hover, the biggest first, each with its shar
 the same item, a bigger share is more of that stat, so a single-stat affix gives the most. Click one to add it to
 the end. Search finds affixes by name or by a
 stat they give ("haste", "stamina"), and the stats filter beside it shows only affixes that give any of the stats
-you pick. Pick just one and the affixes giving the most of it come first, with their share beside them.
+you pick. Pick just one and the affixes giving the most of it come first, with their share beside them; affixes
+giving the same share go by the role and type below.
 
 Below them, pick the build's **role** (Damage, Tank or Healer) and **type** (Strength, Agility or Spell). Together
 they choose the stats that count: Damage adds Hit, Crit and Haste, Tank adds Stamina, Defense, Dodge, Block and

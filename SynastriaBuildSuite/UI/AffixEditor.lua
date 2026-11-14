@@ -117,13 +117,14 @@ local function focusLine(tt, info, set)
 	end
 end
 
--- Sorting: one stat picked in the filter goes by that stat's share, else the build's role and type go by the sum
--- of their stats' shares, else by name.
+-- Sorting: one stat picked in the filter goes by that stat's share, ties by the build's role and type; else the
+-- role and type go by the sum of their stats' shares; else by name.
 local function renderPicker(order)
 	local list = panel.picker
 	local only = state.statCount == 1 and next(state.stats)
-	local set = not only and Affixes.FocusStats(current.affixFocus)
-	local sorted = only and Affixes.ByShare(only) or set and Affixes.ByScore(set) or Affixes.Options()
+	local focus = Affixes.FocusStats(current.affixFocus)
+	local set = not only and focus
+	local sorted = only and Affixes.ByShare(only, focus) or set and Affixes.ByScore(set) or Affixes.Options()
 	list:Begin()
 	for _, info in ipairs(sorted) do
 		if Affixes.Matches(info, state.search, state.stats) then

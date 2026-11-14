@@ -121,24 +121,29 @@ function Affixes.Options()
 	return catalog or {}
 end
 
--- Every affix by a score, biggest first; affixes that score nothing follow by name.
-local function sortedBy(score)
-	local list, scores = {}, {}
+-- Every affix by a score, biggest first, ties by an optional second score; affixes that score nothing follow, then
+-- by name.
+local function sortedBy(score, tiebreak)
+	local list, scores, seconds = {}, {}, {}
 	for i, info in ipairs(Affixes.Options()) do
 		list[i] = info
 		scores[info] = score(info)
+		seconds[info] = tiebreak and tiebreak(info)
 	end
 	table.sort(list, function(x, y)
 		local a, b = scores[x] or -1, scores[y] or -1
+		local c, d = seconds[x] or -1, seconds[y] or -1
 		if a ~= b then return a > b end
+		if c ~= d then return c > d end
 		return x.name:upper() < y.name:upper()
 	end)
 	return list
 end
 
--- Every affix, those giving the biggest share of `stat` first.
-function Affixes.ByShare(stat)
-	return sortedBy(function(info) return info.shares[stat] end)
+-- Every affix, those giving the biggest share of `stat` first; with a set of stats (the build's role and type),
+-- affixes giving the same share go by how much of those they give.
+function Affixes.ByShare(stat, set)
+	return sortedBy(function(info) return info.shares[stat] end, set and function(info) return Affixes.Score(info, set) end)
 end
 
 -- What a build is after, as two choices that add their stats together (names as GetAttuneStatName gives them).
