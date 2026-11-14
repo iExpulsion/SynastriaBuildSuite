@@ -60,7 +60,6 @@ function SBS:Report(plan)
 	end
 	for _, s in ipairs(plan.talents.skipped) do self:Print("  |cffaaaaaaSkipped %s talents: %s|r", s.class, s.reason) end
 
-	for _, g in ipairs(plan.glyphs) do self:Print("  Glyph to socket yourself: %s", g.name) end
 	if plan.affixes then self:Print("  Affix order will change (the server only takes it near an innkeeper)") end
 	if plan.pet then self:Print("  Pet aspects will change") end
 	if plan.spec then self:Print("  Spec name: %s", plan.spec) end

@@ -129,7 +129,6 @@ function Build.Plan(build)
 		group = group,
 		perks = SBS.Perks.BuildPlan(build),
 		talents = SBS.Talents.Plan(build.talents),
-		glyphs = SBS.Glyphs.Plan(build.glyphs),
 		gear = SBS.Gear.Status(build.gear),
 		affixes = not build.sharedOnly and SBS.Affixes.Plan(build.affixes) or nil,
 		pet =build.pet and isHunter() and GetHunterBM() ~= build.pet and build.pet or nil,

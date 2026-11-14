@@ -82,11 +82,6 @@ local function lines(plan)
 		for _, l in ipairs(talentLines) do add(l[1], l[2], false, l[3]) end
 	end
 
-	if #plan.glyphs > 0 then
-		add("Glyphs", nil, true)
-		for _, g in ipairs(plan.glyphs) do add(g.name, S.Hex(C.muted, "Socket Yourself")) end
-	end
-
 	local a = plan.affixes
 	if a then
 		local Affixes = SBS.Affixes
@@ -112,7 +107,7 @@ local function lines(plan)
 	return out
 end
 
--- Whether applying would send anything (glyphs and skipped items are information only).
+-- Whether applying would send anything (skipped items are information only).
 local function hasChanges(plan)
 	local p = plan.perks
 	local talents = false
