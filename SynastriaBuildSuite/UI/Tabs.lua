@@ -129,6 +129,13 @@ Tabs.actions.affixes = {
 		SBS.Build.CopyCurrent(build, { affixes = true })
 		SBS:Changed()
 	end },
+	{ label = "Test Affixes", tooltip = "Send only this build's affix order to your spec, then show your stats and how each one changes. Revert puts your old order back. Works near an innkeeper.", usable = function(build)
+		return SBS.Window.IsComparing(build) and SBS.Affixes.Plan(build.affixes) ~= nil
+	end, unusableTip = "Nothing to send: your spec's order already matches, the build has none, or its spec isn't active.", run = function(build)
+		SBS.Affixes.Apply(SBS.Affixes.Plan(build.affixes))
+		SBS.AffixEditor.state.view = "stats"
+		SBS.Window.Message(SBS.Style.Hex(SBS.Style.colors.muted, "Sending Affix Order..."))
+	end },
 	{ label = "Clear Order", tooltip = "Empty this build's affix order. Applying the build then leaves your spec's order alone.", run = function(build)
 		build.affixes = {}
 		SBS:Changed()

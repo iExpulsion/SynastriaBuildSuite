@@ -88,14 +88,21 @@ function Stats.HasMana()
 	return (UnitPowerMax("player", 0) or 0) > 0
 end
 
--- Remembers the stats now; the tab shows each one's change from here until the next snapshot or Clear.
-function Stats.Snapshot()
+-- Remembers the stats now, and the affix order they came from (which Revert sends back); the tab shows each stat's
+-- change from here until the next snapshot or a reset.
+function Stats.Snapshot(order)
 	Stats.baseline = Stats.Read(Stats.baseline or {})
 	Stats.baselineAt = date("%H:%M")
+	Stats.baselineOrder = order
 end
 
 function Stats.ClearSnapshot()
-	Stats.baseline, Stats.baselineAt = nil, nil
+	Stats.baseline, Stats.baselineAt, Stats.baselineOrder = nil, nil, nil
+end
+
+-- What sending the snapshot's order back would change, or nil when there's none or it's already active.
+function Stats.RevertPlan()
+	return Stats.baselineOrder and #Stats.baselineOrder > 0 and SBS.Affixes.Plan(Stats.baselineOrder) or nil
 end
 
 -- The stat names (as GetAttuneStatName gives them) that any affix in the order gives, written into `into`.

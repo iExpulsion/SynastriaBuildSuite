@@ -165,13 +165,14 @@ local REFUSED, CAST, WATCH_FOR, POLL_EVERY, POLL_FOR = "near an innkeeper", "aff
 local watchUntil, sentOrder, pollUntil, nextPoll = 0, nil, nil, nil
 
 -- Sends the order the way the game's Apply button does. The server only takes it near an innkeeper, which the
--- client can't check, so it's always sent and the server decides. Returns whether it was sent.
-function Affixes.Apply(plan)
+-- client can't check, so it's always sent and the server decides. The stats and the order being replaced are
+-- remembered first, except when reverting to that snapshot. Returns whether it was sent.
+function Affixes.Apply(plan, keepSnapshot)
 	local sent = plan ~= nil
 	if sent then
 		local slots = {}
 		for i = 1, Affixes.SLOTS do slots[i] = plan.order[i] or 0 end
-		SBS.Stats.Snapshot()
+		if not keepSnapshot then SBS.Stats.Snapshot(plan.current) end
 		NotifyServer(4, 0, table.concat(slots, ","))
 		watchUntil, sentOrder = GetTime() + WATCH_FOR, plan.order
 	end

@@ -191,8 +191,24 @@ local function renderStats(order)
 	local list = panel.statList
 	list:Begin()
 	if Stats.baseline then
-		list:Add({ text = S.Hex(C.muted, "Changes Since " .. Stats.baselineAt) })
+		list:Add({
+			text = S.Hex(C.muted, "Changes Since " .. Stats.baselineAt), status = S.Hex(C.muted, "Reset"),
+			onClick = function()
+				Stats.ClearSnapshot()
+				SBS.Window.Render()
+			end,
+			tooltip = function(tt)
+				tt:AddLine("Changes Since " .. Stats.baselineAt, 1, 1, 1)
+				tt:AddLine("Each stat shows how it changed since you last applied an affix order. Click to stop showing changes until the next one.", 0.8, 0.8, 0.8, true)
+			end,
+		})
+	else
+		list:Add({ text = S.Hex(C.muted, "Test Affixes to See What Changes") })
 	end
+	local canRevert = Stats.RevertPlan() ~= nil
+	enable(panel.revert, canRevert)
+	panel.revert.tooltipText = canRevert and "Send back the affix order you had before the last test or apply. Works near an innkeeper."
+		or "Nothing to revert: your order is the one you had before the last test, or you haven't tested one."
 	local group
 	for _, row in ipairs(Stats.ROWS) do
 		local gives = Stats.Gives(row, touched)
@@ -213,7 +229,6 @@ local function renderStats(order)
 		end
 	end
 	list:End()
-	enable(panel.clear, Stats.baseline ~= nil)
 end
 
 local function showView(view)
@@ -334,16 +349,11 @@ function Editor.Create(parent, width, height)
 	statsView:SetAllPoints()
 	statsView:Hide()
 	panel.statsView = statsView
-	panel.snapshot = S.Button(statsView, "Snapshot", "secondary", 80, function()
-		Stats.Snapshot()
-		SBS.Window.Render()
-	end, "Remember your stats now, so each one shows how it changes from here. Applying an affix order takes a snapshot for you.")
-	panel.snapshot:SetPoint("TOPLEFT", PAD, -PAD)
-	panel.clear = S.Button(statsView, "Clear", "secondary", 60, function()
-		Stats.ClearSnapshot()
-		SBS.Window.Render()
-	end, "Forget the snapshot and stop showing changes.")
-	panel.clear:SetPoint("LEFT", panel.snapshot, "RIGHT", GAP, 0)
+	panel.revert = S.Button(statsView, "Revert", "secondary", 80, function()
+		SBS.Affixes.Apply(Stats.RevertPlan(), true)
+		SBS.Window.Message(S.Hex(C.muted, "Reverting Affix Order..."))
+	end)
+	panel.revert:SetPoint("TOPLEFT", PAD, -PAD)
 	panel.statList = SBS.List.New(statsView, "SynastriaBuildSuiteAffixStats", pickW - 20 - 2 * wi, height - listTop - PAD)
 	panel.statList.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	return panel
