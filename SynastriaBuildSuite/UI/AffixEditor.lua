@@ -207,7 +207,7 @@ local function renderStats(order)
 	end
 	local canRevert = Stats.RevertPlan() ~= nil
 	enable(panel.revert, canRevert)
-	panel.revert.tooltipText = canRevert and "Send back the affix order you had before the last test or apply. Works near an innkeeper."
+	panel.revert.tooltipText = canRevert and "Put back the affix order you had before the last test or apply, in your spec and in this build. Sending it works near an innkeeper."
 		or "Nothing to revert: your order is the one you had before the last test, or you haven't tested one."
 	local group
 	for _, row in ipairs(Stats.ROWS) do
@@ -349,8 +349,13 @@ function Editor.Create(parent, width, height)
 	statsView:SetAllPoints()
 	statsView:Hide()
 	panel.statsView = statsView
+	-- the build's order goes back too, so it matches the spec again
 	panel.revert = S.Button(statsView, "Revert", "secondary", 80, function()
-		SBS.Affixes.Apply(Stats.RevertPlan(), true)
+		local plan = Stats.RevertPlan()
+		SBS.Affixes.Apply(plan, true)
+		current.affixes = {}
+		for i, id in ipairs(plan.order) do current.affixes[i] = id end
+		state.slot = 1
 		SBS.Window.Message(S.Hex(C.muted, "Reverting Affix Order..."))
 	end)
 	panel.revert:SetPoint("TOPLEFT", PAD, -PAD)

@@ -128,8 +128,8 @@ Apply Build sets it along with the rest of the build. A build with no affix orde
 
 **Test Affixes** sends just the build's affix order and shows **Your Stats**: your character's stats, with the
 ones the build's affixes give highlighted. Your stats are noted before the order goes out, so once the server
-has switched your affixes, each stat shows how much it went up or down. Don't like it? **Revert** sends back the
-order you had before, and the changes drop back to nothing. Click the Changes Since line to stop showing changes.
+has switched your affixes, each stat shows how much it went up or down. Don't like it? **Revert** puts back the
+order you had before, in your spec and in the build, and the changes drop back to nothing. Click the Changes Since line to stop showing changes.
 
 ![The Affixes tab: a 15-affix priority order on the left that matches the spec's, and every affix on the right](docs/images/affixes.png)
 
