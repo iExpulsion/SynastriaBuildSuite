@@ -28,6 +28,7 @@ function Sheet.Render()
 	local label = T.Label(state.section)
 	sheet.title:SetText(label .. " Templates")
 	sheet.sub:SetText(("Saved for every character. Load one into %s, or save its %s as a new one."):format(state.build.name, label:lower()))
+	sheet.stack:Layout()
 	local list, selected = sheet.list, state.selected and T.Get(state.section, state.selected)
 	if not selected then state.selected = nil end
 	list:Begin()
@@ -112,11 +113,10 @@ local function create()
 	-- the theme's dialog padding; the dialog grows by the difference from the kit's, so its contents keep their size
 	local PAD, GAP, CONTROL_H = S.metrics.inset, S.GAP, S.CONTROL_H
 	local grow = 2 * (PAD - S.PAD)
-	local listTop = PAD + 16 + 4 + 12 + PAD
-	local nameY = listTop + LIST_H + GAP + CONTROL_H / 2
+	local innerW = W - 2 * S.PAD
 	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteTemplateFrame", UIParent)
-	f:SetSize(W + grow, nameY + CONTROL_H / 2 + PAD + CONTROL_H + PAD)
+	f:SetWidth(W + grow)
 	f:SetPoint("CENTER")
 	f:SetFrameStrata("DIALOG")
 	f:EnableMouse(true)
@@ -130,46 +130,54 @@ local function create()
 	f:HookScript("OnHide", S.Dismiss)
 	f:Hide()
 
-	f.title = S.Text(f, "large")
-	f.title:SetPoint("TOPLEFT", PAD, -PAD)
-	-- one line within the dialog's padding, so a long build name or wide skin cuts it short rather than past the edge
-	f.sub = S.Text(f, "small", C.muted)
-	f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
-	f.sub:SetWidth(W - 2 * S.PAD)
-	f.sub:SetWordWrap(false)
+	-- top to bottom: title, a subtitle that wraps, the list, the name row, the buttons; the dialog is as tall as they are
+	f.stack = S.Stack(f, { width = innerW, onLayout = function(bottom) f:SetHeight(bottom + PAD) end })
+	local function row(gap)
+		local r = CreateFrame("Frame", nil, f)
+		r:SetHeight(CONTROL_H)
+		r:Show()
+		f.stack:Add(r, { gap = gap, fill = true })
+		return r
+	end
+	f.title = f.stack:Add(S.Text(f, "large"))
+	f.title:SetHeight(16)
+	f.sub = f.stack:Add(S.Wrapped(f, "small", C.muted), { gap = 4 })
 	local close = S.Button(f, "Close", "ghost", 56, function() f:Hide() end)
 	close:SetPoint("TOPRIGHT", -PAD, -(PAD - 4))
 
 	local well = CreateFrame("Frame", nil, f)
-	well:SetPoint("TOPLEFT", PAD, -listTop)
-	well:SetSize(W - 2 * S.PAD, LIST_H)
+	well:SetSize(innerW, LIST_H)
+	well:Show()
 	S.Well(well)
+	f.stack:Add(well, { gap = PAD })
 	local wi = 1 + S.metrics.wellInset
-	f.list = SBS.List.New(well, "SynastriaBuildSuiteTemplateList", W - 2 * S.PAD - 20 - 2 * wi, LIST_H - 2 * wi, nil, 20)
+	f.list = SBS.List.New(well, "SynastriaBuildSuiteTemplateList", innerW - 20 - 2 * wi, LIST_H - 2 * wi, nil, 20)
 	f.list.scroll:SetPoint("TOPLEFT", wi, -wi)
 
-	local nameLabel = S.Text(f, "small", C.muted)
-	nameLabel:SetPoint("LEFT", f, "TOPLEFT", PAD, -nameY)
+	local nameRow = row(GAP)
+	local nameLabel = S.Text(nameRow, "small", C.muted)
+	nameLabel:SetPoint("LEFT")
 	nameLabel:SetText("Name")
 	-- the name box takes the row's spare width, so Rename ends in line with the list and Load
-	local nameW = W - 2 * S.PAD - LABEL_W - 2 * (BUTTON_W + GAP)
-	f.name = S.Input(f, "SynastriaBuildSuiteTemplateName", nameW, "Template Name", 40)
-	f.name:SetPoint("LEFT", f, "TOPLEFT", PAD + LABEL_W, -nameY)
+	local nameW = innerW - LABEL_W - 2 * (BUTTON_W + GAP)
+	f.name = S.Input(nameRow, "SynastriaBuildSuiteTemplateName", nameW, "Template Name", 40)
+	f.name:SetPoint("LEFT", LABEL_W, 0)
 	f.name:HookScript("OnTextChanged", function(_, userInput)
 		if userInput then Sheet.Render() end
 	end)
-	f.save = S.Button(f, "Save", "secondary", BUTTON_W, save)
+	f.save = S.Button(nameRow, "Save", "secondary", BUTTON_W, save)
 	f.save:SetPoint("LEFT", f.name, "RIGHT", GAP, 0)
-	f.rename = S.Button(f, "Rename", "secondary", BUTTON_W, rename, "Give the selected template the name in the box.")
+	f.rename = S.Button(nameRow, "Rename", "secondary", BUTTON_W, rename, "Give the selected template the name in the box.")
 	f.rename:SetPoint("LEFT", f.save, "RIGHT", GAP, 0)
 
 	-- Delete and Load sit under Save and Rename, the four buttons one block in the corner
-	f.load = S.Button(f, "Load", "primary", BUTTON_W, load, "Replace this build's tab with the selected template.")
-	f.load:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-	f.delete = S.Button(f, "Delete", "danger", BUTTON_W, delete, "Delete the selected template.")
+	local footer = row(PAD)
+	f.load = S.Button(footer, "Load", "primary", BUTTON_W, load, "Replace this build's tab with the selected template.")
+	f.load:SetPoint("RIGHT")
+	f.delete = S.Button(footer, "Delete", "danger", BUTTON_W, delete, "Delete the selected template.")
 	f.delete:SetPoint("RIGHT", f.load, "LEFT", -GAP, 0)
-	f.note = S.Text(f, "small", C.muted)
-	f.note:SetPoint("LEFT", f, "BOTTOMLEFT", PAD, PAD + CONTROL_H / 2)
+	f.note = S.Text(footer, "small", C.muted)
+	f.note:SetPoint("LEFT")
 	f.note:SetPoint("RIGHT", f.delete, "LEFT", -PAD, 0)
 	return f
 end
