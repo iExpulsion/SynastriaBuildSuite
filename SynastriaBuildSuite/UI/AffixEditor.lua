@@ -12,7 +12,7 @@ local C = S.colors
 local Affixes, Stats
 
 local PAD, GAP, CONTROL_H = S.PAD, S.GAP, S.CONTROL_H
-local ORDER_W, PRESET_W, STATS_W, VIEW_W, WEIGHT_W = 300, 120, 110, 80, 76
+local ORDER_W, PRESET_W, STATS_W, WEIGHT_W = 300, 120, 110, 76
 
 local panel, current
 local state = { slot = 1, search = "", stats = {}, statCount = 0, view = "affixes" }
@@ -63,18 +63,18 @@ local function renderOrder(order, now, comparing)
 	list:Begin()
 	for i, id in ipairs(order) do
 		local differs = comparing and now[i] ~= id
+		local function remove()
+			Affixes.Remove(current, i)
+			SBS:Changed()
+		end
 		list:Add({
 			text = S.Hex(C.muted, i .. ".") .. "  " .. Affixes.Name(id),
 			status = differs and S.Hex(C.warn, "Differs") or nil,
 			selected = i == state.slot,
 			move = i, dragLabel = Affixes.Name(id),
+			onRemove = remove, removeTip = "Take it out of the order.",
 			onClick = function(_, mouse)
-				if mouse == "RightButton" then
-					Affixes.Remove(current, i)
-					SBS:Changed()
-				else
-					selectSlot(i)
-				end
+				if mouse == "RightButton" then remove() else selectSlot(i) end
 			end,
 			tooltip = function(tt)
 				nameLine(tt, ("%d. %s"):format(i, Affixes.Name(id)))
@@ -84,7 +84,7 @@ local function renderOrder(order, now, comparing)
 					tt:AddLine(("Your spec has %s here."):format(now[i] and Affixes.Name(now[i]) or "nothing"), 0.8, 0.8, 0.8, true)
 				end
 				tt:AddLine(" ")
-				tt:AddLine("Drag to change the order. Right-click to remove it.", 0.6, 0.6, 0.66, true)
+				tt:AddLine("Drag to change the order. Click the X or right-click to remove it.", 0.6, 0.6, 0.66, true)
 			end,
 		})
 	end
@@ -92,7 +92,6 @@ local function renderOrder(order, now, comparing)
 		list:Add({ text = S.Hex(C.muted, "No affixes yet."), sub = "Pick some on the right, or load a preset." })
 	end
 	list:End()
-	enable(panel.remove, order[state.slot] ~= nil)
 end
 
 -- Picker ----------------------------------------------------------------------------------------------------
@@ -345,9 +344,8 @@ function Editor.Render(build)
 	end
 	if onStats then panel.affixView:Hide() else panel.affixView:Show() end
 	if onStats then panel.statsView:Show() else panel.statsView:Hide() end
-	panel.view:SetLabel(onStats and "Affix List" or "Your Stats")
-	panel.view.tooltipText = onStats and "Back to the list of affixes to add to the order."
-		or "See your character's stats. After an affix order is tested or applied, each stat shows how it changed."
+	panel.listTab:SetKind(onStats and "secondary" or "selected")
+	panel.statsTab:SetKind(onStats and "selected" or "secondary")
 	renderFocus(build)
 	return summary(order, now)
 end
@@ -359,13 +357,17 @@ function Editor.Create(parent, width, height)
 	panel = CreateFrame("Frame", nil, parent)
 	panel:SetSize(width, height)
 
-	-- left: the title and preset menu, the order, then the reorder buttons
+	-- both wells have two rows of controls, so their lists start level; spare width in a row goes to its first control
+	local rowY = PAD + CONTROL_H + GAP
+	local listTop = rowY + CONTROL_H + GAP
+	-- the lists sit inside the wells' frames, however thick the theme draws them
+	local wi = 1 + S.metrics.wellInset
+
+	-- left: the title and preset menu, the build's role and type (which pick the suggested preset), then the order
 	local left = CreateFrame("Frame", nil, panel)
 	left:SetSize(ORDER_W, height)
 	left:SetPoint("TOPLEFT")
 	S.Well(left)
-	-- the lists sit inside the wells' frames, however thick the theme draws them
-	local wi = 1 + S.metrics.wellInset
 	panel.preset = S.Dropdown(left, PRESET_W, function(i)
 		Affixes.LoadPreset(current, Affixes.PRESETS[i])
 		state.slot = 1
@@ -376,62 +378,57 @@ function Editor.Create(parent, width, height)
 	panel.preset.menu:SetWidth(170)
 	panel.orderTitle = S.Text(left, "normal")
 	panel.orderTitle:SetPoint("LEFT", left, "TOPLEFT", PAD, -(PAD + CONTROL_H / 2))
-	local listTop = PAD + CONTROL_H + GAP
-	local footer = PAD + CONTROL_H + GAP
-	panel.order = SBS.List.New(left, "SynastriaBuildSuiteAffixOrder", ORDER_W - 20 - 2 * wi, height - listTop - footer, nil, 20)
+	local kindW = math.floor((ORDER_W - 2 * PAD - GAP) / 2)
+	panel.role = S.Dropdown(left, ORDER_W - 2 * PAD - GAP - kindW, function(key) setFocus("role", key) end)
+	panel.role:SetPoint("TOPLEFT", PAD, -rowY)
+	panel.role:SetOptions(focusOptions(Affixes.ROLES, "Any Role", "role"))
+	panel.role.tooltipText = "What this build does. With a role or type picked, the affix list puts the affixes giving the most of their stats first, and Load Preset marks the game's preset that fits."
+	panel.kind = S.Dropdown(left, kindW, function(key) setFocus("kind", key) end)
+	panel.kind:SetPoint("LEFT", panel.role, "RIGHT", GAP, 0)
+	panel.kind:SetOptions(focusOptions(Affixes.TYPES, "Any Type", "type"))
+	panel.kind.tooltipText = "Where this build's damage or healing comes from."
+	panel.order = SBS.List.New(left, "SynastriaBuildSuiteAffixOrder", ORDER_W - 20 - 2 * wi, height - listTop - PAD, nil, 20)
 	panel.order.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	panel.order:SetReorder(function(from, to)
 		state.slot = Affixes.Move(current, from, to)
 		SBS:Changed()
 	end)
-	panel.remove = S.Button(left, "Remove", "secondary", 76, function()
-		Affixes.Remove(current, state.slot)
-		SBS:Changed()
-	end, "Take the selected affix out of the order.")
-	panel.remove:SetPoint("BOTTOMLEFT", PAD, PAD)
 
-	-- right: every affix, with a stat filter and a search box, or the character's stats; the button between them
-	-- keeps its spot in both
+	-- right: a switch between every affix and the character's stats, the same in both
 	local pickW = width - ORDER_W - PAD
 	local pick = CreateFrame("Frame", nil, panel)
 	pick:SetSize(pickW, height)
 	pick:SetPoint("TOPLEFT", ORDER_W + PAD, 0)
 	S.Well(pick)
-	panel.view = S.Button(pick, "Your Stats", "secondary", VIEW_W, function()
-		showView(state.view == "stats" and "affixes" or "stats")
-	end)
-	panel.view:SetPoint("TOPRIGHT", -PAD, -PAD)
+	-- a segmented switch: the halves share their 1px border, like the class buttons on the Talents and Glyphs tabs
+	local statsTabW = math.floor((pickW - 2 * PAD + 1) / 2)
+	panel.listTab = S.Button(pick, "Affix List", "secondary", pickW - 2 * PAD + 1 - statsTabW, function()
+		showView("affixes")
+	end, "Every affix, to add to the order.")
+	panel.listTab:SetPoint("TOPLEFT", PAD, -PAD)
+	panel.statsTab = S.Button(pick, "Your Stats", "secondary", statsTabW, function()
+		showView("stats")
+	end, "Your character's stats. After an affix order is tested or applied, each stat shows how it changed.")
+	panel.statsTab:SetPoint("LEFT", panel.listTab, "RIGHT", -1, 0)
 
+	-- the affix list: a stat filter, a search box and the Weighted box
 	local affixView = CreateFrame("Frame", nil, pick)
 	affixView:SetAllPoints()
 	panel.affixView = affixView
 	panel.stats = S.PickerButton(affixView, STATS_W, statsSpec)
-	panel.stats:SetPoint("TOPLEFT", PAD, -PAD)
+	panel.stats:SetPoint("TOPLEFT", PAD, -rowY)
 	panel.stats.tooltipText = "Show only affixes that give any of the stats you pick. With one stat picked, the affixes giving the most of it come first, with their share beside them."
-	panel.search = S.Input(affixView, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - STATS_W - VIEW_W - 2 * GAP,
+	panel.search = S.Input(affixView, "SynastriaBuildSuiteAffixSearch", pickW - 2 * PAD - STATS_W - WEIGHT_W - 2 * GAP,
 		"Search Names or Stats", 40)
 	panel.search:SetPoint("LEFT", panel.stats, "RIGHT", GAP, 0)
 	panel.search:HookScript("OnTextChanged", function(self)
 		state.search = self:GetText():lower()
 		SBS.Window.Render()
 	end)
-	-- a second row: the build's role and type, which sort the affixes by how much of their stats each gives, and
-	-- whether that weighs each stat; the spare width goes to the first
-	local rowY = PAD + CONTROL_H + GAP
-	local dropsW = pickW - 2 * PAD - 2 * GAP - WEIGHT_W
-	local kindW = math.floor((dropsW - GAP) / 2)
-	panel.role = S.Dropdown(affixView, dropsW - GAP - kindW, function(key) setFocus("role", key) end)
-	panel.role:SetPoint("TOPLEFT", PAD, -rowY)
-	panel.role:SetOptions(focusOptions(Affixes.ROLES, "Any Role", "role"))
-	panel.role.tooltipText = "What this build does. With a role or type picked, the affixes giving the most of their stats together come first."
-	panel.kind = S.Dropdown(affixView, kindW, function(key) setFocus("kind", key) end)
-	panel.kind:SetPoint("LEFT", panel.role, "RIGHT", GAP, 0)
-	panel.kind:SetOptions(focusOptions(Affixes.TYPES, "Any Type", "type"))
-	panel.kind.tooltipText = "Where this build's damage or healing comes from."
 	-- the label is part of the button, so clicking either toggles it
 	local weight = CreateFrame("Button", nil, affixView)
 	weight:SetSize(WEIGHT_W, CONTROL_H)
-	weight:SetPoint("LEFT", panel.kind, "RIGHT", GAP, 0)
+	weight:SetPoint("LEFT", panel.search, "RIGHT", GAP, 0)
 	panel.weighted = S.Check(weight, nil, function() weight:Click() end)
 	panel.weighted:SetPoint("LEFT", 0, 0)
 	local weightLabel = S.Text(weight, "small")
@@ -449,9 +446,8 @@ function Editor.Create(parent, width, height)
 	end)
 	weight:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	panel.weightToggle = weight
-	local pickTop = rowY + CONTROL_H + GAP
-	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - pickTop - PAD, nil, 20)
-	panel.picker.scroll:SetPoint("TOPLEFT", wi, -pickTop)
+	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
+	panel.picker.scroll:SetPoint("TOPLEFT", wi, -listTop)
 
 	local statsView = CreateFrame("Frame", nil, pick)
 	statsView:SetAllPoints()
@@ -466,7 +462,7 @@ function Editor.Create(parent, width, height)
 		state.slot = 1
 		SBS.Window.Message(S.Hex(C.muted, "Reverting Affix Order..."))
 	end)
-	panel.revert:SetPoint("TOPLEFT", PAD, -PAD)
+	panel.revert:SetPoint("TOPLEFT", PAD, -rowY)
 	panel.statList = SBS.List.New(statsView, "SynastriaBuildSuiteAffixStats", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
 	panel.statList.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	return panel

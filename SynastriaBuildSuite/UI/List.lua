@@ -13,13 +13,26 @@ local STYLES = {
 	sidebar = { rowH = 22, subRowH = 36, header = "small", row = "normal" },
 }
 
+-- A hovered row shows its highlight and, when it can be removed, its remove button in place of its status.
+local function setHover(row, on)
+	local removable = on and row.onRemove ~= nil
+	if on then row.hoverTex:Show() else row.hoverTex:Hide() end
+	if removable then row.remove:Show() row.status:Hide() else row.remove:Hide() row.status:Show() end
+end
+
 local function runTooltip(row)
-	row.hoverTex:Show()
+	setHover(row, true)
 	if row.tooltip then
 		GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
 		row.tooltip(GameTooltip)
 		GameTooltip:Show()
 	end
+end
+
+-- Moving onto the remove button leaves the row; the row stays hovered while the mouse is over either.
+local function leave(row)
+	if not MouseIsOver(row) then setHover(row, false) end
+	GameTooltip:Hide()
 end
 
 local function dropOrClick(row, button)
@@ -69,13 +82,30 @@ local function newRow(self)
 	row.sub:SetPoint("TOPLEFT", row.text, "BOTTOMLEFT", 0, -2)
 	row.sub:SetPoint("RIGHT", row.status, "LEFT", -6, 0)
 
+	-- shown on hover for rows added with onRemove, over the status
+	row.remove = CreateFrame("Button", nil, row)
+	row.remove:SetSize(S.CONTROL_H, S.CONTROL_H)
+	row.remove:SetPoint("RIGHT", -S.PAD + 6, 0)
+	row.remove.label = S.Text(row.remove, "normal", S.colors.muted)
+	row.remove.label:SetPoint("CENTER")
+	row.remove.label:SetText("X")
+	row.remove:Hide()
+	row.remove:SetScript("OnClick", function() if row.onRemove then row.onRemove(row) end end)
+	row.remove:SetScript("OnEnter", function(self)
+		self.label:SetTextColor(unpack(S.colors.bad))
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:SetText(row.removeTip or "Remove", nil, nil, nil, nil, true)
+		GameTooltip:Show()
+	end)
+	row.remove:SetScript("OnLeave", function(self)
+		self.label:SetTextColor(unpack(S.colors.muted))
+		leave(row)
+	end)
+
 	row:SetScript("OnClick", dropOrClick)
 	row:SetScript("OnReceiveDrag", function(r) dropOrClick(r, "LeftButton") end)
 	row:SetScript("OnEnter", runTooltip)
-	row:SetScript("OnLeave", function(r)
-		r.hoverTex:Hide()
-		GameTooltip:Hide()
-	end)
+	row:SetScript("OnLeave", leave)
 	return row
 end
 
@@ -127,8 +157,9 @@ end
 
 -- entry: text, sub, status, icon, header, collapsed (true/false shows +/-), indent, selected,
 -- check (true/false shows a checkbox), checkEnabled, checkTooltip, onCheck(row),
--- tooltip(tt), onClick(row, button), onDrop(itemId), move (the index it drags from, with SetReorder) and
--- dragLabel (the text by the cursor while it's dragged)
+-- tooltip(tt), onClick(row, button), onDrop(itemId), move (the index it drags from, with SetReorder),
+-- dragLabel (the text by the cursor while it's dragged), and onRemove(row) with removeTip (an X shown over the
+-- status while the row is hovered)
 function List:Add(entry)
 	local style = self.style
 	self.count = self.count + 1
@@ -201,6 +232,9 @@ function List:Add(entry)
 	end
 
 	row.tooltip, row.onClick, row.onDrop, row.onCheck = entry.tooltip, entry.onClick, entry.onDrop, entry.onCheck
+	row.onRemove, row.removeTip = entry.onRemove, entry.removeTip
+	-- rows are reused, so a redraw under the mouse keeps the hover the new entry should have
+	setHover(row, row:IsShown() and MouseIsOver(row) or false)
 	row.moveIndex, row.dragLabel = entry.move, entry.dragLabel
 	row:Show()
 	return row

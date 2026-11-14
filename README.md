@@ -125,17 +125,18 @@ Loot Database.
 
 An item can have several of its affixes attuned, but only one is active at a time. The server picks the first
 one in your spec's affix order, the same 16 slots as the game's Item Affix Manager. The left side is the build's
-order, most wanted first: drag an affix up or down to change its place, and select one to remove it or right-click
-it to remove it.
-**Load Preset** starts from one of the game's orders (Strength DPS, Agility DPS, Tank, Caster). The right side
-lists every affix with its stats on hover, the biggest first, each with its share of the item's affix budget: on
-the same item, a bigger share is more of that stat, so a single-stat affix gives the most. Click one to add it to
-the end. Search finds affixes by name or by a
-stat they give ("haste", "stamina"), and the stats filter beside it shows only affixes that give any of the stats
-you pick. Pick just one and the affixes giving the most of it come first, with their share beside them; affixes
-giving the same share go by the role and type below, whose total shows beside the share.
+order, most wanted first: drag an affix up or down to change its place, and click the X on a hovered affix (or
+right-click it) to remove it. **Load Preset** starts from one of the game's orders (Strength DPS, Agility DPS, Tank,
+Caster).
 
-Below them, pick the build's **role** (Damage, Tank or Healer) and **type** (Strength, Agility or Spell). Together
+The right side switches between the **Affix List** and **Your Stats**. The list shows every affix with its stats
+on hover, the biggest first, each with its share of the item's affix budget: on the same item, a bigger share is
+more of that stat, so a single-stat affix gives the most. Click one to add it to the end. Search finds affixes by
+name or by a stat they give ("haste", "stamina"), and the stats filter beside it shows only affixes that give any
+of the stats you pick. Pick just one and the affixes giving the most of it come first, with their share beside
+them; affixes giving the same share go by the build's role and type, whose total shows beside the share.
+
+Under the order, pick the build's **role** (Damage, Tank or Healer) and **type** (Strength, Agility or Spell). Together
 they choose the stats that count: Damage adds Hit, Crit and Haste, Tank adds Stamina, Defense, Dodge, Block and
 Armor, Healer adds Spirit, Mana Regen, Crit and Haste; Strength adds Strength and Attack Power, Agility adds
 Agility, Attack Power and Ranged Attack Power, Spell adds Intellect and Spell Power. The affixes giving the most of
