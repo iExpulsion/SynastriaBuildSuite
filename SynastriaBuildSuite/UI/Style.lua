@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.6.0-6-g1cd0659. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.6.0-8-g2fb8e56. Change it there, then run tools/sync_style.py.
 -- MIT License, Copyright (c) 2026 Expulsion: https://github.com/iExpulsion/MaterialCraftUI
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
@@ -1640,8 +1640,8 @@ function Table:Redraw()
 		local item = self.items[self.offset + i]
 		local header = item and self.header and self.header(item)
 		if i == 1 and stuckItem then item, header = stuckItem, stuckLabel end
-		if row.stickyRule then
-			if i == 1 and stuckItem then row.stickyRule:Show() else row.stickyRule:Hide() end
+		if i == 1 and self.stickyHeaders then
+			if stuckItem then row.stickyRule:Show() else row.stickyRule:Hide() end
 		end
 		row.item = item
 		row.moveIndex = item and not header and self.offset + i or nil
@@ -1657,7 +1657,7 @@ function Table:Redraw()
 		end
 		local groupColor = header and self.headerColor and self.headerColor(item)
 		row.headerText:SetTextColor(unpack(groupColor or S.colors.heading))
-		if row.headerRule then
+		if self.headerColor then
 			if groupColor then
 				row.headerRule:SetVertexColor(unpack(groupColor))
 				row.headerRule:Show()
@@ -2283,6 +2283,137 @@ S.RegisterSkin("material", {
 	end,
 })
 skin = skins.material
+
+-------------------------------------------------------------------------------- minimap button
+
+-- Which quadrants of each minimap shape are round, in the order GetMinimapShape addons use.
+local MINIMAP_SHAPES = {
+	ROUND = { true, true, true, true },
+	SQUARE = { false, false, false, false },
+	["CORNER-TOPLEFT"] = { false, false, false, true },
+	["CORNER-TOPRIGHT"] = { false, false, true, false },
+	["CORNER-BOTTOMLEFT"] = { false, true, false, false },
+	["CORNER-BOTTOMRIGHT"] = { true, false, false, false },
+	["SIDE-LEFT"] = { false, true, false, true },
+	["SIDE-RIGHT"] = { true, false, true, false },
+	["SIDE-TOP"] = { false, false, true, true },
+	["SIDE-BOTTOM"] = { true, true, false, false },
+	["TRICORNER-TOPLEFT"] = { false, true, true, true },
+	["TRICORNER-TOPRIGHT"] = { true, false, true, true },
+	["TRICORNER-BOTTOMLEFT"] = { true, true, false, true },
+	["TRICORNER-BOTTOMRIGHT"] = { true, true, true, false },
+}
+
+-- The game's round minimap button with an icon: drag moves it around the minimap's edge (any shape), Shift-drag
+-- frees it to sit anywhere on screen, even with the minimap hidden. Where it is and whether it's hidden are kept in
+-- opts.db, a saved table (angle, free = { x, y }, hide). opts: name (the frame's name), icon, angle (where it starts,
+-- in degrees), onClick(button, mouse), tooltip(tt) (the lines above the drag hint), hint (a last tooltip line, such
+-- as the command that hides it), onDragStart(), onReparent(button) (after it moves between the minimap and
+-- UIParent). Returns the button, with :Place(), :Refresh() (shown unless db.hide) and :ResetPosition(). Dragging
+-- runs on a child frame, so the button's OnUpdate stays free for the addon.
+function S.MinimapButton(opts)
+	local db = opts.db
+	local button = CreateFrame("Button", opts.name, Minimap)
+	button:SetSize(31, 31)
+	button:SetFrameStrata("MEDIUM")
+	button:SetFrameLevel(8)
+	button:SetClampedToScreen(true)
+	button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+	button:RegisterForDrag("LeftButton")
+	button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+	local background = button:CreateTexture(nil, "BACKGROUND")
+	background:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+	background:SetSize(20, 20)
+	background:SetPoint("TOPLEFT", 7, -5)
+	button.icon = button:CreateTexture(nil, "ARTWORK")
+	button.icon:SetTexture(opts.icon)
+	button.icon:SetSize(17, 17)
+	button.icon:SetPoint("TOPLEFT", 7, -6)
+	button.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+	local border = button:CreateTexture(nil, "OVERLAY")
+	border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+	border:SetSize(53, 53)
+	border:SetPoint("TOPLEFT")
+
+	function button:Place()
+		local free = db.free
+		local parent = free and UIParent or Minimap
+		if self:GetParent() ~= parent then
+			self:SetParent(parent)
+			self:SetFrameStrata("MEDIUM")
+			self:SetFrameLevel(8)
+			if opts.onReparent then opts.onReparent(self) end
+		end
+		self:ClearAllPoints()
+		if free then
+			self:SetPoint("CENTER", UIParent, "BOTTOMLEFT", free.x, free.y)
+		else
+			local angle = math.rad(db.angle or opts.angle or 225)
+			local x, y = math.cos(angle), math.sin(angle)
+			local quadrant = 1 + (x < 0 and 1 or 0) + (y > 0 and 2 or 0)
+			local shape = GetMinimapShape and GetMinimapShape() or "ROUND"
+			local radius = Minimap:GetWidth() / 2 + 5
+			if (MINIMAP_SHAPES[shape] or MINIMAP_SHAPES.ROUND)[quadrant] then
+				x, y = x * radius, y * radius
+			else
+				local diagonal = math.sqrt(2 * radius * radius) - 10
+				x = math.max(-radius, math.min(x * diagonal, radius))
+				y = math.max(-radius, math.min(y * diagonal, radius))
+			end
+			self:SetPoint("CENTER", Minimap, "CENTER", x, y)
+		end
+	end
+
+	function button:Refresh()
+		if db.hide then self:Hide() else self:Show() end
+	end
+
+	function button:ResetPosition()
+		db.free, db.angle = nil, nil
+		self:Place()
+	end
+
+	-- follows the cursor until the button is let go, which ends it even when a reparent mid-drag costs OnDragStop
+	local dragger = CreateFrame("Frame", nil, button)
+	dragger:Hide()
+	dragger:SetScript("OnUpdate", function(self)
+		if IsMouseButtonDown("LeftButton") then
+			local px, py = GetCursorPosition()
+			if db.free then
+				local scale = UIParent:GetEffectiveScale()
+				db.free.x, db.free.y = px / scale, py / scale
+			else
+				local mx, my = Minimap:GetCenter()
+				local scale = Minimap:GetEffectiveScale()
+				db.angle = math.deg(math.atan2(py / scale - my, px / scale - mx)) % 360
+			end
+			button:Place()
+		else
+			self:Hide()
+		end
+	end)
+	button.dragger = dragger
+
+	button:SetScript("OnClick", function(self, mouse) if opts.onClick then opts.onClick(self, mouse) end end)
+	button:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+		if opts.tooltip then opts.tooltip(GameTooltip) end
+		GameTooltip:AddLine("Drag to move it around the minimap, Shift-drag to place it anywhere.", 0.6, 0.6, 0.66)
+		if opts.hint then GameTooltip:AddLine(opts.hint, 0.6, 0.6, 0.66) end
+		GameTooltip:Show()
+	end)
+	button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	button:SetScript("OnDragStart", function()
+		GameTooltip:Hide()
+		if opts.onDragStart then opts.onDragStart() end
+		db.free = IsShiftKeyDown() and (db.free or {}) or nil
+		dragger:Show()
+	end)
+	button:SetScript("OnDragStop", function() dragger:Hide() end)
+	button:Place()
+	button:Refresh()
+	return button
+end
 
 -------------------------------------------------------------------------------- settings
 
