@@ -48,12 +48,12 @@ end
 
 local function dragLabel(row) return row.dragLabel end
 
-local function newRow(self)
+local function newRow(self, parent)
 	local style = self.style
-	local row = CreateFrame("Button", nil, self.content)
+	local row = CreateFrame("Button", nil, parent or self.content)
 	row.list = self
 	row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-	if self.reorder then self.reorder:Attach(row, dragLabel) end
+	if self.reorder and not parent then self.reorder:Attach(row, dragLabel) end
 
 	row.hoverTex = S.Solid(row, "BACKGROUND", S.colors.rowHover)
 	row.hoverTex:SetAllPoints()
@@ -81,6 +81,12 @@ local function newRow(self)
 	row.sub = S.Text(row, "small", S.colors.muted)
 	row.sub:SetPoint("TOPLEFT", row.text, "BOTTOMLEFT", 0, -2)
 	row.sub:SetPoint("RIGHT", row.status, "LEFT", -6, 0)
+	-- a colored header's rule
+	row.rule = S.Solid(row, "ARTWORK", S.colors.heading)
+	row.rule:SetHeight(1)
+	row.rule:SetPoint("BOTTOMLEFT", S.PAD, 0)
+	row.rule:SetPoint("BOTTOMRIGHT", -S.PAD, 0)
+	row.rule:Hide()
 
 	-- shown on hover for rows added with onRemove, over the status
 	row.remove = CreateFrame("Button", nil, row)
@@ -112,7 +118,8 @@ end
 -- `width` leaves room on the right for the scroll bar; `gutter` is that room, which the rows take over while
 -- there's nothing to scroll and the bar is hidden.
 function List.New(parent, name, width, height, style, gutter)
-	local self = setmetatable({ rows = {}, count = 0, style = STYLES[style or "content"], width = width, name = name }, { __index = List })
+	local self = setmetatable({ rows = {}, headers = {}, count = 0, style = STYLES[style or "content"], width = width,
+		name = name }, { __index = List })
 	self.scroll = CreateFrame("ScrollFrame", name, parent, "UIPanelScrollFrameTemplate")
 	self.scroll:SetSize(width, height)
 	self.content = CreateFrame("Frame", nil, self.scroll)
@@ -124,6 +131,68 @@ function List.New(parent, name, width, height, style, gutter)
 		self.content:SetWidth(w)
 	end)
 	return self
+end
+
+-- The overlay row's copy of the header the list has scrolled past: shown while any of that header is above the
+-- top, hidden at the top or above the first header.
+local function updateSticky(self)
+	local stuck = self.stuck
+	local offset = self.scroll:GetVerticalScroll() or 0
+	local source
+	for i = 1, self.headerCount do
+		local row = self.headers[i]
+		if row.y < offset then source = row end
+	end
+	stuck.source = source
+	if source then
+		S.SetFont(stuck.text, self.style.header)
+		stuck.text:SetText(source.text:GetText() or "")
+		stuck.text:SetTextColor(source.text:GetTextColor())
+		stuck.status:SetText(source.status:GetText() or "")
+		if source.rule:IsShown() then
+			stuck.rule:SetVertexColor(source.rule:GetVertexColor())
+			stuck.rule:Show()
+		else
+			stuck.rule:Hide()
+		end
+		stuck:Show()
+	else
+		stuck:Hide()
+	end
+end
+
+-- Keeps the header of the section scrolled into on an overlay at the top, with a rule under it, until the next
+-- header reaches the top. Clicks and the tooltip go to the header itself.
+function List:SetSticky()
+	local stuck = newRow(self, self.scroll)
+	stuck:SetFrameLevel(self.content:GetFrameLevel() + 3)
+	stuck:SetPoint("TOPLEFT", self.scroll, "TOPLEFT")
+	stuck:SetPoint("TOPRIGHT", self.scroll, "TOPRIGHT")
+	stuck:SetHeight(self.style.rowH)
+	stuck.bg = S.Solid(stuck, "BACKGROUND", S.colors.panel)
+	stuck.bg:SetDrawLayer("BACKGROUND", -1)
+	stuck.bg:SetAllPoints()
+	local divider, thickness = S.Divider(stuck, "header")
+	divider:SetHeight(thickness)
+	divider:SetPoint("BOTTOMLEFT")
+	divider:SetPoint("BOTTOMRIGHT")
+	stuck.text:ClearAllPoints()
+	stuck.text:SetPoint("LEFT", S.PAD, 0)
+	stuck.text:SetPoint("RIGHT", stuck.status, "LEFT", -6, 0)
+	stuck.selectedTex:Hide()
+	stuck.bar:Hide()
+	stuck.toggle:Hide()
+	stuck.check:Hide()
+	stuck.icon:Hide()
+	stuck.sub:Hide()
+	stuck:SetScript("OnClick", function(r, button)
+		if r.source and r.source.onClick then r.source.onClick(r.source, button) end
+	end)
+	stuck.tooltip = function(tt) if stuck.source and stuck.source.tooltip then stuck.source.tooltip(tt) end end
+	stuck:Hide()
+	self.stuck = stuck
+	self.headerCount = 0
+	self.scroll:HookScript("OnVerticalScroll", function() updateSticky(self) end)
 end
 
 -- Rows added with a move index can be dragged into a new order; onMove(from, to) gets the drop.
@@ -153,9 +222,11 @@ end
 function List:Begin()
 	self.count = 0
 	self.height = 0
+	self.headerCount = 0
 end
 
--- entry: text, sub, status, icon, header, collapsed (true/false shows +/-), indent, selected,
+-- entry: text, sub, status, icon, header, color (a header's text and rule color), collapsed (true/false shows +/-),
+-- indent, selected,
 -- check (true/false shows a checkbox), checkEnabled, checkTooltip, onCheck(row),
 -- tooltip(tt), onClick(row, button), onDrop(itemId), move (the index it drags from, with SetReorder),
 -- dragLabel (the text by the cursor while it's dragged), and onRemove(row) with removeTip (an X shown over the
@@ -174,7 +245,12 @@ function List:Add(entry)
 	row:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -self.height)
 	row:SetPoint("TOPRIGHT", self.content, "TOPRIGHT", 0, -self.height)
 	row:SetHeight(h)
+	row.y = self.height
 	self.height = self.height + h
+	if entry.header then
+		self.headerCount = self.headerCount + 1
+		self.headers[self.headerCount] = row
+	end
 
 	local x = S.PAD + (entry.indent or 0)
 	if entry.collapsed ~= nil then
@@ -221,7 +297,13 @@ function List:Add(entry)
 	S.SetFont(row.text, entry.header and style.header or style.row)
 	row.text:SetText(entry.text or "")
 	-- rows are reused, so both kinds set their color; a header left to its font would keep a build row's white
-	row.text:SetTextColor(unpack(entry.header and S.colors.heading or S.colors.text))
+	row.text:SetTextColor(unpack(entry.header and (entry.color or S.colors.heading) or S.colors.text))
+	if entry.header and entry.color then
+		row.rule:SetVertexColor(unpack(entry.color))
+		row.rule:Show()
+	else
+		row.rule:Hide()
+	end
 	row.status:SetText(entry.status or "")
 	if entry.selected then
 		row.selectedTex:Show()
@@ -245,6 +327,7 @@ function List:End()
 	self.content:SetHeight(math.max(1, self.height))
 	self.scroll:UpdateScrollChildRect()
 	self.updateBar()
+	if self.stuck then updateSticky(self) end
 end
 
 function List:Show() self.scroll:Show() end

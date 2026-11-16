@@ -35,6 +35,19 @@ local function categoryName(cat)
 	return key and (SBS.Window.ClassText({ key }, true) .. " Class") or CATEGORY_NAMES[cat] or "Other"
 end
 
+-- Each category's heading color: a theme hue for the four general ones, the class color for a class category, and
+-- the usual heading color for the rest. Class colors are made once each.
+local CATEGORY_HUES = { [15] = "red", [16] = "blue", [17] = "green", [18] = "yellow" }
+local classColors = {}
+
+local function categoryColor(cat)
+	local hue = CATEGORY_HUES[cat]
+	local key = SBS.CLASS_KEYS[cat]
+	local raid = key and RAID_CLASS_COLORS and RAID_CLASS_COLORS[key]
+	if raid and not classColors[cat] then classColors[cat] = { raid.r, raid.g, raid.b, 1 } end
+	return hue and S.colors[hue] or classColors[cat]
+end
+
 local function spellIcon(id)
 	return id and select(3, GetSpellInfo(id)) or QUESTION
 end
@@ -208,7 +221,7 @@ local function renderList(build, mask, look)
 	for _, cat in ipairs(CATEGORY_ORDER) do
 		local perks = byCat[cat]
 		if perks then
-			list:Add({ text = categoryName(cat), header = true, status = categoryStatus(build, cat, mask),
+			list:Add({ text = categoryName(cat), header = true, color = categoryColor(cat), status = categoryStatus(build, cat, mask),
 				tooltip = function(tt)
 					tt:AddLine(categoryName(cat), 1, 1, 1)
 					tt:AddLine(cat == Perks.SHARED_CAT
@@ -590,6 +603,7 @@ function Editor.Create(parent, width, height)
 	end)
 
 	panel.list = SBS.List.New(panel, "SynastriaBuildSuitePerkList", LIST_W - 14, height - TOOLBAR_H, nil, 14)
+	panel.list:SetSticky()
 	panel.list.scroll:SetPoint("TOPLEFT", 0, -TOOLBAR_H)
 
 	panel.detail = createDetail(width - LIST_RIGHT - PAD, height)
