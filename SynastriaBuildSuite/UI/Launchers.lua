@@ -11,8 +11,8 @@ local PARK_WAIT = 10
 local watching = false
 
 -- The Perk Manager the gossip line opens has to stay shown for perk activations, but the window covers it, so it's
--- moved off screen and made invisible until it closes. Closing the window closes it too. A Perk Manager that
--- arrives already invisible (Synastria Companion parks it the same way) is left alone.
+-- moved off screen and made invisible until it closes. A Perk Manager that arrives already invisible (Synastria
+-- Companion parks it the same way) is left alone. Whichever addon's window closes last closes it.
 local park = { wantedUntil = nil, saved = nil }
 
 local function parkPerkManager(f)
@@ -45,9 +45,15 @@ function Launchers.PerkManagerParked()
 	return park.saved ~= nil
 end
 
+local function companionShown()
+	local addon = _G.SynastriaCompanion
+	local api = addon and addon.API
+	return api ~= nil and api.IsShown()
+end
+
 function Launchers.WindowClosed()
 	local f = PerkMgrFrame
-	if f and park.saved and f:IsShown() then f:Hide() end
+	if f and f:IsShown() and f:GetAlpha() == 0 and not companionShown() then ClosePerkMgr() end
 end
 
 -- The server sends the Perk Manager's Lua after login, so this checks until it exists. The window redraws when it

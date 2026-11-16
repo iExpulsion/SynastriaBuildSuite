@@ -50,24 +50,11 @@ end
 -- restart, and a /reload after an update would leave other addons without it.
 local API = { version = 1 }
 SBS.API = API
-local shownListeners = {}
 
 -- True while Build Suite's window is open.
 function API.IsShown()
 	local f = SBS.Window and SBS.Window.Frame()
 	return f ~= nil and f:IsShown() ~= nil
-end
-
--- Calls callback(shown) each time Build Suite's window opens or closes.
-function API.OnShownChanged(callback)
-	shownListeners[#shownListeners + 1] = callback
-end
-
-function SBS.ShownChanged(shown)
-	for _, callback in ipairs(shownListeners) do
-		local ok, err = pcall(callback, shown)
-		if not ok then geterrorhandler()(err) end
-	end
 end
 
 function SBS:Print(fmt, ...)
