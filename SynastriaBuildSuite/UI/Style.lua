@@ -1,4 +1,4 @@
--- Vendored from MaterialCraftUI v1.6.0-5-geb12fb5. Change it there, then run tools/sync_style.py.
+-- Vendored from MaterialCraftUI v1.6.0-6-g1cd0659. Change it there, then run tools/sync_style.py.
 -- MIT License, Copyright (c) 2026 Expulsion: https://github.com/iExpulsion/MaterialCraftUI
 -- MaterialCraftUI: a flat dark style kit for WoW 3.3.5 addons on Material 3 color roles: one accent color, 1px
 -- borders, state layers and a few button kinds. Each addon ships its own copy, listed in its .toc, and reads it
@@ -2283,3 +2283,158 @@ S.RegisterSkin("material", {
 	end,
 })
 skin = skins.material
+
+-------------------------------------------------------------------------------- settings
+
+-- The player's look for the addon, kept in its saved table: skin (a change applies after a reload, which it offers),
+-- windowScale (the size of its windows) and pixelScale (whether they snap to whole pixels). Settings.Use runs once
+-- the saved table exists and before any frame is built; frames made through Settings.PixelScale follow both.
+local Settings = { SCALES = { 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2 } }
+S.Settings = Settings
+local MIN_SCALE, MAX_SCALE = 0.5, 3
+local RELOAD_POPUP = ADDON:upper() .. "_THEME_RELOAD"
+local settingsDb, settingsOpts = {}, {}
+-- frame -> the function that puts it back after its scale changes, or false to snap it by its top left
+local scaledFrames = {}
+local settingsBar
+
+local function skinLabel(key)
+	for _, s in ipairs(S.Skins()) do
+		if s.key == key then return s.label end
+	end
+end
+
+local function paintSettingsBar()
+	if settingsBar then
+		settingsBar.size:SetText(Settings.ScaleLabel(settingsDb.windowScale))
+		settingsBar.snap:SetChecked(settingsDb.pixelScale)
+	end
+end
+
+-- After the scale changes: frames with a place of their own are put back (the rest snap, when asked), then the
+-- addon's onRescaled runs and the title bar controls show the saved values.
+local function rescaled(snap)
+	for frame, place in pairs(scaledFrames) do
+		if place then place() elseif snap then Settings.SnapPosition(frame) end
+	end
+	if settingsOpts.onRescaled then settingsOpts.onRescaled() end
+	paintSettingsBar()
+end
+
+-- opts: theme (S.SetTheme roles for the skins without a scheme of their own), name (the addon's name in the
+-- reload prompt), onRescaled() (after the size or pixel snapping changes, to place the addon's windows again).
+-- Missing or unknown values in db get their defaults.
+function Settings.Use(db, opts)
+	settingsDb, settingsOpts = db, opts or {}
+	if not skinLabel(db.skin) then db.skin = "material" end
+	if db.pixelScale == nil then db.pixelScale = true end
+	if db.windowScale == nil then db.windowScale = 1 end
+	S.UseSkin(db.skin, settingsOpts.theme)
+	S.SetWindowScale(db.windowScale)
+	StaticPopupDialogs[RELOAD_POPUP] = {
+		text = (settingsOpts.name or ADDON) .. " switches to the %s theme after a reload. Reload now?",
+		button1 = "Reload", button2 = "Later",
+		OnAccept = function() ReloadUI() end,
+		timeout = 0, whileDead = true, hideOnEscape = true,
+	}
+end
+
+-- Pixel-scales a frame as the player has it (S.PixelScale). A frame that keeps an anchor of its own, such as a
+-- tracker pinned by a corner, passes place(), which puts it back after its scale changes; the others snap by their
+-- top left.
+function Settings.PixelScale(frame, place)
+	scaledFrames[frame] = place or false
+	S.PixelScale(frame, settingsDb.pixelScale)
+	return frame
+end
+
+-- Snaps a window's position to whole pixels, when pixel snapping is on.
+function Settings.SnapPosition(frame)
+	if settingsDb.pixelScale then S.SnapPosition(frame) end
+end
+
+function Settings.SetPixelScale(on)
+	settingsDb.pixelScale = on
+	for frame in pairs(scaledFrames) do S.PixelScale(frame, on) end
+	rescaled(true)
+end
+
+function Settings.ScaleLabel(scale)
+	return ("%d%%"):format(math.floor(scale * 100 + 0.5))
+end
+
+-- Sets the size of the addon's windows; false when it's not a number from 0.5 to 3.
+function Settings.SetWindowScale(scale)
+	local ok = type(scale) == "number" and scale >= MIN_SCALE and scale <= MAX_SCALE
+	if ok then
+		settingsDb.windowScale = scale
+		S.SetWindowScale(scale)
+		rescaled(false)
+	end
+	return ok
+end
+
+-- Saves a skin for the next load and offers to reload; false for a skin that doesn't exist.
+function Settings.SetSkin(key)
+	local label = skinLabel(key)
+	if label and key ~= settingsDb.skin then
+		settingsDb.skin = key
+		StaticPopup_Show(RELOAD_POPUP, label)
+	end
+	return label ~= nil
+end
+
+local settingsWatch = CreateFrame("Frame")
+settingsWatch:RegisterEvent("UI_SCALE_CHANGED")
+settingsWatch:RegisterEvent("DISPLAY_SIZE_CHANGED")
+settingsWatch:SetScript("OnEvent", function() rescaled(false) end)
+
+local function barLabel(bar, anchor, text, gap)
+	local label = S.Text(bar, "small", S.colors.muted)
+	label:SetPoint("LEFT", anchor, "RIGHT", gap, 0)
+	label:SetText(text)
+	return label
+end
+
+-- A window's title bar settings, left to right from anchor: a Theme dropdown (each skin, who made it on hover), a
+-- Size dropdown and a Snap to Pixels box. They show the saved values and set them. Returns { theme, size, snap }
+-- and the last control, to place more after it.
+function Settings.TitleBar(bar, anchor)
+	local controls = {}
+	local options, inUse = {}, nil
+	for _, s in ipairs(S.Skins()) do
+		options[#options + 1] = { value = s.key, text = s.label, tooltip = s.credit }
+		if s.key == S.Skin() then inUse = s.label end
+	end
+	local themeLabel = barLabel(bar, anchor, "Theme", 2 * S.GAP)
+	controls.theme = S.Dropdown(bar, 96, function(key)
+		Settings.SetSkin(key)
+		controls.theme:SetText(skinLabel(key) or key)
+	end)
+	controls.theme:SetOptions(options)
+	controls.theme:SetText(inUse or "")
+	controls.theme:SetPoint("LEFT", themeLabel, "RIGHT", S.GAP, 0)
+
+	local sizeLabel = barLabel(bar, controls.theme, "Size", 2 * S.GAP)
+	local sizes = {}
+	for _, scale in ipairs(Settings.SCALES) do sizes[#sizes + 1] = { value = scale, text = Settings.ScaleLabel(scale) } end
+	controls.size = S.Dropdown(bar, 64, function(scale) Settings.SetWindowScale(scale) end)
+	controls.size:SetOptions(sizes)
+	controls.size:SetPoint("LEFT", sizeLabel, "RIGHT", S.GAP, 0)
+
+	controls.snap = S.Check(bar, nil, function() Settings.SetPixelScale(not settingsDb.pixelScale) end)
+	controls.snap:SetPoint("LEFT", controls.size, "RIGHT", 2 * S.GAP, 0)
+	local snapLabel = barLabel(bar, controls.snap, "Snap to Pixels", 6)
+	controls.snap:HookScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+		GameTooltip:AddLine("Snap to Pixels", 1, 1, 1)
+		GameTooltip:AddLine("Lines the window up with whole screen pixels so its borders stay crisp. It can make the "
+			.. "window a little larger or smaller than the rest of your UI; turn it off to match the UI scale exactly.",
+			nil, nil, nil, true)
+		GameTooltip:Show()
+	end)
+	controls.snap:HookScript("OnLeave", function() GameTooltip:Hide() end)
+	settingsBar = controls
+	paintSettingsBar()
+	return controls, snapLabel
+end
