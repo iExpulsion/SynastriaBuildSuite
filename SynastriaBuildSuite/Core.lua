@@ -44,6 +44,32 @@ function SBS:ComboName(a, b)
 	return a and b and comboByPair[a .. "/" .. b]
 end
 
+-- What other addons may use, as SynastriaBuildSuite.API. Look it up when needed, since Build Suite may not be
+-- installed or may load later. Fields are only ever added, and version goes up when they are. It lives here rather
+-- than in a file of its own: the client reads the .toc only at startup, so a file added to it is skipped until a
+-- restart, and a /reload after an update would leave other addons without it.
+local API = { version = 1 }
+SBS.API = API
+local shownListeners = {}
+
+-- True while Build Suite's window is open.
+function API.IsShown()
+	local f = SBS.Window and SBS.Window.Frame()
+	return f ~= nil and f:IsShown() ~= nil
+end
+
+-- Calls callback(shown) each time Build Suite's window opens or closes.
+function API.OnShownChanged(callback)
+	shownListeners[#shownListeners + 1] = callback
+end
+
+function SBS.ShownChanged(shown)
+	for _, callback in ipairs(shownListeners) do
+		local ok, err = pcall(callback, shown)
+		if not ok then geterrorhandler()(err) end
+	end
+end
+
 function SBS:Print(fmt, ...)
 	local msg = select("#", ...) > 0 and fmt:format(...) or fmt
 	DEFAULT_CHAT_FRAME:AddMessage("|cffffc400Synastria Build Suite|r:" .. msg)
