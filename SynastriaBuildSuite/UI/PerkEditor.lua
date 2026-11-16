@@ -543,7 +543,7 @@ local function createDetail(width, height)
 	child:SetSize(width - 12 - 2 * wi, height)
 	d.scroll:SetScrollChild(child)
 	d.child, d.innerW = child, width - 12 - 2 * wi - 2 * PAD
-	d.updateBar = SBS.List.AutoHideBar(d.scroll, "SynastriaBuildSuitePerkDetail")
+	d.updateBar = S.List.AutoHideBar(d.scroll, "SynastriaBuildSuitePerkDetail")
 
 	d.none = S.Text(d, "small", C.muted)
 	d.none:SetPoint("CENTER")
@@ -602,7 +602,7 @@ function Editor.Create(parent, width, height)
 		SBS.Window.Render()
 	end)
 
-	panel.list = SBS.List.New(panel, "SynastriaBuildSuitePerkList", LIST_W - 14, height - TOOLBAR_H, nil, 14)
+	panel.list = S.List.New(panel, "SynastriaBuildSuitePerkList", LIST_W - 14, height - TOOLBAR_H, nil, 14)
 	panel.list:SetSticky()
 	panel.list.scroll:SetPoint("TOPLEFT", 0, -TOOLBAR_H)
 

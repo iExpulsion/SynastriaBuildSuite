@@ -151,7 +151,7 @@ local function create()
 	S.Well(well)
 	f.stack:Add(well, { gap = PAD })
 	local wi = 1 + S.metrics.wellInset
-	f.list = SBS.List.New(well, "SynastriaBuildSuiteTemplateList", innerW - 20 - 2 * wi, LIST_H - 2 * wi, nil, 20)
+	f.list = S.List.New(well, "SynastriaBuildSuiteTemplateList", innerW - 20 - 2 * wi, LIST_H - 2 * wi, nil, 20)
 	f.list.scroll:SetPoint("TOPLEFT", wi, -wi)
 
 	local nameRow = row(GAP)

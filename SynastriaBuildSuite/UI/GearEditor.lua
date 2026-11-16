@@ -192,7 +192,7 @@ local function renderDetail(rowsBySlot)
 		list:Add({
 			text = label .. "  " .. name, icon = GetItemIcon(item.id) or QUESTION, indent = 2,
 			status = where(item), selected = rank == state.rank,
-			onDrop = function(id) dropItem(id, slot) end,
+			onDrop = function(kind, id) if kind == "item" then dropItem(id, slot) end end,
 			onClick = function(_, mouse)
 				if mouse == "RightButton" then
 					Gear.Remove(current, slot, rank)
@@ -307,7 +307,7 @@ local function createDetail(width, height)
 	d.sub = S.Text(d, "small", C.muted)
 	d.sub:SetPoint("TOPLEFT", d.title, "BOTTOMLEFT", 0, -4)
 	d.sub:SetWidth(width - 2 * PAD)
-	d.list = SBS.List.New(d, "SynastriaBuildSuiteGearDetail", width - 22, height - 52 - 92, nil, 20)
+	d.list = S.List.New(d, "SynastriaBuildSuiteGearDetail", width - 22, height - 52 - 92, nil, 20)
 	d.list.scroll:SetPoint("TOPLEFT", 1, -52)
 	d.hint = S.Text(d, "small", C.muted)
 	d.hint:SetPoint("BOTTOMLEFT", PAD, PAD + CONTROL_H + GAP)

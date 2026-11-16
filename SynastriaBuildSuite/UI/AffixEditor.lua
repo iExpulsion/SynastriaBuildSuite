@@ -387,7 +387,7 @@ function Editor.Create(parent, width, height)
 	panel.kind:SetPoint("LEFT", panel.role, "RIGHT", GAP, 0)
 	panel.kind:SetOptions(focusOptions(Affixes.TYPES, "Any Type", "type"))
 	panel.kind.tooltipText = "Where this build's damage or healing comes from."
-	panel.order = SBS.List.New(left, "SynastriaBuildSuiteAffixOrder", ORDER_W - 20 - 2 * wi, height - listTop - PAD, nil, 20)
+	panel.order = S.List.New(left, "SynastriaBuildSuiteAffixOrder", ORDER_W - 20 - 2 * wi, height - listTop - PAD, nil, 20)
 	panel.order.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	panel.order:SetReorder(function(from, to)
 		state.slot = Affixes.Move(current, from, to)
@@ -446,7 +446,7 @@ function Editor.Create(parent, width, height)
 	end)
 	weight:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	panel.weightToggle = weight
-	panel.picker = SBS.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
+	panel.picker = S.List.New(affixView, "SynastriaBuildSuiteAffixPicker", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
 	panel.picker.scroll:SetPoint("TOPLEFT", wi, -listTop)
 
 	local statsView = CreateFrame("Frame", nil, pick)
@@ -463,7 +463,7 @@ function Editor.Create(parent, width, height)
 		SBS.Window.Message(S.Hex(C.muted, "Reverting Affix Order..."))
 	end)
 	panel.revert:SetPoint("TOPLEFT", PAD, -rowY)
-	panel.statList = SBS.List.New(statsView, "SynastriaBuildSuiteAffixStats", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
+	panel.statList = S.List.New(statsView, "SynastriaBuildSuiteAffixStats", pickW - 20 - 2 * wi, height - listTop - PAD, nil, 20)
 	panel.statList.scroll:SetPoint("TOPLEFT", wi, -listTop)
 	return panel
 end

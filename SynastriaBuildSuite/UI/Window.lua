@@ -673,7 +673,7 @@ local function createSidebar(f, edge)
 
 	-- the list runs from below the search box to the footer, which lines up with the build pane's footer
 	local listTop = PAD + CONTROL_H + GAP
-	f.list = SBS.List.New(side, "SynastriaBuildSuiteListScroll", SIDEBAR_W - 14 - 2 * inset,
+	f.list = S.List.New(side, "SynastriaBuildSuiteListScroll", SIDEBAR_W - 14 - 2 * inset,
 		H - TITLE_H - listTop - FOOTER_H, "sidebar", 14)
 	f.list.scroll:SetPoint("TOPLEFT", inset, -listTop)
 
@@ -868,7 +868,7 @@ local function createNotes(main, width, height)
 	end)
 	scroll:SetScrollChild(edit)
 	S.TrackInput(edit, box)
-	SBS.List.AutoHideBar(scroll, "SynastriaBuildSuiteNotesScroll")
+	S.List.AutoHideBar(scroll, "SynastriaBuildSuiteNotesScroll")
 	box:EnableMouse(true)
 	box:SetScript("OnMouseDown", function() edit:SetFocus() end)
 	box.edit = edit
