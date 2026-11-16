@@ -93,8 +93,6 @@ local function create()
 	local PAD, GAP, CONTROL_H = S.metrics.inset, S.GAP, S.CONTROL_H
 	local grow = 2 * (PAD - S.PAD)
 	local innerW = W - 2 * S.PAD
-	-- the string's text sits inside the well's frame, however thick the theme draws it
-	local wellPad = S.PAD + S.metrics.wellInset
 	S.RefreshFonts()
 	local f = CreateFrame("Frame", "SynastriaBuildSuiteTextFrame", UIParent)
 	f:SetWidth(W + grow)
@@ -138,8 +136,15 @@ local function create()
 		f.toggles[i] = t
 	end
 
-	local well = CreateFrame("Frame", nil, f)
-	well:SetSize(innerW, WELL_H)
+	local well = S.TextArea(f, "SynastriaBuildSuiteTextScroll", innerW, WELL_H, { font = "edit", pad = S.PAD,
+		onTextChanged = function(self, userInput)
+			if box.mode == "import" then
+				refreshImport()
+			elseif userInput then
+				refreshExport()
+			end
+			if box.mode == "import" and self:GetText() == "" then box.placeholder:Show() else box.placeholder:Hide() end
+		end })
 	well:Show()
 	f.stack:Add(well, { gap = GAP })
 	f.well = well
@@ -157,35 +162,13 @@ local function create()
 	f.nameHint = S.Text(f.nameRow, "small", C.muted)
 	f.nameHint:SetPoint("LEFT", f.name, "RIGHT", GAP, 0)
 	f.nameHint:SetText("For Import as New.")
-	S.Well(well)
-	well:EnableMouse(true)
-	local scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuiteTextScroll", well, "UIPanelScrollFrameTemplate")
-	scroll:SetPoint("TOPLEFT", wellPad, -wellPad)
-	scroll:SetPoint("BOTTOMRIGHT", -wellPad - 10, wellPad)
-	SBS.Style.List.AutoHideBar(scroll, "SynastriaBuildSuiteTextScroll")
-	local edit = CreateFrame("EditBox", nil, scroll)
-	edit:SetMultiLine(true)
-	edit:SetAutoFocus(false)
-	S.SetFont(edit, "edit")
-	edit:SetWidth(innerW - 2 * wellPad - 10)
-	edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-	edit:SetScript("OnTextChanged", function(self, userInput)
-		if box.mode == "import" then
-			refreshImport()
-		elseif userInput then
-			refreshExport()
-		end
-		if box.mode == "import" and self:GetText() == "" then box.placeholder:Show() else box.placeholder:Hide() end
-	end)
+	local edit = well.edit
 	-- 3.3.5 gives addons no clipboard access, so the best is selecting the text and confirming the Ctrl+C
 	edit:SetScript("OnKeyDown", function(_, key)
 		if box.mode == "export" and key == "C" and IsControlKeyDown() then
 			box.note:SetText(S.Hex(C.good, "Copied: Paste It Anywhere with Ctrl+V"))
 		end
 	end)
-	scroll:SetScrollChild(edit)
-	S.TrackInput(edit, well)
-	well:SetScript("OnMouseDown", function() edit:SetFocus() end)
 	f.edit = edit
 	f.placeholder = S.Text(well, "normal", C.muted)
 	f.placeholder:SetPoint("CENTER")

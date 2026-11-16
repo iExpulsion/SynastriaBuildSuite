@@ -782,33 +782,11 @@ local function createTabBar(main)
 end
 
 local function createNotes(main, width, height)
-	local box = CreateFrame("Frame", nil, main)
-	box:SetSize(width, height)
-	S.Well(box)
-	-- the text sits inside the well's frame, however thick the theme draws it
-	local pad = PAD + S.metrics.wellInset
-	local scroll = CreateFrame("ScrollFrame", "SynastriaBuildSuiteNotesScroll", box, "UIPanelScrollFrameTemplate")
-	scroll:SetPoint("TOPLEFT", pad, -pad)
-	scroll:SetPoint("BOTTOMRIGHT", -pad - 10, pad)
-	local edit = CreateFrame("EditBox", nil, scroll)
-	edit:SetMultiLine(true)
-	edit:SetAutoFocus(false)
-	S.SetFont(edit, "normal")
-	edit:SetWidth(width - 2 * pad - 10)
-	edit:SetScript("OnEscapePressed", edit.ClearFocus)
-	edit:SetScript("OnEditFocusGained", function(self) self.focused = true end)
-	edit:SetScript("OnEditFocusLost", function(self) self.focused = false end)
-	edit:SetScript("OnTextChanged", function(self, userInput)
-		local build = selectedBuild()
-		if userInput and build then build.notes = self:GetText() end
-	end)
-	scroll:SetScrollChild(edit)
-	S.TrackInput(edit, box)
-	S.List.AutoHideBar(scroll, "SynastriaBuildSuiteNotesScroll")
-	box:EnableMouse(true)
-	box:SetScript("OnMouseDown", function() edit:SetFocus() end)
-	box.edit = edit
-	return box
+	return S.TextArea(main, "SynastriaBuildSuiteNotesScroll", width, height, { font = "normal", pad = PAD,
+		onInput = function(text)
+			local build = selectedBuild()
+			if build then build.notes = text end
+		end })
 end
 
 local function createMain(f, edge)
