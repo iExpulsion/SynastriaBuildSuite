@@ -43,6 +43,7 @@ UI\GearEditor.lua
 UI\GlyphEditor.lua
 UI\AffixEditor.lua
 UI\TemplateSheet.lua
+UI\Card.lua
 UI\Window.lua
 UI\Tabs.lua
 UI\Launchers.lua

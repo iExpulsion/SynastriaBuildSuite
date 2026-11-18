@@ -48,6 +48,14 @@ local function categoryColor(cat)
 	return hue and S.colors[hue] or classColors[cat]
 end
 
+-- The heading a perk is listed under: a named category, its class's category, or 0 (Other).
+local function categoryOf(perk)
+	return CATEGORY_NAMES[perk.cat] and perk.cat or SBS.CLASS_KEYS[perk.cat] and perk.cat or 0
+end
+
+Editor.CATEGORY_ORDER = CATEGORY_ORDER
+Editor.CategoryOf, Editor.CategoryName, Editor.CategoryColor = categoryOf, categoryName, categoryColor
+
 local function spellIcon(id)
 	return id and select(3, GetSpellInfo(id)) or QUESTION
 end
@@ -137,7 +145,7 @@ local function visiblePerks(build, mask, look)
 		-- Misc perks are listed only under Shared Perks, and Shared Perks lists nothing else
 		local inMode = Perks.IsShared(id) == (build.sharedOnly == true)
 		if relevant and matches and inMode then
-			local cat = CATEGORY_NAMES[perk.cat] and perk.cat or SBS.CLASS_KEYS[perk.cat] and perk.cat or 0
+			local cat = categoryOf(perk)
 			byCat[cat] = byCat[cat] or {}
 			table.insert(byCat[cat], perk)
 		end

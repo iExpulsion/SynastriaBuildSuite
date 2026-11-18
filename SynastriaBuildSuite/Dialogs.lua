@@ -193,6 +193,12 @@ local function create()
 		box.note:SetText(S.Hex(C.warn, "Selected: Press Ctrl+C to Copy"))
 	end, "Select the whole string, ready for Ctrl+C.")
 	f.selectAll:SetPoint("RIGHT")
+	f.card = S.Button(footer, "Build Card", "secondary", 100, function()
+		local build, sections = box.build, chosen()
+		box:Hide()
+		SBS.Card.Open(build, sections)
+	end, "Show the checked sections on one card, ready to screenshot and post on Discord.")
+	f.card:SetPoint("RIGHT", f.selectAll, "LEFT", -GAP, 0)
 	return f
 end
 
@@ -220,6 +226,8 @@ function Dialogs.ShowExport(build)
 	box.primary:Hide()
 	box.secondary:Hide()
 	box.selectAll:Show()
+	-- a card file added by an update loads only after a full game restart
+	if SBS.Card then box.card:Show() else box.card:Hide() end
 	box.placeholder:Hide()
 	refreshExport()
 	box:Show()
@@ -235,6 +243,7 @@ function Dialogs.ShowImport(onImport, targetName)
 	box.sub:SetText("Paste a Synastria Build Suite, SBM, SPM or affix order string, then pick the sections to bring in.")
 	setMode("import")
 	box.selectAll:Hide()
+	box.card:Hide()
 	box.placeholder:Show()
 	box.nameEdited = false
 	box.name:SetText("")

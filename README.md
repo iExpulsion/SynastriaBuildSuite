@@ -22,6 +22,7 @@ Hunter pet aspects, the spec name and notes.
 - **Templates:** save any tab (perks, talents, glyphs, gear or affixes) by name and load it into any build.
 - **Share Builds:** export the sections you choose as a single line, and import Synastria Build Suite,
   SynastriaBuildManager (SBM), SynastriaPerkManager (SPM) and Item Affix Manager strings.
+- **Build Card:** the whole build on one screen, ready to screenshot and post on Discord.
 - **Shared Perks:** your Misc perks live in one list that every build applies, and they're never exported or
   overwritten by an import.
 - **Themes:** the flat Material look, Classic for the game's own frames and buttons, Cognac's painted gold
@@ -161,6 +162,10 @@ order you had before, in your spec and in the build, and the changes drop back t
 **Export** shows the build as a single line, with checkboxes for the sections to include. Click **Select All**,
 then press Ctrl+C to copy.
 
+**Build Card** in the export box shows the checked sections on one card: perks by category with their options and
+chosen abilities, each class's talent trees, glyphs, gear, affix priority and notes. Take a screenshot of it to
+post on Discord or anywhere else; hover anything on the card for its tooltip. `/sbs card <name>` opens it too.
+
 **Import** takes a pasted string, shows which sections it has and lets you pick which to bring in. **Import as
 New** makes a new build; **Into** replaces just those sections of the selected build.
 
@@ -186,6 +191,7 @@ Misc perks are left out of every import and export, so your Shared Perks only ch
 | `/sbs specs` | Saves every spec as a build linked to it |
 | `/sbs apply <name>` | Lists what would change in chat, then asks before applying |
 | `/sbs export <name>` | Opens the export box for a build |
+| `/sbs card <name>` | Shows the build on one card to screenshot |
 | `/sbs import` | Opens the import box |
 | `/sbs gear <name>` | Shows each slot: worn, in bags or missing |
 | `/sbs equip <name>` | Equips the build's gear you're carrying |
