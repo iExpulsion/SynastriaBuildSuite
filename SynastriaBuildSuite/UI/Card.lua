@@ -12,6 +12,7 @@ local C = S.colors
 local PAD = S.PAD
 local PERK_W, TALENT_W, GEAR_W, COL_GAP = 250, 328, 250, 20
 local W = PAD + PERK_W + COL_GAP + TALENT_W + COL_GAP + GEAR_W + PAD
+local CLOSE_W = 56
 local HEADER_H = PAD + 18 + 4 + 12 + PAD
 local SECTION_H, LINE_H, SMALL_H, BLOCK_GAP = 22, 16, 13, 14
 local GEAR_ROW, GEAR_ICON, GLYPH_ICON = 22, 18, 16
@@ -180,13 +181,6 @@ local function perkTip(row)
 	end
 end
 
--- Ranks are the character's own, shown only when the character has learned the perk.
-local function perkRank(row)
-	local rank = GetPerkAcquired and GetPerkAcquired(row.entry.id)
-	local max = row.perk and row.perk.levels and #row.perk.levels or 0
-	return rank and max > 0 and ("%d/%d"):format(rank, max) or nil
-end
-
 local function categoryLabel(cat, count)
 	local limit = cat >= 15 and cat <= 18 and GetPerkLimit and GetPerkLimit(SBS.Perks.LimitIndex(cat))
 	local tally = limit and limit > 0 and ("%d/%d"):format(count, limit) or tostring(count)
@@ -198,19 +192,13 @@ local function drawPerks(build, x, y)
 	local groups = perkGroups(build)
 	local mask = SBS.Perks.ClassMask(build.classes and #build.classes > 0 and build.classes or SBS:PlayerClasses())
 	y = heading(x, y, PERK_W, "Perks", S.Count(#(build.perks or {}), "Perk"))
-	if #(build.perks or {}) == 0 then
-		text(x, y, "small", C.muted, PERK_W, "No Perks")
-		y = y + LINE_H
-	end
 	for _, cat in ipairs(Editor.CATEGORY_ORDER) do
 		local list = groups[cat]
 		if list then
 			text(x, y, "small", Editor.CategoryColor(cat) or C.heading, PERK_W, categoryLabel(cat, #list))
 			y = y + LINE_H
 			for _, row in ipairs(list) do
-				local rank = perkRank(row)
-				text(x + 8, y, "normal", C.text, PERK_W - 8 - (rank and 40 or 0), row.name)
-				if rank then text(x, y + 1, "small", C.muted, PERK_W, rank, "RIGHT") end
+				text(x + 8, y, "normal", C.text, PERK_W - 8, row.name)
 				local choices = perkChoices(row.entry, mask)
 				local rowH = LINE_H + (choices and SMALL_H or 0)
 				if choices then text(x + 16, y + LINE_H - 1, "small", C.muted, PERK_W - 16, choices) end
@@ -286,21 +274,19 @@ end
 
 local function drawTalents(build, x, y)
 	local classes = talentClasses(build)
-	local single = #classes == 1
-	local note = single and (SBS.Window.ClassText({ classes[1] }) .. "  " .. talentSplit(classes[1], build.talents[classes[1]])) or nil
-	y = heading(x, y, TALENT_W, "Talents", note)
-	if #classes == 0 then
-		text(x, y, "small", C.muted, TALENT_W, "No Talents")
-		y = y + LINE_H
-	end
-	local cell = single and 26 or 22
-	for _, class in ipairs(classes) do
-		local trees = build.talents[class]
-		if not single then
-			text(x, y, "normal", C.text, TALENT_W, SBS.Window.ClassText({ class }) .. "  " .. S.Hex(C.muted, talentSplit(class, trees)))
-			y = y + LINE_H + 2
+	if #classes > 0 then
+		local single = #classes == 1
+		local note = single and (SBS.Window.ClassText({ classes[1] }) .. "  " .. talentSplit(classes[1], build.talents[classes[1]])) or nil
+		y = heading(x, y, TALENT_W, "Talents", note)
+		local cell = single and 26 or 22
+		for _, class in ipairs(classes) do
+			local trees = build.talents[class]
+			if not single then
+				text(x, y, "normal", C.text, TALENT_W, SBS.Window.ClassText({ class }) .. "  " .. S.Hex(C.muted, talentSplit(class, trees)))
+				y = y + LINE_H + 2
+			end
+			y = drawTrees(class, trees, x, y, cell) + 6
 		end
-		y = drawTrees(class, trees, x, y, cell) + 6
 	end
 	return y
 end
@@ -423,26 +409,66 @@ function Card.Render()
 	local spec = build.spec or ""
 	frame.sub:SetText(spec ~= "" and spec ~= build.name and (who .. S.Hex(C.muted, "   Spec: ") .. spec) or who)
 
-	local perkX = 0
-	local talentX = perkX + PERK_W + COL_GAP
-	local gearX = talentX + TALENT_W + COL_GAP
-	local perkY = drawPerks(build, perkX, 0)
-	local talentY = drawGlyphs(build, talentX, drawTalents(build, talentX, 0) + BLOCK_GAP - 6)
-	local gearY = drawGear(build, gearX, 0)
-	-- affixes and notes go under whichever of the two right-hand columns ends higher
-	local function place(draw)
-		if talentY + BLOCK_GAP < gearY then
-			talentY = math.max(talentY, draw(build, talentX, talentY + BLOCK_GAP, TALENT_W) - BLOCK_GAP)
-		else
-			gearY = draw(build, gearX, gearY, GEAR_W)
-		end
-	end
-	place(drawAffixes)
-	place(drawNotes)
+	-- Only columns with something in them are drawn, left to right, and the card is as wide as they are.
+	local hasPerks = #(build.perks or {}) > 0
+	local hasTalents = #talentClasses(build) > 0 or #glyphClasses(build) > 0
+	local gearCount = 0
+	for _ in pairs(build.gear or {}) do gearCount = gearCount + 1 end
+	local hasGear = gearCount > 0
+	local notes = (build.notes or ""):gsub("^%s+", ""):gsub("%s+$", "")
+	local hasExtras = #(build.affixes or {}) > 0 or notes ~= ""
 
-	local bodyH = math.ceil(math.max(perkY, talentY, gearY))
-	frame.body:SetHeight(bodyH)
-	frame:SetHeight(2 * frame.edge + HEADER_H + PAD + bodyH + PAD)
+	local x, bottom, columns = 0, 0, {}
+	local function column(width)
+		local col = { x = x, width = width, y = 0 }
+		columns[#columns + 1] = col
+		x = x + width + COL_GAP
+		return col
+	end
+	if hasPerks then
+		local col = column(PERK_W)
+		col.y = drawPerks(build, col.x, 0)
+		bottom = col.y
+	end
+	-- affixes and notes go under whichever right-hand column ends higher, or in a column of their own
+	local sides = {}
+	if hasTalents then
+		local col = column(TALENT_W)
+		col.y = drawGlyphs(build, col.x, drawTalents(build, col.x, 0) + BLOCK_GAP - 6)
+		sides[#sides + 1] = col
+	end
+	if hasGear then
+		local col = column(GEAR_W)
+		col.y = drawGear(build, col.x, 0)
+		sides[#sides + 1] = col
+	end
+	if hasExtras and #sides == 0 then sides[1] = column(GEAR_W) end
+	local function place(draw)
+		local best = sides[1]
+		for _, col in ipairs(sides) do
+			if col.y < best.y then best = col end
+		end
+		local start = best.y > 0 and best.y + BLOCK_GAP or 0
+		best.y = draw(build, best.x, start, best.width) - BLOCK_GAP
+	end
+	if hasExtras then
+		place(drawAffixes)
+		place(drawNotes)
+	else
+		frame.notes:Hide()
+	end
+	for _, col in ipairs(columns) do bottom = math.max(bottom, col.y) end
+	if #columns == 0 then
+		text(0, 0, "small", C.muted, PERK_W, "Nothing to Show")
+		bottom = LINE_H
+	end
+
+	-- never narrower than the header's title, brand and Close button side by side
+	local header = (frame.title:GetStringWidth() or 0) + (frame.brand:GetStringWidth() or 0) + CLOSE_W + 3 * S.GAP
+	local bodyW = math.ceil(math.max(x - COL_GAP, header, (frame.sub:GetStringWidth() or 0)))
+	local bodyH = math.ceil(bottom)
+	frame.body:SetSize(bodyW, bodyH)
+	frame:SetSize(2 * frame.edge + PAD + bodyW + PAD, 2 * frame.edge + HEADER_H + PAD + bodyH + PAD)
 end
 
 -- `sections` ({ key = true }, as the export box picks them) limits what's shown; nil shows everything.
@@ -493,9 +519,10 @@ function Card.Create()
 	f.title:SetPoint("TOPLEFT", left, -top)
 	f.sub = S.Text(f, "small")
 	f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
-	local close = S.Button(f, "Close", "ghost", 56, function() f:Hide() end)
+	local close = S.Button(f, "Close", "ghost", CLOSE_W, function() f:Hide() end)
 	close:SetPoint("TOPRIGHT", -(edge + PAD), -(edge + (HEADER_H - S.CONTROL_H) / 2))
 	local brand = S.Text(f, "small", C.muted)
+	f.brand = brand
 	brand:SetPoint("RIGHT", close, "LEFT", -S.GAP, 0)
 	brand:SetText("Synastria " .. S.Hex(C.accent, "Build Suite") .. S.Hex(C.muted, " v" .. SBS.version))
 	local divider, dividerH = S.Divider(f, "rule")

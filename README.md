@@ -163,7 +163,8 @@ order you had before, in your spec and in the build, and the changes drop back t
 then press Ctrl+C to copy.
 
 **Build Card** in the export box shows the checked sections on one card: perks by category with their options and
-chosen abilities, each class's talent trees, glyphs, gear, affix priority and notes. Take a screenshot of it to
+chosen abilities, each class's talent trees, glyphs, gear, affix priority and notes. The card fits what's on it,
+so leaving sections out makes it smaller instead of leaving gaps. Take a screenshot of it to
 post on Discord or anywhere else; hover anything on the card for its tooltip. `/sbs card <name>` opens it too.
 
 **Import** takes a pasted string, shows which sections it has and lets you pick which to bring in. **Import as
