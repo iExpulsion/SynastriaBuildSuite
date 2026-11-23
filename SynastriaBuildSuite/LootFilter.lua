@@ -151,7 +151,7 @@ function LootFilter.Sync()
 		for _, rule in ipairs(kept) do new[#new + 1] = rule end
 		result = { items = listed, dropped = #wanted - listed, changed = serialize(new) ~= serialize(rules) }
 		if result.changed then
-			SBS.charDB.lootFilterBackup = copy(rules)
+			SBS:CharData().lootFilterBackup = copy(rules)
 			local ok, refused = write(new)
 			if not ok then result = { error = ("the server refused a condition in %s"):format(refused) } end
 		end
@@ -161,7 +161,7 @@ end
 
 -- Writes back the filter as it was before the last sync that changed it.
 function LootFilter.Restore()
-	local backup = SBS.charDB.lootFilterBackup
+	local backup = SBS:CharData().lootFilterBackup
 	local ok = backup ~= nil and LootFilter.Available()
 	if ok then ok = write(copy(backup)) end
 	return ok

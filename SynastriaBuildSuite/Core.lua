@@ -171,28 +171,36 @@ function SBS:RenameLinks(old, new)
 	end
 end
 
+-- This character's own data, keyed by GUID in the account file: characters can share a name, and with it the
+-- client's per-character file, which held it before and is taken over only by the character that stamped it.
+function SBS:CharData()
+	local guid = UnitGUID("player")
+	local data = {}
+	if guid then
+		local file = SynastriaBuildSuiteCharDB
+		if not self.db.chars[guid] and file and file.guid == guid then
+			file.guid = nil
+			self.db.chars[guid] = file
+			SynastriaBuildSuiteCharDB = nil
+		end
+		self.db.chars[guid] = self.db.chars[guid] or {}
+		data = self.db.chars[guid]
+	end
+	return data
+end
+
 local frame = CreateFrame("Frame")
 SBS.frame = frame
 frame:RegisterEvent("ADDON_LOADED")
-frame:RegisterEvent("PLAYER_LOGIN")
-frame:SetScript("OnEvent", function(self, event, name)
-	if event == "PLAYER_LOGIN" then
-		-- the per-character file follows the name, so a new character with a deleted one's name would inherit it
-		local guid = UnitGUID("player")
-		if SBS.charDB.guid and SBS.charDB.guid ~= guid then
-			SynastriaBuildSuiteCharDB = {}
-			SBS.charDB = SynastriaBuildSuiteCharDB
-		end
-		SBS.charDB.guid = guid
-		self:UnregisterEvent("PLAYER_LOGIN")
-	elseif event == "ADDON_LOADED" and name == ADDON then
+frame:SetScript("OnEvent", function(self, _, name)
+	if name == ADDON then
 		SynastriaBuildSuiteDB = SynastriaBuildSuiteDB or {}
 		SynastriaBuildSuiteDB.builds = SynastriaBuildSuiteDB.builds or {}
 		SynastriaBuildSuiteDB.shared = SynastriaBuildSuiteDB.shared or { perks = {} }
 		SynastriaBuildSuiteDB.links = SynastriaBuildSuiteDB.links or {}
 		SynastriaBuildSuiteDB.templates = SynastriaBuildSuiteDB.templates or {}
-		SynastriaBuildSuiteCharDB = SynastriaBuildSuiteCharDB or {}
-		SBS.db, SBS.charDB = SynastriaBuildSuiteDB, SynastriaBuildSuiteCharDB
+		SynastriaBuildSuiteDB.chars = SynastriaBuildSuiteDB.chars or {}
+		SBS.db = SynastriaBuildSuiteDB
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 end)
